@@ -1,0 +1,27 @@
+Unstaged changes after reset:
+M	mujoco_py/builder.py
+diff --git a/mujoco_py/builder.py b/mujoco_py/builder.py
+index 5280b2c..a1dfa85 100644
+--- a/mujoco_py/builder.py
++++ b/mujoco_py/builder.py
+@@ -91,7 +91,8 @@ The easy solution is to `import mujoco_py` _before_ `import glfw`.
+ 
+     lockpath = os.path.join(os.path.dirname(cext_so_path), 'mujocopy-buildlock')
+ 
+-    with fasteners.InterProcessLock(lockpath):
++    from contextlib import nullcontext
++    with nullcontext() if os.path.exists(cext_so_path) else fasteners.InterProcessLock(lockpath):
+         mod = None
+         force_rebuild = os.environ.get('MUJOCO_PY_FORCE_REBUILD')
+         if force_rebuild:
+@@ -105,7 +106,9 @@ The easy solution is to `import mujoco_py` _before_ `import glfw`.
+             try:
+                 mod = load_dynamic_ext('cymj', cext_so_path)
+             except ImportError:
+-                print("Import error. Trying to rebuild mujoco_py.")
++                print("Import failed. Import error. Trying to rebuild mujoco_py.")
++                raise
++
+         if mod is None:
+             cext_so_path = builder.build()
+             mod = load_dynamic_ext('cymj', cext_so_path)
