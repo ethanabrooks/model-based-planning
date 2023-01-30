@@ -1,0 +1,14 @@
+Unstaged changes after reset:
+M	d4rl/__init__.py
+diff --git a/d4rl/__init__.py b/d4rl/__init__.py
+index 808ec65..7690b53 100644
+--- a/d4rl/__init__.py
++++ b/d4rl/__init__.py
+@@ -17,6 +17,7 @@ try:
+     import d4rl.gym_minigrid
+     import d4rl.gym_mujoco
+ except ImportError as e:
++    raise
+     if not SUPPRESS_MESSAGES:
+         print(_ERROR_MESSAGE % 'Mujoco-based envs', file=sys.stderr)
+         print(e, file=sys.stderr)
