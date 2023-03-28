@@ -2,6 +2,7 @@ import os
 import numpy as np
 import gym
 import pdb
+import environments  # noqa: F401
 
 from contextlib import (
     contextmanager,
