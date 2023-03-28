@@ -17,3 +17,4 @@ mjkey.txt
 azure/fuse.cfg.direnv/
 .env
 .direnv/
+ignore.py
