@@ -2,13 +2,15 @@ import numpy as np
 import torch
 import pdb
 
-#-------------------------------- helper functions --------------------------------#
+# -------------------------------- helper functions --------------------------------#
+
 
 def top_k_logits(logits, k):
     v, ix = torch.topk(logits, k)
     out = logits.clone()
-    out[out < v[:, [-1]]] = -float('Inf')
+    out[out < v[:, [-1]]] = -float("Inf")
     return out
+
 
 def filter_cdf(logits, threshold):
     batch_inds = torch.arange(logits.shape[0], device=logits.device, dtype=torch.long)
@@ -26,20 +28,22 @@ def filter_cdf(logits, threshold):
     out[logits_mask] = -1000
     return out
 
-def round_to_multiple(x, N):
-    '''
-        Rounds `x` up to nearest multiple of `N`.
 
-        x : int
-        N : int
-    '''
+def round_to_multiple(x, N):
+    """
+    Rounds `x` up to nearest multiple of `N`.
+
+    x : int
+    N : int
+    """
     pad = (N - x % N) % N
     return x + pad
 
+
 def sort_2d(x):
-    '''
-        x : [ M x N ]
-    '''
+    """
+    x : [ M x N ]
+    """
     M, N = x.shape
     x = x.view(-1)
     x_sort, inds = torch.sort(x, descending=True)
@@ -49,23 +53,26 @@ def sort_2d(x):
 
     return x_sort, rows, cols
 
-#-------------------------------- forward pass --------------------------------#
+
+# -------------------------------- forward pass --------------------------------#
+
 
 def forward(model, x, max_block=None, allow_crop=True, crop_increment=None, **kwargs):
-    '''
-        A wrapper around a single forward pass of the transformer.
-        Crops the input if the sequence is too long.
+    """
+    A wrapper around a single forward pass of the transformer.
+    Crops the input if the sequence is too long.
 
-        x : tensor[ batch_size x sequence_length ]
-    '''
+    x : tensor[ batch_size x sequence_length ]
+    """
     model.eval()
 
     block_size = min(model.get_block_size(), max_block or np.inf)
 
     if x.shape[1] > block_size:
         assert allow_crop, (
-            f'[ search/sampling ] input size is {x.shape} and block size is {block_size}, '
-            'but cropping not allowed')
+            f"[ search/sampling ] input size is {x.shape} and block size is {block_size}, "
+            "but cropping not allowed"
+        )
 
         ## crop out entire transition at a time so that the first token is always s_t^0
         n_crop = round_to_multiple(x.shape[1] - block_size, crop_increment)
@@ -76,10 +83,11 @@ def forward(model, x, max_block=None, allow_crop=True, crop_increment=None, **kw
 
     return logits
 
+
 def get_logp(model, x, temperature=1.0, topk=None, cdf=None, **forward_kwargs):
-    '''
-        x : tensor[ batch_size x sequence_length ]
-    '''
+    """
+    x : tensor[ batch_size x sequence_length ]
+    """
     ## [ batch_size x sequence_length x vocab_size ]
     logits = forward(model, x, **forward_kwargs)
 
@@ -100,14 +108,16 @@ def get_logp(model, x, temperature=1.0, topk=None, cdf=None, **forward_kwargs):
 
     return logp
 
-#-------------------------------- sampling --------------------------------#
+
+# -------------------------------- sampling --------------------------------#
+
 
 def sample(model, x, temperature=1.0, topk=None, cdf=None, **forward_kwargs):
-    '''
-        Samples from the distribution parameterized by `model(x)`.
+    """
+    Samples from the distribution parameterized by `model(x)`.
 
-        x : tensor[ batch_size x sequence_length ]
-    '''
+    x : tensor[ batch_size x sequence_length ]
+    """
     ## [ batch_size x sequence_length x vocab_size ]
     logits = forward(model, x, **forward_kwargs)
 
@@ -134,6 +144,7 @@ def sample(model, x, temperature=1.0, topk=None, cdf=None, **forward_kwargs):
     indices = torch.multinomial(probs, num_samples=1)
 
     return indices, raw_probs
+
 
 @torch.no_grad()
 def sample_n(model, x, N, **sample_kwargs):

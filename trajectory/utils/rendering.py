@@ -11,8 +11,9 @@ from .arrays import to_np
 from .video import save_video, save_videos
 from ..datasets import load_environment, get_preprocess_fn
 
+
 def make_renderer(args):
-    render_str = getattr(args, 'renderer')
+    render_str = getattr(args, "renderer")
     render_class = getattr(sys.modules[__name__], render_str)
     ## get dimensions in case the observations are preprocessed
     env = load_environment(args.dataset)
@@ -21,20 +22,22 @@ def make_renderer(args):
     observation = preprocess_fn(observation)
     return render_class(args.dataset, observation_dim=observation.size)
 
+
 def split(sequence, observation_dim, action_dim):
     assert sequence.shape[1] == observation_dim + action_dim + 2
     observations = sequence[:, :observation_dim]
-    actions = sequence[:, observation_dim:observation_dim+action_dim]
+    actions = sequence[:, observation_dim : observation_dim + action_dim]
     rewards = sequence[:, -2]
     values = sequence[:, -1]
     return observations, actions, rewards, values
+
 
 def set_state(env, state):
     qpos_dim = env.sim.data.qpos.size
     qvel_dim = env.sim.data.qvel.size
     qstate_dim = qpos_dim + qvel_dim
 
-    if 'ant' in env.name:
+    if "ant" in env.name:
         ypos = np.zeros(1)
         state = np.concatenate([ypos, state])
 
@@ -46,13 +49,14 @@ def set_state(env, state):
         qvel = np.zeros(qvel_dim)
         state = np.concatenate([state, qvel])
 
-    if 'ant' in env.name and state.size > qpos_dim + qvel_dim:
+    if "ant" in env.name and state.size > qpos_dim + qvel_dim:
         xpos = np.zeros(1)
         state = np.concatenate([xpos, state])[:qstate_dim]
 
     assert state.size == qpos_dim + qvel_dim
 
     env.set_state(state[:qpos_dim], state[qpos_dim:])
+
 
 def rollout_from_state(env, state, actions):
     qpos_dim = env.sim.data.qpos.size
@@ -63,13 +67,13 @@ def rollout_from_state(env, state, actions):
         observations.append(obs)
         if term:
             break
-    for i in range(len(observations), len(actions)+1):
+    for i in range(len(observations), len(actions) + 1):
         ## if terminated early, pad with zeros
-        observations.append( np.zeros(obs.size) )
+        observations.append(np.zeros(obs.size))
     return np.stack(observations)
 
-class DebugRenderer:
 
+class DebugRenderer:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -82,15 +86,17 @@ class DebugRenderer:
     def render_rollout(self, *args, **kwargs):
         pass
 
-class Renderer:
 
+class Renderer:
     def __init__(self, env, observation_dim=None, action_dim=None):
         if type(env) is str:
             self.env = load_environment(env)
         else:
             self.env = env
 
-        self.observation_dim = observation_dim or np.prod(self.env.observation_space.shape)
+        self.observation_dim = observation_dim or np.prod(
+            self.env.observation_space.shape
+        )
         self.action_dim = action_dim or np.prod(self.env.action_space.shape)
         self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
 
@@ -102,14 +108,14 @@ class Renderer:
 
         if render_kwargs is None:
             render_kwargs = {
-                'trackbodyid': 2,
-                'distance': 3,
-                'lookat': [0, -0.5, 1],
-                'elevation': -20
+                "trackbodyid": 2,
+                "distance": 3,
+                "lookat": [0, -0.5, 1],
+                "elevation": -20,
             }
 
         for key, val in render_kwargs.items():
-            if key == 'lookat':
+            if key == "lookat":
                 self.viewer.cam.lookat[:] = val[:]
             else:
                 setattr(self.viewer.cam, key, val)
@@ -132,11 +138,11 @@ class Renderer:
         return np.stack(images, axis=0)
 
     def render_plan(self, savepath, sequence, state, fps=30):
-        '''
-            state : np.array[ observation_dim ]
-            sequence : np.array[ horizon x transition_dim ]
-                as usual, sequence is ordered as [ s_t, a_t, r_t, V_t, ... ]
-        '''
+        """
+        state : np.array[ observation_dim ]
+        sequence : np.array[ horizon x transition_dim ]
+            as usual, sequence is ordered as [ s_t, a_t, r_t, V_t, ... ]
+        """
 
         if len(sequence) == 1:
             return
@@ -144,11 +150,13 @@ class Renderer:
         sequence = to_np(sequence)
 
         ## compare to ground truth rollout using actions from sequence
-        actions = sequence[:-1, self.observation_dim : self.observation_dim + self.action_dim]
+        actions = sequence[
+            :-1, self.observation_dim : self.observation_dim + self.action_dim
+        ]
         rollout_states = rollout_from_state(self.env, state, actions)
 
         videos = [
-            self.renders(sequence[:, :self.observation_dim]),
+            self.renders(sequence[:, : self.observation_dim]),
             self.renders(rollout_states),
         ]
 
@@ -158,8 +166,8 @@ class Renderer:
         images = self(states)
         save_video(savepath, images, **video_kwargs)
 
-class KitchenRenderer:
 
+class KitchenRenderer:
     def __init__(self, env):
         if type(env) is str:
             self.env = gym.make(env)
@@ -172,9 +180,14 @@ class KitchenRenderer:
     def set_obs(self, obs, goal_dim=30):
         robot_dim = self.env.n_jnt
         obj_dim = self.env.n_obj
-        assert robot_dim + obj_dim + goal_dim == obs.size or robot_dim + obj_dim == obs.size
+        assert (
+            robot_dim + obj_dim + goal_dim == obs.size
+            or robot_dim + obj_dim == obs.size
+        )
         self.env.sim.data.qpos[:robot_dim] = obs[:robot_dim]
-        self.env.sim.data.qpos[robot_dim:robot_dim+obj_dim] = obs[robot_dim:robot_dim+obj_dim]
+        self.env.sim.data.qpos[robot_dim : robot_dim + obj_dim] = obs[
+            robot_dim : robot_dim + obj_dim
+        ]
         self.env.sim.forward()
 
     def rollout(self, obs, actions):
@@ -185,18 +198,20 @@ class KitchenRenderer:
             observations.append(obs)
             if term:
                 break
-        for i in range(len(observations), len(actions)+1):
+        for i in range(len(observations), len(actions) + 1):
             ## if terminated early, pad with zeros
-            observations.append( np.zeros(observations[-1].size) )
+            observations.append(np.zeros(observations[-1].size))
         return np.stack(observations)
 
     def render(self, observation, dim=512, onscreen=False):
-        self.env.sim_robot.renderer._camera_settings.update({
-            'distance': 4.5,
-            'azimuth': 90,
-            'elevation': -25,
-            'lookat': [0, 1, 2],
-        })
+        self.env.sim_robot.renderer._camera_settings.update(
+            {
+                "distance": 4.5,
+                "azimuth": 90,
+                "elevation": -25,
+                "lookat": [0, 1, 2],
+            }
+        )
         self.set_obs(observation)
         if onscreen:
             self.env.render()
@@ -213,22 +228,23 @@ class KitchenRenderer:
         return self.render_rollout(*args, **kwargs)
 
     def render_rollout(self, savepath, states, **video_kwargs):
-        images = self(states) #np.stack(states, axis=0))
+        images = self(states)  # np.stack(states, axis=0))
         save_video(savepath, images, **video_kwargs)
 
     def __call__(self, *args, **kwargs):
         return self.renders(*args, **kwargs)
 
+
 ANTMAZE_BOUNDS = {
-    'antmaze-umaze-v0': (-3, 11),
-    'antmaze-medium-play-v0': (-3, 23),
-    'antmaze-medium-diverse-v0': (-3, 23),
-    'antmaze-large-play-v0': (-3, 39),
-    'antmaze-large-diverse-v0': (-3, 39),
+    "antmaze-umaze-v0": (-3, 11),
+    "antmaze-medium-play-v0": (-3, 23),
+    "antmaze-medium-diverse-v0": (-3, 23),
+    "antmaze-large-play-v0": (-3, 39),
+    "antmaze-large-diverse-v0": (-3, 39),
 }
 
-class AntMazeRenderer:
 
+class AntMazeRenderer:
     def __init__(self, env_name):
         self.env_name = env_name
         self.env = gym.make(env_name).unwrapped
@@ -243,33 +259,33 @@ class AntMazeRenderer:
 
         N, path_length, _ = X.shape
         if N > 4:
-            fig, axes = plt.subplots(4, int(N/4))
+            fig, axes = plt.subplots(4, int(N / 4))
             axes = axes.flatten()
-            fig.set_size_inches(N/4,8)
+            fig.set_size_inches(N / 4, 8)
         elif N > 1:
             fig, axes = plt.subplots(1, N)
-            fig.set_size_inches(8,8)
+            fig.set_size_inches(8, 8)
         else:
             fig, axes = plt.subplots(1, 1)
-            fig.set_size_inches(8,8)
+            fig.set_size_inches(8, 8)
 
-        colors = plt.cm.jet(np.linspace(0,1,path_length))
+        colors = plt.cm.jet(np.linspace(0, 1, path_length))
         for i in range(N):
             ax = axes if N == 1 else axes[i]
             xlim, ylim = self.plot_boundaries(ax=ax)
             x = X[i]
-            ax.scatter(x[:,0], x[:,1], c=colors)
+            ax.scatter(x[:, 0], x[:, 1], c=colors)
             ax.set_xticks([])
             ax.set_yticks([])
             ax.set_xlim(*xlim)
             ax.set_ylim(*ylim)
-        plt.savefig(savepath + '.png')
+        plt.savefig(savepath + ".png")
         plt.close()
-        print(f'[ attentive/utils/visualization ] Saved to: {savepath}')
+        print(f"[ attentive/utils/visualization ] Saved to: {savepath}")
 
     def plot_boundaries(self, N=100, ax=None):
         """
-            plots the maze boundaries in the antmaze environments
+        plots the maze boundaries in the antmaze environments
         """
         ax = ax or plt.gca()
 
@@ -285,15 +301,15 @@ class AntMazeRenderer:
                 collision = self.env.unwrapped._is_in_collision((x, y))
                 Z[-j, i] = collision
 
-        ax.imshow(Z, extent=(*xlim, *ylim), aspect='auto', cmap=plt.cm.binary)
+        ax.imshow(Z, extent=(*xlim, *ylim), aspect="auto", cmap=plt.cm.binary)
         return xlim, ylim
 
     def render_plan(self, savepath, discretizer, state, sequence):
-        '''
-            state : np.array[ observation_dim ]
-            sequence : np.array[ horizon x transition_dim ]
-                as usual, sequence is ordered as [ s_t, a_t, r_t, V_t, ... ]
-        '''
+        """
+        state : np.array[ observation_dim ]
+        sequence : np.array[ horizon x transition_dim ]
+            as usual, sequence is ordered as [ s_t, a_t, r_t, V_t, ... ]
+        """
 
         if len(sequence) == 1:
             # raise RuntimeError(f'horizon is 1 in Renderer:render_plan: {sequence.shape}')
@@ -303,7 +319,9 @@ class AntMazeRenderer:
 
         sequence_recon = discretizer.reconstruct(sequence)
 
-        observations, actions, *_ = split(sequence_recon, self.observation_dim, self.action_dim)
+        observations, actions, *_ = split(
+            sequence_recon, self.observation_dim, self.action_dim
+        )
 
         rollout_states = rollout_from_state(self.env, state, actions[:-1])
 
@@ -316,27 +334,27 @@ class AntMazeRenderer:
             states = np.stack(states, axis=0)[None]
         images = self.renders(savepath, states)
 
-class Maze2dRenderer(AntMazeRenderer):
 
+class Maze2dRenderer(AntMazeRenderer):
     def _is_in_collision(self, x, y):
-        '''
-            10 : wall
-            11 : free
-            12 : goal
-        '''
+        """
+        10 : wall
+        11 : free
+        12 : goal
+        """
         maze = self.env.maze_arr
         ind = maze[int(x), int(y)]
         return ind == 10
 
     def plot_boundaries(self, N=100, ax=None, eps=1e-6):
         """
-            plots the maze boundaries in the antmaze environments
+        plots the maze boundaries in the antmaze environments
         """
         ax = ax or plt.gca()
 
         maze = self.env.maze_arr
-        xlim = (0, maze.shape[1]-eps)
-        ylim = (0, maze.shape[0]-eps)
+        xlim = (0, maze.shape[1] - eps)
+        ylim = (0, maze.shape[0] - eps)
 
         X = np.linspace(*xlim, N)
         Y = np.linspace(*ylim, N)
@@ -347,11 +365,11 @@ class Maze2dRenderer(AntMazeRenderer):
                 collision = self._is_in_collision(x, y)
                 Z[-j, i] = collision
 
-        ax.imshow(Z, extent=(*xlim, *ylim), aspect='auto', cmap=plt.cm.binary)
+        ax.imshow(Z, extent=(*xlim, *ylim), aspect="auto", cmap=plt.cm.binary)
         return xlim, ylim
 
     def renders(self, savepath, X):
         return super().renders(savepath, X + 0.5)
 
-#--------------------------------- planning callbacks ---------------------------------#
 
+# --------------------------------- planning callbacks ---------------------------------#

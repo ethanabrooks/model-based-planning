@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import pdb
 
-class EinLinear(nn.Module):
 
+class EinLinear(nn.Module):
     def __init__(self, n_models, in_features, out_features, bias):
         super().__init__()
         self.n_models = n_models
@@ -14,7 +14,7 @@ class EinLinear(nn.Module):
         if bias:
             self.bias = nn.Parameter(torch.Tensor(n_models, out_features))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -27,15 +27,15 @@ class EinLinear(nn.Module):
 
     def forward(self, input):
         """
-            input : [ B x n_models x input_dim ]
+        input : [ B x n_models x input_dim ]
         """
         ## [ B x n_models x output_dim ]
-        output = torch.einsum('eoi,bei->beo', self.weight, input)
+        output = torch.einsum("eoi,bei->beo", self.weight, input)
         if self.bias is not None:
             raise RuntimeError()
         return output
 
     def extra_repr(self):
-        return 'n_models={}, in_features={}, out_features={}, bias={}'.format(
+        return "n_models={}, in_features={}, out_features={}, bias={}".format(
             self.n_models, self.in_features, self.out_features, self.bias is not None
         )

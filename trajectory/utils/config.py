@@ -2,8 +2,8 @@ import os
 import collections
 import pickle
 
-class Config(collections.Mapping):
 
+class Config(collections.Mapping):
     def __init__(self, _class, verbose=True, savepath=None, **kwargs):
         self._class = _class
         self._dict = {}
@@ -16,14 +16,14 @@ class Config(collections.Mapping):
 
         if savepath is not None:
             savepath = os.path.join(*savepath) if type(savepath) is tuple else savepath
-            pickle.dump(self, open(savepath, 'wb'))
-            print(f'Saved config to: {savepath}\n')
+            pickle.dump(self, open(savepath, "wb"))
+            print(f"Saved config to: {savepath}\n")
 
     def __repr__(self):
-        string = f'\nConfig: {self._class}\n'
+        string = f"\nConfig: {self._class}\n"
         for key in sorted(self._dict.keys()):
             val = self._dict[key]
-            string += f'    {key}: {val}\n'
+            string += f"    {key}: {val}\n"
         return string
 
     def __iter__(self):
@@ -39,7 +39,7 @@ class Config(collections.Mapping):
         return self.make()
 
     def __getattr__(self, attr):
-        if attr == '_dict' and '_dict' not in vars(self):
+        if attr == "_dict" and "_dict" not in vars(self):
             self._dict = {}
         try:
             return self._dict[attr]
@@ -47,7 +47,7 @@ class Config(collections.Mapping):
             raise AttributeError(attr)
 
     def make(self):
-        if 'GPT' in str(self._class) or 'Trainer' in str(self._class):
+        if "GPT" in str(self._class) or "Trainer" in str(self._class):
             ## GPT class expects the config as the sole input
             return self._class(self)
         else:
