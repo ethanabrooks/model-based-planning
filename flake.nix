@@ -70,6 +70,9 @@
             sha256 = "sha256-20V6gi1zYBO2/+UJBTABvJGL3Xj+aJZ7YF9TmEqa+sU=";
           };
         });
+        torchrl = pyprev.torchrl.overridePythonAttrs (old: {
+          preFixup = "addAutoPatchelfSearchPath ${pyfinal.torch}";
+        });
       };
       poetryEnv = pkgs.poetry2nix.mkPoetryEnv {
         python = pkgs.python39;

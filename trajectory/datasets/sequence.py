@@ -5,6 +5,10 @@ import pdb
 
 from trajectory.utils import discretization
 from trajectory.utils.arrays import to_torch
+import yaml
+from torchrl.data import ReplayBuffer
+from torchrl.data.replay_buffers import LazyMemmapStorage
+from torchsnapshot import Snapshot
 
 from .d4rl import load_environment, qlearning_dataset_with_timeouts
 from .preprocessing import dataset_preprocess_functions
@@ -66,7 +70,33 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.device = device
 
         print(f"[ datasets/sequence ] Loading...", end=" ", flush=True)
-        dataset = qlearning_dataset_with_timeouts(env.unwrapped, terminate_on_end=True)
+        with open("local-datasets.yml") as f:
+            local_datasets = yaml.load(f, Loader=yaml.FullLoader)
+        local_dataset = local_datasets.get(env.name)
+        if local_dataset is None:
+            dataset = qlearning_dataset_with_timeouts(
+                env.unwrapped, terminate_on_end=True
+            )
+        else:
+            replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
+            snapshot = Snapshot(path=local_dataset)
+            snapshot.restore(dict(replay_buffer=replay_buffer))
+            memmap_tensors = replay_buffer[: len(replay_buffer)]
+            rename = dict(
+                state="observations",
+                next_state="next_observations",
+                done="terminals",
+                done_mdp="realterminals",
+            )
+
+            def preprocess(v):
+                v = v.numpy()
+                b, *_, d = v.shape
+                return v.reshape(b, d)
+
+            dataset = {
+                rename.get(k, k): preprocess(v) for k, v in memmap_tensors.items()
+            }
         print("✓")
 
         preprocess_fn = dataset_preprocess_functions.get(env.name)
