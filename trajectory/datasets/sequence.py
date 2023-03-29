@@ -59,6 +59,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         max_path_length=1000,
         penalty=None,
         device="cuda:0",
+        pass_task_to_model=False,
     ):
         print(
             f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
@@ -97,6 +98,10 @@ class SequenceDataset(torch.utils.data.Dataset):
             dataset = {
                 rename.get(k, k): preprocess(v) for k, v in memmap_tensors.items()
             }
+            if pass_task_to_model:
+                dataset["observations"] = np.concatenate(
+                    [dataset["observations"], dataset["task"]], axis=-1
+                )
         print("✓")
 
         preprocess_fn = dataset_preprocess_functions.get(env.name)
