@@ -11,6 +11,7 @@ from trajectory.models.transformers import GPT
 class Parser(utils.Parser):
     dataset: str = "halfcheetah-medium-expert-v2"
     config: str = "config.offline"
+    pass_task_to_policy: bool = False
 
 
 #######################
@@ -37,6 +38,7 @@ dataset_config = utils.Config(
     step=args.step,
     discount=args.discount,
     discretizer=args.discretizer,
+    pass_task_to_policy=args.pass_task_to_policy,
 )
 
 dataset = dataset_config()
