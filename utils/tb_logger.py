@@ -9,9 +9,9 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class TBLogger:
-    def __init__(self, args, exp_label):
+    def __init__(self, args):
         self.output_name = (
-            exp_label
+            ("fully_observed" if args.pass_task_to_model else "partially_observed")
             + "_"
             + str(args.seed)
             + "_"
@@ -42,7 +42,7 @@ class TBLogger:
 
         try:
             self.full_output_folder = os.path.join(
-                os.path.join(dir_path, "logs_{}".format(args.env_name)),
+                os.path.join(dir_path, "logs_{}".format(args.dataset)),
                 self.output_name,
             )
         except:
@@ -58,10 +58,11 @@ class TBLogger:
         if not os.path.exists(self.full_output_folder):
             os.makedirs(self.full_output_folder)
         with open(os.path.join(self.full_output_folder, "config.json"), "w") as f:
-            try:
-                config = {k: v for (k, v) in vars(args).items() if k != "device"}
-            except:
-                config = args
+            config = {
+                k: v
+                for k, v in args.as_dict().items()
+                if isinstance(v, (int, float, str, bool, type(None)))
+            }
             config.update(device=device.type)
             json.dump(config, f, indent=2)
 
