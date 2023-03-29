@@ -6,12 +6,14 @@ import pdb
 import trajectory.utils as utils
 import trajectory.datasets as datasets
 from trajectory.models.transformers import GPT
+from utils.tb_logger import TBLogger
 
 
 class Parser(utils.Parser):
     dataset: str = "halfcheetah-medium-expert-v2"
     config: str = "config.offline"
     pass_task_to_model: bool = False
+    results_log_dir: str = None
 
 
 #######################
@@ -118,11 +120,12 @@ trainer = trainer_config()
 ## scale number of epochs to keep number of updates constant
 n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
 save_freq = int(n_epochs // args.n_saves)
+logger = TBLogger(args)
 
 for epoch in range(n_epochs):
     print(f"\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name}")
 
-    trainer.train(model, dataset)
+    trainer.train(model, dataset, logger)
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = (epoch + 1) // save_freq * save_freq
