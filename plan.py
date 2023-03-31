@@ -44,7 +44,9 @@ gpt, gpt_epoch = utils.load_model(
 #######################
 
 env = datasets.load_environment(args.dataset)
-renderer = utils.make_renderer(args)
+if dataset.pass_task_to_model:
+    env = datasets.local.TaskWrapper(env)
+renderer = utils.make_renderer(args, env)
 timer = utils.timer.Timer()
 
 discretizer = dataset.discretizer
@@ -53,7 +55,7 @@ observation_dim = dataset.observation_dim
 action_dim = dataset.action_dim
 
 value_fn = lambda x: discretizer.value_fn(x, args.percentile)
-preprocess_fn = datasets.get_preprocess_fn(env.name)
+preprocess_fn = datasets.get_preprocess_fn(env.spec.id)
 
 #######################
 ###### main loop ######
@@ -68,7 +70,7 @@ rollout = [observation.copy()]
 ## previous (tokenized) transitions for conditioning transformer
 context = []
 
-T = env.max_episode_steps
+T = env.spec.max_episode_steps
 for t in range(T):
 
     observation = preprocess_fn(observation)

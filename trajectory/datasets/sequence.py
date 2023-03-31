@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import pdb
 
+from trajectory.datasets import local
 from trajectory.utils import discretization
 from trajectory.utils.arrays import to_torch
 import yaml
@@ -64,23 +65,19 @@ class SequenceDataset(torch.utils.data.Dataset):
         print(
             f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
         )
-        self.env = env = load_environment(env) if type(env) is str else env
+        env = load_environment(env) if type(env) is str else env
+        name = env.spec.id
         self.sequence_length = sequence_length
         self.step = step
         self.max_path_length = max_path_length
         self.device = device
+        self.pass_task_to_model = pass_task_to_model
 
         print(f"[ datasets/sequence ] Loading...", end=" ", flush=True)
-        with open("local-datasets.yml") as f:
-            local_datasets = yaml.load(f, Loader=yaml.FullLoader)
-        local_dataset = local_datasets.get(env.name)
-        if local_dataset is None:
-            dataset = qlearning_dataset_with_timeouts(
-                env.unwrapped, terminate_on_end=True
-            )
-        else:
+        local_data_path = local.get_data_path(name)
+        if local_data_path:
             replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
-            snapshot = Snapshot(path=local_dataset)
+            snapshot = Snapshot(path=local_data_path)
             snapshot.restore(dict(replay_buffer=replay_buffer))
             memmap_tensors = replay_buffer[: len(replay_buffer)]
             rename = dict(
@@ -99,12 +96,16 @@ class SequenceDataset(torch.utils.data.Dataset):
                 rename.get(k, k): preprocess(v) for k, v in memmap_tensors.items()
             }
             if pass_task_to_model:
-                dataset["observations"] = np.concatenate(
-                    [dataset["observations"], dataset["task"]], axis=-1
+                dataset["observations"] = local.add_task_to_obs(
+                    dataset["observations"], dataset["task"]
                 )
+        else:
+            dataset = qlearning_dataset_with_timeouts(
+                env.unwrapped, terminate_on_end=True
+            )
         print("✓")
 
-        preprocess_fn = dataset_preprocess_functions.get(env.name)
+        preprocess_fn = dataset_preprocess_functions.get(name)
         if preprocess_fn:
             print(f"[ datasets/sequence ] Modifying environment")
             dataset = preprocess_fn(dataset)

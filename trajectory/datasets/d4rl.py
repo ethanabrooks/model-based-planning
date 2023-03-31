@@ -10,6 +10,8 @@ from contextlib import (
     redirect_stdout,
 )
 
+from trajectory.datasets import local
+
 
 @contextmanager
 def suppress_output():
@@ -84,9 +86,12 @@ def qlearning_dataset_with_timeouts(
 
 
 def load_environment(name):
-    with suppress_output():
-        wrapped_env = gym.make(name)
-    env = wrapped_env.unwrapped
-    env.max_episode_steps = wrapped_env._max_episode_steps
-    env.name = name
-    return env
+    if local.is_local_dataset(name):
+        return local.load_environment(name)
+    else:
+        with suppress_output():
+            wrapped_env = gym.make(name)
+        env = wrapped_env.unwrapped
+        env.max_episode_steps = wrapped_env._max_episode_steps
+        env.name = name
+        return env
