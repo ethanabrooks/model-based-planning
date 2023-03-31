@@ -26,8 +26,6 @@ args = Parser().parse_args("train")
 ####### dataset #######
 #######################
 
-env = datasets.load_environment(args.dataset)
-
 sequence_length = args.subsampled_sequence_length * args.step
 
 dataset_config = utils.Config(

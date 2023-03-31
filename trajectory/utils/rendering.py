@@ -6,17 +6,17 @@ import torch
 import gym
 import mujoco_py as mjc
 import pdb
+from typing import Optional
 
 from .arrays import to_np
 from .video import save_video, save_videos
 from ..datasets import load_environment, get_preprocess_fn
 
 
-def make_renderer(args):
+def make_renderer(args, env: gym.Env):
     render_str = getattr(args, "renderer")
     render_class = getattr(sys.modules[__name__], render_str)
     ## get dimensions in case the observations are preprocessed
-    env = load_environment(args.dataset)
     preprocess_fn = get_preprocess_fn(args.dataset)
     observation = env.reset()
     observation = preprocess_fn(observation)
@@ -98,12 +98,20 @@ class Renderer:
             self.env.observation_space.shape
         )
         self.action_dim = action_dim or np.prod(self.env.action_space.shape)
-        self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
+        try:
+            sim = self.env.sim
+        except AttributeError:
+            sim = None
+        self.viewer = (
+            None if sim is None else mjc.MjRenderContextOffscreen(self.env.sim)
+        )
 
     def __call__(self, *args, **kwargs):
         return self.renders(*args, **kwargs)
 
     def render(self, observation, dim=256, render_kwargs=None):
+        if self.viewer is None:
+            return
         observation = to_np(observation)
 
         if render_kwargs is None:
@@ -192,9 +200,9 @@ class KitchenRenderer:
 
     def rollout(self, obs, actions):
         self.set_obs(obs)
-        observations = [env._get_obs()]
+        observations = [self.env._get_obs()]
         for act in actions:
-            obs, rew, term, _ = env.step(act)
+            obs, rew, term, _ = self.env.step(act)
             observations.append(obs)
             if term:
                 break
@@ -370,6 +378,62 @@ class Maze2dRenderer(AntMazeRenderer):
 
     def renders(self, savepath, X):
         return super().renders(savepath, X + 0.5)
+
+
+class PointRenderer:
+    def __init__(self, env_name: str, observation_dim: int):
+        self.env = gym.make(env_name).unwrapped
+        self.observation_dim = observation_dim
+        self.action_dim = np.prod(self.env.action_space.shape)
+
+    def renders(
+        self, savepath: str, X: np.ndarray, actions: Optional[np.ndarray] = None
+    ):
+        plt.clf()
+
+        assert X.ndim == 2
+        states, tasks = np.split(X, 2, -1)
+        task, *_ = tasks
+        assert np.all(tasks == task[None])
+
+        # plot the states
+        plt.plot(*states.T, "-o")
+
+        # plot the task using * notation to unpack the task array
+        plt.plot(*task, "r*")
+
+        # plot the actions as arrows
+        if actions is None:
+            actions = np.diff(states, axis=0)
+
+        for state, action in zip(states, actions):
+            plt.arrow(*state, *action)
+
+        plt.savefig(savepath + ".png")
+        plt.close()
+        print(f"[ attentive/utils/visualization ] Saved to: {savepath}")
+
+    def render_plan(self, savepath, sequence, state):
+        """
+        state : np.array[ observation_dim ]
+        sequence : np.array[ horizon x transition_dim ]
+            as usual, sequence is ordered as [ s_t, a_t, r_t, V_t, ... ]
+        """
+        del state
+
+        if len(sequence) == 1:
+            # raise RuntimeError(f'horizon is 1 in Renderer:render_plan: {sequence.shape}')
+            return
+
+        sequence = to_np(sequence)
+
+        states, actions, *_ = split(sequence, self.observation_dim, self.action_dim)
+        self.renders(savepath, states, actions)
+
+    def render_rollout(self, savepath, states, **video_kwargs):
+        if type(states) is list:
+            states = np.stack(states, axis=0)
+        images = self.renders(savepath, states)
 
 
 # --------------------------------- planning callbacks ---------------------------------#

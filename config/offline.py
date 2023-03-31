@@ -129,3 +129,9 @@ ant_medium_v2 = ant_medium_replay_v2 = ant_random_v2 = {
         "horizon": 5,
     },
 }
+
+SparsePointEnv_v0 = {
+    "plan": {
+        "renderer": "PointRenderer",
+    },
+}
