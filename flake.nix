@@ -87,6 +87,7 @@
           alejandra
           poetry
           poetryEnv
+          ffmpeg
         ];
         PYTHONBREAKPOINT = "ipdb.set_trace";
         shellHook = ''
