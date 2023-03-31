@@ -10,6 +10,7 @@ from trajectory.search import (
     extract_actions,
     update_context,
 )
+from utils.tb_logger import TBLogger
 
 
 class Parser(utils.Parser):
@@ -22,18 +23,21 @@ class Parser(utils.Parser):
 #######################
 
 args = Parser().parse_args("plan")
+logger = TBLogger(args, output_name=args.gpt_loadpath)
 
 #######################
 ####### models ########
 #######################
 
+dataset_dir = f"logs_{args.dataset}"
+
 dataset = utils.load_from_config(
-    args.logbase, args.dataset, args.gpt_loadpath, "data_config.pkl"
+    args.logbase, dataset_dir, args.gpt_loadpath, "data_config.pkl"
 )
 
 gpt, gpt_epoch = utils.load_model(
     args.logbase,
-    args.dataset,
+    dataset_dir,
     args.gpt_loadpath,
     epoch=args.gpt_epoch,
     device=args.device,
@@ -120,6 +124,9 @@ for t in range(T):
         context, discretizer, observation, action, reward, args.max_context_transitions
     )
 
+    logger.add("reward", reward, t)
+    logger.add("total reward", total_reward, t)
+    logger.add("score", score, t)
     print(
         f"[ plan ] t: {t} / {T} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
         f"time: {timer():.2f} | {args.dataset} | {args.exp_name} | {args.suffix}\n"
@@ -130,11 +137,15 @@ for t in range(T):
 
         ## save current plan
         renderer.render_plan(
-            join(args.savepath, f"{t}_plan.mp4"), sequence_recon, env.state_vector()
+            join(logger.full_output_folder, f"{t}_plan.mp4"),
+            sequence_recon,
+            env.state_vector(),
         )
 
         ## save rollout thus far
-        renderer.render_rollout(join(args.savepath, f"rollout.mp4"), rollout, fps=80)
+        renderer.render_rollout(
+            join(logger.full_output_folder, f"rollout.mp4"), rollout, fps=80
+        )
 
     if terminal:
         break
@@ -142,7 +153,7 @@ for t in range(T):
     observation = next_observation
 
 ## save result as a json file
-json_path = join(args.savepath, "rollout.json")
+json_path = join(logger.full_output_folder, "rollout.json")
 json_data = {
     "score": score,
     "step": t,
