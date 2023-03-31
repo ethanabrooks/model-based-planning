@@ -1,10 +1,24 @@
 from typing import Optional
+import re
 import gym
 import numpy as np
 import yaml
 
 from environments import parallel_envs
 import environments  # noqa: F401
+
+TASK_AWARE_PATTERN = re.compile(r"^TaskAware(.*)")
+
+
+def get_env_name(env: str) -> str:
+    matches = TASK_AWARE_PATTERN.match(env)
+    if matches:
+        return matches.group(1)
+    return env
+
+
+def is_task_aware(env: str) -> bool:
+    return TASK_AWARE_PATTERN.match(env) is not None
 
 
 def get_local_datasets():

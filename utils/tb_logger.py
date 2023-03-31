@@ -11,11 +11,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def get_full_output_folder(args, output_name: str = None):
     if output_name is None:
         output_name = (
-            ("fully_observed" if args.pass_task_to_model else "partially_observed")
-            + "_"
-            + str(args.seed)
-            + "_"
-            + datetime.datetime.now().strftime("_%d:%m_%H:%M:%S")
+            str(args.seed) + "_" + datetime.datetime.now().strftime("_%d:%m_%H:%M:%S")
         )
     dir_path = os.path.abspath(
         os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)

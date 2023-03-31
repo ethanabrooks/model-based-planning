@@ -12,7 +12,6 @@ from utils.tb_logger import TBLogger
 class Parser(utils.Parser):
     dataset: str = "halfcheetah-medium-expert-v2"
     config: str = "config.offline"
-    pass_task_to_model: bool = False
     results_log_dir: str = None
 
 
@@ -40,7 +39,6 @@ dataset_config = utils.Config(
     step=args.step,
     discount=args.discount,
     discretizer=args.discretizer,
-    pass_task_to_model=args.pass_task_to_model,
 )
 
 dataset = dataset_config()
