@@ -1,4 +1,5 @@
 import os
+import re
 import numpy as np
 import torch
 import pdb
@@ -53,25 +54,26 @@ def segment(observations, terminals, max_path_length):
 class SequenceDataset(torch.utils.data.Dataset):
     def __init__(
         self,
-        env,
+        env: str,
         sequence_length=250,
         step=10,
         discount=0.99,
         max_path_length=1000,
         penalty=None,
         device="cuda:0",
-        pass_task_to_model=False,
     ):
         print(
             f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
         )
-        env = load_environment(env) if type(env) is str else env
+
+        task_aware = local.is_task_aware(env)
+        env = local.get_env_name(env)
+        env = load_environment(env)
         name = env.spec.id
         self.sequence_length = sequence_length
         self.step = step
         self.max_path_length = max_path_length
         self.device = device
-        self.pass_task_to_model = pass_task_to_model
 
         print(f"[ datasets/sequence ] Loading...", end=" ", flush=True)
         local_data_path = local.get_data_path(name)
@@ -95,7 +97,7 @@ class SequenceDataset(torch.utils.data.Dataset):
             dataset = {
                 rename.get(k, k): preprocess(v) for k, v in memmap_tensors.items()
             }
-            if pass_task_to_model:
+            if task_aware:
                 dataset["observations"] = local.add_task_to_obs(
                     dataset["observations"], dataset["task"]
                 )

@@ -47,8 +47,10 @@ gpt, gpt_epoch = utils.load_model(
 ####### dataset #######
 #######################
 
-env = datasets.load_environment(args.dataset)
-if dataset.pass_task_to_model:
+task_aware = datasets.local.is_task_aware(args.dataset)
+env = datasets.local.get_env_name(args.dataset)
+env = datasets.load_environment(env)
+if task_aware:
     env = datasets.local.TaskWrapper(env)
 renderer = utils.make_renderer(args, env)
 timer = utils.timer.Timer()
