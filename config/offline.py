@@ -130,9 +130,34 @@ ant_medium_v2 = ant_medium_replay_v2 = ant_random_v2 = {
     },
 }
 
+halfcheetah_medium_v2 = {
+    "plan": {
+        "gpt_loadpath": "42__31:03_15:03:09",
+    },
+}
+
 SparsePointEnv_v0 = {
     "plan": {
         "renderer": "PointRenderer",
-        "gpt_loadpath": "fully_observed_42__31:03_12:24:45/",
+        "gpt_loadpath": "42__31:03_15:02:51",
+    },
+}
+
+TaskAwareSparsePointEnv_v0 = {
+    "plan": {
+        "renderer": "PointRenderer",
+        "gpt_loadpath": "42__31:03_15:02:59",
+    },
+}
+
+HalfCheetahVel_v0 = {
+    "plan": {
+        "gpt_loadpath": "42__31:03_15:02:24",
+    },
+}
+
+TaskAwareHalfCheetahVel_v0 = {
+    "plan": {
+        "gpt_loadpath": "42__31:03_15:02:32",
     },
 }
