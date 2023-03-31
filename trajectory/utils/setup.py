@@ -52,7 +52,6 @@ class Parser(Tap):
         self.set_seed(args)
         self.get_commit(args)
         self.generate_exp_name(args)
-        self.mkdir(args)
         self.save_diff(args)
         return args
 
@@ -125,19 +124,6 @@ class Parser(Tap):
             exp_name_string = exp_name(args)
             print(f"[ utils/setup ] Setting exp_name to: {exp_name_string}")
             setattr(args, "exp_name", exp_name_string)
-
-    def mkdir(self, args):
-        if (
-            "logbase" in dir(args)
-            and "dataset" in dir(args)
-            and "exp_name" in dir(args)
-        ):
-            args.savepath = os.path.join(args.logbase, args.dataset, args.exp_name)
-            if "suffix" in dir(args):
-                args.savepath = os.path.join(args.savepath, args.suffix)
-            if mkdir(args.savepath):
-                print(f"[ utils/setup ] Made savepath: {args.savepath}")
-            self.save()
 
     def get_commit(self, args):
         args.commit = get_git_rev()
