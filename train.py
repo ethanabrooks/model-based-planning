@@ -28,9 +28,11 @@ args = Parser().parse_args("train")
 
 sequence_length = args.subsampled_sequence_length * args.step
 
+logger = TBLogger(args)
+
 dataset_config = utils.Config(
     datasets.DiscretizedDataset,
-    savepath=(args.savepath, "data_config.pkl"),
+    savepath=(logger.full_output_folder, "data_config.pkl"),
     env=args.dataset,
     N=args.N,
     penalty=args.termination_penalty,
@@ -59,7 +61,7 @@ print(
 
 model_config = utils.Config(
     GPT,
-    savepath=(args.savepath, "model_config.pkl"),
+    savepath=(logger.full_output_folder, "model_config.pkl"),
     ## discretization
     vocab_size=args.N,
     block_size=block_size,
@@ -93,7 +95,7 @@ final_tokens = 20 * warmup_tokens
 
 trainer_config = utils.Config(
     utils.Trainer,
-    savepath=(args.savepath, "trainer_config.pkl"),
+    savepath=(logger.full_output_folder, "trainer_config.pkl"),
     # optimization parameters
     batch_size=args.batch_size,
     learning_rate=args.learning_rate,
@@ -118,7 +120,6 @@ trainer = trainer_config()
 ## scale number of epochs to keep number of updates constant
 n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
 save_freq = int(n_epochs // args.n_saves)
-logger = TBLogger(args)
 
 for epoch in range(n_epochs):
     print(f"\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name}")
@@ -127,7 +128,7 @@ for epoch in range(n_epochs):
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = (epoch + 1) // save_freq * save_freq
-    statepath = os.path.join(args.savepath, f"state_{save_epoch}.pt")
+    statepath = os.path.join(logger.full_output_folder, f"state_{save_epoch}.pt")
     print(f"Saving model to {statepath}")
 
     ## save state to disk
