@@ -8,6 +8,8 @@ import mujoco_py as mjc
 import pdb
 from typing import Optional
 
+from trajectory.datasets.local import TaskWrapper
+
 from .arrays import to_np
 from .video import save_video, save_videos
 from ..datasets import load_environment, get_preprocess_fn
@@ -20,7 +22,7 @@ def make_renderer(args, env: gym.Env):
     preprocess_fn = get_preprocess_fn(args.dataset)
     observation = env.reset()
     observation = preprocess_fn(observation)
-    return render_class(args.dataset, observation_dim=observation.size)
+    return render_class(env=env, observation_dim=observation.size)
 
 
 def split(sequence, observation_dim, action_dim):
@@ -176,8 +178,8 @@ class Renderer:
 
 
 class PointRenderer:
-    def __init__(self, env_name: str, observation_dim: int):
-        self.env = gym.make(env_name).unwrapped
+    def __init__(self, env: gym.Env, observation_dim: int):
+        self.env = env
         self.observation_dim = observation_dim
         self.action_dim = np.prod(self.env.action_space.shape)
 
@@ -187,15 +189,18 @@ class PointRenderer:
         plt.clf()
 
         assert X.ndim == 2
-        states, tasks = np.split(X, 2, -1)
-        task, *_ = tasks
-        assert np.all(tasks == task[None])
+        if isinstance(self.env, TaskWrapper):
+            states, tasks = np.split(X, 2, -1)
+            task, *_ = tasks
+            assert np.all(tasks == task[None])
+
+            # plot the task using * notation to unpack the task array
+            plt.plot(*task, "r*")
+        else:
+            states = X
 
         # plot the states
         plt.plot(*states.T, "-o")
-
-        # plot the task using * notation to unpack the task array
-        plt.plot(*task, "r*")
 
         # plot the actions as arrows
         if actions is None:
