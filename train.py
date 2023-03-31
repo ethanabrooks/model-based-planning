@@ -13,6 +13,7 @@ class Parser(utils.Parser):
     dataset: str = "halfcheetah-medium-expert-v2"
     config: str = "config.offline"
     results_log_dir: str = None
+    debug: bool = False
 
 
 #######################
@@ -27,11 +28,11 @@ args = Parser().parse_args("train")
 
 sequence_length = args.subsampled_sequence_length * args.step
 
-logger = TBLogger(args)
+logger = None if args.debug else TBLogger(args)
 
 dataset_config = utils.Config(
     datasets.DiscretizedDataset,
-    savepath=(logger.full_output_folder, "data_config.pkl"),
+    savepath=None if logger is None else (logger.full_output_folder, "data_config.pkl"),
     env=args.dataset,
     N=args.N,
     penalty=args.termination_penalty,
@@ -59,7 +60,9 @@ print(
 
 model_config = utils.Config(
     GPT,
-    savepath=(logger.full_output_folder, "model_config.pkl"),
+    savepath=None
+    if logger is None
+    else (logger.full_output_folder, "model_config.pkl"),
     ## discretization
     vocab_size=args.N,
     block_size=block_size,
@@ -93,7 +96,9 @@ final_tokens = 20 * warmup_tokens
 
 trainer_config = utils.Config(
     utils.Trainer,
-    savepath=(logger.full_output_folder, "trainer_config.pkl"),
+    savepath=None
+    if logger is None
+    else (logger.full_output_folder, "trainer_config.pkl"),
     # optimization parameters
     batch_size=args.batch_size,
     learning_rate=args.learning_rate,
@@ -126,9 +131,10 @@ for epoch in range(n_epochs):
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = (epoch + 1) // save_freq * save_freq
-    statepath = os.path.join(logger.full_output_folder, f"state_{save_epoch}.pt")
-    print(f"Saving model to {statepath}")
+    if logger is not None:
+        statepath = os.path.join(logger.full_output_folder, f"state_{save_epoch}.pt")
+        print(f"Saving model to {statepath}")
 
-    ## save state to disk
-    state = model.state_dict()
-    torch.save(state, statepath)
+        ## save state to disk
+        state = model.state_dict()
+        torch.save(state, statepath)
