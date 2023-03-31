@@ -133,5 +133,6 @@ ant_medium_v2 = ant_medium_replay_v2 = ant_random_v2 = {
 SparsePointEnv_v0 = {
     "plan": {
         "renderer": "PointRenderer",
+        "gpt_loadpath": "fully_observed_42__31:03_12:24:45/",
     },
 }
