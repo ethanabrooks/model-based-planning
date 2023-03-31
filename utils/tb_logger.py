@@ -8,53 +8,29 @@ from torch.utils.tensorboard import SummaryWriter
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-class TBLogger:
-    def __init__(self, args):
-        self.output_name = (
+def get_full_output_folder(args, output_name: str = None):
+    if output_name is None:
+        output_name = (
             ("fully_observed" if args.pass_task_to_model else "partially_observed")
             + "_"
             + str(args.seed)
             + "_"
             + datetime.datetime.now().strftime("_%d:%m_%H:%M:%S")
         )
-        try:
-            log_dir = args.results_log_dir
-        except AttributeError:
-            log_dir = args["results_log_dir"]
+    dir_path = os.path.abspath(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)
+    )
+    dir_path = os.path.join(dir_path, "logs")
 
-        if log_dir is None:
-            dir_path = os.path.abspath(
-                os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)
-            )
-            dir_path = os.path.join(dir_path, "logs")
-        else:
-            dir_path = log_dir
+    return os.path.join(
+        os.path.join(dir_path, "logs_{}".format(args.dataset)),
+        output_name,
+    )
 
-        if not os.path.exists(dir_path):
-            try:
-                os.mkdir(dir_path)
-            except:
-                dir_path_head, dir_path_tail = os.path.split(dir_path)
-                if len(dir_path_tail) == 0:
-                    dir_path_head, dir_path_tail = os.path.split(dir_path_head)
-                os.mkdir(dir_path_head)
-                os.mkdir(dir_path)
 
-        try:
-            self.full_output_folder = os.path.join(
-                os.path.join(dir_path, "logs_{}".format(args.dataset)),
-                self.output_name,
-            )
-        except:
-            self.full_output_folder = os.path.join(
-                os.path.join(dir_path, "logs_{}".format(args["env_name"])),
-                self.output_name,
-            )
-
-        self.writer = SummaryWriter(log_dir=self.full_output_folder)
-
-        print("logging under", self.full_output_folder)
-
+class TBLogger:
+    def __init__(self, args, output_name: str = None):
+        self.full_output_folder = get_full_output_folder(args, output_name)
         if not os.path.exists(self.full_output_folder):
             os.makedirs(self.full_output_folder)
         with open(os.path.join(self.full_output_folder, "config.json"), "w") as f:
@@ -65,6 +41,9 @@ class TBLogger:
             }
             config.update(device=device.type)
             json.dump(config, f, indent=2)
+
+        self.writer = SummaryWriter(log_dir=self.full_output_folder)
+        print("logging under", self.full_output_folder)
 
     def add(self, name, value, x_pos):
         self.writer.add_scalar(name, value, x_pos)
