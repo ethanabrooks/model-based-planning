@@ -1,8 +1,12 @@
+import os
 from typing import Optional
 import re
 import gym
 import numpy as np
 import yaml
+from torchrl.data import ReplayBuffer
+from torchrl.data.replay_buffers import LazyMemmapStorage
+from torchsnapshot import Snapshot
 
 from environments import parallel_envs
 import environments  # noqa: F401
@@ -49,6 +53,36 @@ def load_environment(env: str) -> gym.Env:
     env = NormalizedScoreWrapper(env)
     env = StateVectorWrapper(env)
     return env
+
+
+def load_dataset(path: str, task_aware: bool) -> dict[str, np.ndarray]:
+    full_path = os.path.join(os.environ["LOCAL_DATASET_PATH"], path)
+    replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
+    print(
+        f"[ datasets/local ] Loading dataset from {full_path}...", end=" ", flush=True
+    )
+    snapshot = Snapshot(path=full_path)
+    snapshot.restore(dict(replay_buffer=replay_buffer))
+    print("✓")
+    memmap_tensors = replay_buffer[: len(replay_buffer)]
+    rename = dict(
+        state="observations",
+        next_state="next_observations",
+        done="terminals",
+        done_mdp="realterminals",
+    )
+
+    def preprocess(v):
+        v = v.numpy()
+        b, *_, d = v.shape
+        return v.reshape(b, d)
+
+    dataset = {rename.get(k, k): preprocess(v) for k, v in memmap_tensors.items()}
+    if task_aware:
+        dataset["observations"] = add_task_to_obs(
+            dataset["observations"], dataset["task"]
+        )
+    return dataset
 
 
 def add_task_to_obs(obs: np.ndarray, task: np.ndarray) -> np.ndarray:

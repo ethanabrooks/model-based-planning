@@ -1,0 +1,4 @@
+SparsePointEnv-v0: logs_SparsePointEnv-v0/multitask_73__29:03_08:32:22/models
+HalfCheetahVel-v0: logs_HalfCheetahVel-v0/multitask_73__31:03_19:14:30/models
+HalfCheetahDir-v0: logs_HalfCheetahDir-v0/multitask_73__31:03_19:14:41/models
+AntGoal-v0: logs_AntGoal-v0/multitask_73__28:03_22:28:52/models
