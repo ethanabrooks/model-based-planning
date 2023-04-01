@@ -7,10 +7,6 @@ import pdb
 from trajectory.datasets import local
 from trajectory.utils import discretization
 from trajectory.utils.arrays import to_torch
-import yaml
-from torchrl.data import ReplayBuffer
-from torchrl.data.replay_buffers import LazyMemmapStorage
-from torchsnapshot import Snapshot
 
 from .d4rl import load_environment, qlearning_dataset_with_timeouts
 from .preprocessing import dataset_preprocess_functions
@@ -75,37 +71,15 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.max_path_length = max_path_length
         self.device = device
 
-        print(f"[ datasets/sequence ] Loading...", end=" ", flush=True)
         local_data_path = local.get_data_path(name)
         if local_data_path:
-            replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
-            snapshot = Snapshot(path=local_data_path)
-            snapshot.restore(dict(replay_buffer=replay_buffer))
-            memmap_tensors = replay_buffer[: len(replay_buffer)]
-            rename = dict(
-                state="observations",
-                next_state="next_observations",
-                done="terminals",
-                done_mdp="realterminals",
-            )
-
-            def preprocess(v):
-                v = v.numpy()
-                b, *_, d = v.shape
-                return v.reshape(b, d)
-
-            dataset = {
-                rename.get(k, k): preprocess(v) for k, v in memmap_tensors.items()
-            }
-            if task_aware:
-                dataset["observations"] = local.add_task_to_obs(
-                    dataset["observations"], dataset["task"]
-                )
+            dataset = local.load_dataset(local_data_path, task_aware)
         else:
+            print(f"[ datasets/sequence ] Loading...", end=" ", flush=True)
             dataset = qlearning_dataset_with_timeouts(
                 env.unwrapped, terminate_on_end=True
             )
-        print("✓")
+            print("✓")
 
         preprocess_fn = dataset_preprocess_functions.get(name)
         if preprocess_fn:

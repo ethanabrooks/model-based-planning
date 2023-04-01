@@ -18,4 +18,3 @@ azure/fuse.cfg.direnv/
 .env
 .direnv/
 ignore.py
-local-datasets.yml
