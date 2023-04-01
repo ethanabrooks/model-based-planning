@@ -1,12 +1,12 @@
+import json
 import os
 import numpy as np
 import torch
-import pdb
+import wandb
 
 import trajectory.utils as utils
 import trajectory.datasets as datasets
 from trajectory.models.transformers import GPT
-from utils.tb_logger import TBLogger
 
 
 class Parser(utils.Parser):
@@ -14,6 +14,7 @@ class Parser(utils.Parser):
     config: str = "config.offline"
     results_log_dir: str = None
     debug: bool = False
+    name: str = None
 
 
 #######################
@@ -22,17 +23,31 @@ class Parser(utils.Parser):
 
 args = Parser().parse_args("train")
 
+if not args.debug:
+    name = f"train-{args.dataset}" if args.name is None else args.name
+    wandb.init(
+        project="In-Context Model-Based Planning", name=name, config=args.as_dict()
+    )
+    with open(os.path.join(wandb.run.dir, "config.json"), "w") as f:
+        config = {
+            k: v
+            for k, v in args.as_dict().items()
+            if isinstance(v, (int, float, str, bool, type(None)))
+        }
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        config.update(device=device.type)
+        json.dump(config, f, indent=2)
+
 #######################
 ####### dataset #######
 #######################
 
 sequence_length = args.subsampled_sequence_length * args.step
 
-logger = None if args.debug else TBLogger(args)
 
 dataset_config = utils.Config(
     datasets.DiscretizedDataset,
-    savepath=None if logger is None else (logger.full_output_folder, "data_config.pkl"),
+    savepath=None if wandb.run is None else (wandb.run.dir, "data_config.pkl"),
     env=args.dataset,
     N=args.N,
     penalty=args.termination_penalty,
@@ -41,6 +56,8 @@ dataset_config = utils.Config(
     discount=args.discount,
     discretizer=args.discretizer,
 )
+if dataset_config.savepath:
+    wandb.save(dataset_config.savepath)
 
 dataset = dataset_config()
 obs_dim = dataset.observation_dim
@@ -60,9 +77,7 @@ print(
 
 model_config = utils.Config(
     GPT,
-    savepath=None
-    if logger is None
-    else (logger.full_output_folder, "model_config.pkl"),
+    savepath=None if wandb.run is None else (wandb.run.dir, "model_config.pkl"),
     ## discretization
     vocab_size=args.N,
     block_size=block_size,
@@ -83,6 +98,8 @@ model_config = utils.Config(
     resid_pdrop=args.resid_pdrop,
     attn_pdrop=args.attn_pdrop,
 )
+if model_config.savepath:
+    wandb.save(model_config.savepath)
 
 model = model_config()
 model.to(args.device)
@@ -96,9 +113,7 @@ final_tokens = 20 * warmup_tokens
 
 trainer_config = utils.Config(
     utils.Trainer,
-    savepath=None
-    if logger is None
-    else (logger.full_output_folder, "trainer_config.pkl"),
+    savepath=None if wandb.run is None else (wandb.run.dir, "trainer_config.pkl"),
     # optimization parameters
     batch_size=args.batch_size,
     learning_rate=args.learning_rate,
@@ -113,6 +128,8 @@ trainer_config = utils.Config(
     num_workers=0,
     device=args.device,
 )
+if trainer_config.savepath:
+    wandb.save(trainer_config.savepath)
 
 trainer = trainer_config()
 
@@ -127,14 +144,17 @@ save_freq = int(n_epochs // args.n_saves)
 for epoch in range(n_epochs):
     print(f"\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name}")
 
-    trainer.train(model, dataset, logger)
+    trainer.train(model, dataset, args.debug)
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = (epoch + 1) // save_freq * save_freq
-    if logger is not None:
-        statepath = os.path.join(logger.full_output_folder, f"state_{save_epoch}.pt")
+    if wandb.run is not None:
+        statepath = os.path.join(wandb.run.dir, f"state_{save_epoch}.pt")
         print(f"Saving model to {statepath}")
 
         ## save state to disk
         state = model.state_dict()
         torch.save(state, statepath)
+        wandb.save(statepath)
+
+wandb.finish()

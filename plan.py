@@ -1,6 +1,11 @@
+import datetime
 import json
+import os
 import pdb
 from os.path import join
+import re
+
+import wandb
 
 import trajectory.utils as utils
 import trajectory.datasets as datasets
@@ -16,6 +21,8 @@ from utils.tb_logger import TBLogger
 class Parser(utils.Parser):
     dataset: str = "halfcheetah-medium-expert-v2"
     config: str = "config.offline"
+    debug: bool = False
+    name: str = None
 
 
 #######################
@@ -23,22 +30,33 @@ class Parser(utils.Parser):
 #######################
 
 args = Parser().parse_args("plan")
-logger = TBLogger(args, output_name=args.gpt_loadpath)
+if args.debug:
+    timestamp = datetime.datetime.now().strftime("_%d:%m_%H:%M:%S")
+    write_path = os.path.join("/tmp", "restore-path", timestamp)
+    os.makedirs(write_path)
+else:
+    name = f"plan-{args.dataset}" if args.name is None else args.name
+    wandb.init(
+        project="In-Context Model-Based Planning", name=name, config=args.as_dict()
+    )
+    write_path = wandb.run.dir
+
 
 #######################
 ####### models ########
 #######################
 
 dataset_dir = f"logs_{args.dataset}"
+wandb.restore("data_config.pkl", run_path=args.loadpath, root=write_path)
+dataset = utils.load_from_config(write_path, "data_config.pkl")
 
-dataset = utils.load_from_config(
-    args.logbase, dataset_dir, args.gpt_loadpath, "data_config.pkl"
-)
-
+wandb.restore("model_config.pkl", run_path=args.loadpath, root=write_path)
+api = wandb.Api()
+for run_file in api.run(args.loadpath).files():
+    if re.match("state_\d+.pt", run_file.name):
+        wandb.restore(run_file.name, run_path=args.loadpath, root=write_path)
 gpt, gpt_epoch = utils.load_model(
-    args.logbase,
-    dataset_dir,
-    args.gpt_loadpath,
+    write_path,
     epoch=args.gpt_epoch,
     device=args.device,
 )
@@ -126,9 +144,15 @@ for t in range(T):
         context, discretizer, observation, action, reward, args.max_context_transitions
     )
 
-    logger.add("reward", reward, t)
-    logger.add("total reward", total_reward, t)
-    logger.add("score", score, t)
+    if wandb.run is not None:
+        wandb.log(
+            {
+                "reward": reward,
+                "total_reward": total_reward,
+                "score": score,
+            },
+            step=t,
+        )
     print(
         f"[ plan ] t: {t} / {T} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
         f"time: {timer():.2f} | {args.dataset} | {args.exp_name} | {args.suffix}\n"
@@ -139,15 +163,13 @@ for t in range(T):
 
         ## save current plan
         renderer.render_plan(
-            join(logger.full_output_folder, f"{t}_plan.mp4"),
+            join(write_path, f"{t}_plan.mp4"),
             sequence_recon,
             env.state_vector(),
         )
 
         ## save rollout thus far
-        renderer.render_rollout(
-            join(logger.full_output_folder, f"rollout.mp4"), rollout, fps=80
-        )
+        renderer.render_rollout(join(write_path, f"rollout.mp4"), rollout, fps=80)
 
     if terminal:
         break
@@ -155,7 +177,7 @@ for t in range(T):
     observation = next_observation
 
 ## save result as a json file
-json_path = join(logger.full_output_folder, "rollout.json")
+json_path = join(write_path, "rollout.json")
 json_data = {
     "score": score,
     "step": t,
