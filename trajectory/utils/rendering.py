@@ -8,6 +8,8 @@ import mujoco_py as mjc
 import pdb
 from typing import Optional
 
+import wandb
+
 from trajectory.datasets.local import TaskWrapper
 
 from .arrays import to_np
@@ -186,7 +188,7 @@ class PointRenderer:
     def renders(
         self, savepath: str, X: np.ndarray, actions: Optional[np.ndarray] = None
     ):
-        plt.clf()
+        fig, ax = plt.subplots()
 
         assert X.ndim == 2
         if isinstance(self.env, TaskWrapper):
@@ -195,21 +197,23 @@ class PointRenderer:
             assert np.all(tasks == task[None])
 
             # plot the task using * notation to unpack the task array
-            plt.plot(*task, "r*")
+            ax.plot(*task, "r*")
         else:
             states = X
 
         # plot the states
-        plt.plot(*states.T, "-o")
+        ax.plot(*states.T, "-o")
 
         # plot the actions as arrows
         if actions is None:
             actions = np.diff(states, axis=0)
 
         for state, action in zip(states, actions):
-            plt.arrow(*state, *action)
+            ax.arrow(*state, *action)
 
         plt.savefig(savepath + ".png")
+        if wandb.run is not None:
+            wandb.log({savepath: wandb.Image(fig)})
         plt.close()
         print(f"[ attentive/utils/visualization ] Saved to: {savepath}")
 
@@ -233,7 +237,7 @@ class PointRenderer:
     def render_rollout(self, savepath, states, **video_kwargs):
         if type(states) is list:
             states = np.stack(states, axis=0)
-        images = self.renders(savepath, states)
+        self.renders(savepath, states)
 
 
 # --------------------------------- planning callbacks ---------------------------------#

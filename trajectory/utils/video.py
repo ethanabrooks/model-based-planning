@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import skvideo.io
+import wandb
 
 
 def _make_dir(filename):
@@ -12,7 +13,8 @@ def _make_dir(filename):
 def save_video(filename, video_frames, fps=60, video_format="mp4"):
     assert fps == int(fps), fps
     _make_dir(filename)
-
+    if wandb.run is not None:
+        wandb.log({filename: wandb.Video(video_frames, fps=fps, format=video_format)})
     skvideo.io.vwrite(
         filename,
         video_frames,

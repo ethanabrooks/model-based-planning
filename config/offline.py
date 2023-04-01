@@ -76,6 +76,7 @@ halfcheetah_medium_v2 = halfcheetah_medium_replay_v2 = {
     "plan": {
         "horizon": 5,
         "beam_width": 32,
+        "loadpath": "rldl/In-Context Model-Based Planning/rfkmp3sq",
     }
 }
 
@@ -132,32 +133,44 @@ ant_medium_v2 = ant_medium_replay_v2 = ant_random_v2 = {
 
 halfcheetah_medium_v2 = {
     "plan": {
-        "gpt_loadpath": "42__31:03_15:03:09",
+        "loadpath": "rldl/In-Context Model-Based Planning/rfkmp3sq",
     },
 }
 
 SparsePointEnv_v0 = {
     "plan": {
         "renderer": "PointRenderer",
-        "gpt_loadpath": "42__31:03_15:02:51",
+        "loadpath": "rldl/In-Context Model-Based Planning/6e4qhiv4",
     },
 }
 
 TaskAwareSparsePointEnv_v0 = {
     "plan": {
         "renderer": "PointRenderer",
-        "gpt_loadpath": "42__31:03_15:02:59",
+        "loadpath": "rldl/In-Context Model-Based Planning/88aryjno",
     },
 }
 
 HalfCheetahVel_v0 = {
     "plan": {
-        "gpt_loadpath": "42__31:03_15:02:24",
+        "loadpath": "rldl/In-Context Model-Based Planning/2guliofc",
     },
 }
 
 TaskAwareHalfCheetahVel_v0 = {
     "plan": {
-        "gpt_loadpath": "42__31:03_15:02:32",
+        "loadpath": "rldl/In-Context Model-Based Planning/yfv3gnj0",
+    },
+}
+
+HalfCheetahDir_v0 = {
+    "plan": {
+        "loadpath": "rldl/In-Context Model-Based Planning/3zk326at",
+    },
+}
+
+TaskAwareHalfCheetahDir_v0 = {
+    "plan": {
+        "loadpath": "rldl/In-Context Model-Based Planning/7czkctie",
     },
 }

@@ -1,7 +1,7 @@
 import math
 import torch
 from torch.utils.data.dataloader import DataLoader
-import pdb
+import wandb
 
 from .timer import Timer
 
@@ -25,7 +25,7 @@ class Trainer:
             self.optimizer = model.configure_optimizers(self.config)
         return self.optimizer
 
-    def train(self, model, dataset, logger, n_epochs=1, log_freq=100):
+    def train(self, model, dataset, debug, n_epochs=1, log_freq=100):
 
         config = self.config
         optimizer = self.get_optimizer(model)
@@ -87,12 +87,17 @@ class Trainer:
                 # report progress
                 if it % log_freq == 0:
                     cuml_it = it + len(loader) * self.n_epochs
-                    if logger is not None:
-                        logger.add("train loss", loss.item(), cuml_it)
-                        logger.add("lr", lr, cuml_it)
-                        logger.add("lr_mult", lr_mult, cuml_it)
-                        logger.add("epoch", self.n_epochs, cuml_it)
-                        logger.add("iteration", it, cuml_it)
+                    if not debug:
+                        wandb.log(
+                            {
+                                "train loss": loss.item(),
+                                "lr": lr,
+                                "lr_mult": lr_mult,
+                                "epoch": self.n_epochs,
+                                "iteration": it,
+                            },
+                            step=cuml_it,
+                        )
                     print(
                         f"[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {len(loader):4d} ] ",
                         f"train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | "
