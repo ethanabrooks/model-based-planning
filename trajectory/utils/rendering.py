@@ -40,8 +40,9 @@ def set_state(env, state):
     qpos_dim = env.sim.data.qpos.size
     qvel_dim = env.sim.data.qvel.size
     qstate_dim = qpos_dim + qvel_dim
+    name = env.spec.id
 
-    if "ant" in env.name:
+    if "ant" in name:
         ypos = np.zeros(1)
         state = np.concatenate([ypos, state])
 
@@ -53,9 +54,12 @@ def set_state(env, state):
         qvel = np.zeros(qvel_dim)
         state = np.concatenate([state, qvel])
 
-    if "ant" in env.name and state.size > qpos_dim + qvel_dim:
+    if "ant" in name and state.size > qpos_dim + qvel_dim:
         xpos = np.zeros(1)
         state = np.concatenate([xpos, state])[:qstate_dim]
+
+    if "HalfCheetahVel" in name or "HalfCheetahDir" in name:
+        state = state[: qpos_dim + qvel_dim]
 
     assert state.size == qpos_dim + qvel_dim
 
@@ -63,9 +67,9 @@ def set_state(env, state):
 
 
 def rollout_from_state(env, state, actions):
-    qpos_dim = env.sim.data.qpos.size
-    env.set_state(state[:qpos_dim], state[qpos_dim:])
+    set_state(env, state)
     observations = [env._get_obs()]
+
     for act in actions:
         obs, rew, term, _ = env.step(act)
         observations.append(obs)

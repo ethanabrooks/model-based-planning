@@ -52,6 +52,7 @@ def load_environment(env: str) -> gym.Env:
     env = thunk()
     env = NormalizedScoreWrapper(env)
     env = StateVectorWrapper(env)
+    env = GetObsWrapper(env)
     return env
 
 
@@ -114,6 +115,10 @@ class TaskWrapper(gym.ObservationWrapper):
     def observation(self, observation: np.ndarray) -> np.ndarray:
         return add_task_to_obs(observation, self.get_task())
 
+    def _get_obs(self):
+        obs = self.env._get_obs()
+        return self.observation(obs)
+
 
 class NormalizedScoreWrapper(gym.Wrapper):
     def get_normalized_score(self, score):
@@ -122,4 +127,9 @@ class NormalizedScoreWrapper(gym.Wrapper):
 
 class StateVectorWrapper(gym.Wrapper):
     def state_vector(self):
+        return self.env.unwrapped._get_obs()
+
+
+class GetObsWrapper(gym.Wrapper):
+    def _get_obs(self):
         return self.env.unwrapped._get_obs()
