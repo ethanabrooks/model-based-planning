@@ -18,6 +18,7 @@ class Config(collections.Mapping):
             savepath = os.path.join(*savepath) if type(savepath) is tuple else savepath
             pickle.dump(self, open(savepath, "wb"))
             print(f"Saved config to: {savepath}\n")
+        self.savepath = savepath
 
     def __repr__(self):
         string = f"\nConfig: {self._class}\n"
