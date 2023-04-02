@@ -179,10 +179,16 @@ AntGoal_v0 = {
     "train": {
         "batch_size": 64,
     },
+    "plan": {
+        "loadpath": "rldl/In-Context Model-Based Planning/kf51yie9",
+    },
 }
 
 TaskAwareAntGoal_v0 = {
     "train": {
         "batch_size": 64,
+    },
+    "plan": {
+        "loadpath": "rldl/In-Context Model-Based Planning/7n4thriz",
     },
 }
