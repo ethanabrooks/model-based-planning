@@ -174,3 +174,15 @@ TaskAwareHalfCheetahDir_v0 = {
         "loadpath": "rldl/In-Context Model-Based Planning/7czkctie",
     },
 }
+
+AntGoal_v0 = {
+    "train": {
+        "batch_size": 64,
+    },
+}
+
+TaskAwareAntGoal_v0 = {
+    "train": {
+        "batch_size": 64,
+    },
+}
