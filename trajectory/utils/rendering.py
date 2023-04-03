@@ -58,7 +58,7 @@ def set_state(env, state):
         xpos = np.zeros(1)
         state = np.concatenate([xpos, state])[:qstate_dim]
 
-    if "HalfCheetahVel" in name or "HalfCheetahDir" in name:
+    if "HalfCheetahVel" in name or "HalfCheetahDir" in name or "AntGoal" in name:
         state = state[: qpos_dim + qvel_dim]
 
     assert state.size == qpos_dim + qvel_dim
