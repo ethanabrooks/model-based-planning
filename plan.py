@@ -25,21 +25,45 @@ class Parser(utils.Parser):
     name: str = None
 
 
-def main(args):
+def main(
+    args: dict,
+    beam_width: int,
+    cdf_obs: float,
+    cdf_act: float,
+    dataset: str,
+    debug: bool,
+    device: int,
+    exp_name: str,
+    gpt_epoch: int,
+    horizon: int,
+    k_act: int,
+    k_obs: int,
+    loadpath: str,
+    max_context_transitions: int,
+    name: str,
+    n_expand: int,
+    percentile: float,
+    plan_freq: int,
+    prefix_context: int,
+    suffix: str,
+    verbose: bool,
+    vis_freq: int,
+    **_,
+):
     #######################
     ######## setup ########
     #######################
 
-    if args["debug"]:
+    if debug:
         timestamp = datetime.datetime.now().strftime("_%d:%m_%H:%M:%S")
         write_path = os.path.join("/tmp", "restore-path", timestamp)
         os.makedirs(write_path)
     else:
-        name = f"plan-{args['dataset']}" if args["name"] is None else args["name"]
+        name = f"plan-{dataset}" if name is None else name
         wandb.init(
             project="In-Context Model-Based Planning",
             name=name,
-            config=args["as_dict"](),
+            config=args,
         )
         write_path = wandb.run.dir
 
@@ -47,27 +71,28 @@ def main(args):
     ####### models ########
     #######################
 
-    dataset_dir = f"logs_{args['dataset']}"
-    wandb.restore("data_config.pkl", run_path=args["loadpath"], root=write_path)
+    dataset_dir = f"logs_{dataset}"
+    wandb.restore("data_config.pkl", run_path=loadpath, root=write_path)
+    env = dataset
     dataset = utils.load_from_config(write_path, "data_config.pkl")
 
-    wandb.restore("model_config.pkl", run_path=args["loadpath"], root=write_path)
+    wandb.restore("model_config.pkl", run_path=loadpath, root=write_path)
     api = wandb.Api()
-    for run_file in api.run(args["loadpath"]).files():
+    for run_file in api.run(loadpath).files():
         if re.match("state_\d+.pt", run_file.name):
-            wandb.restore(run_file.name, run_path=args["loadpath"], root=write_path)
+            wandb.restore(run_file.name, run_path=loadpath, root=write_path)
     gpt, gpt_epoch = utils.load_model(
         write_path,
-        epoch=args["gpt_epoch"],
-        device=args["device"],
+        epoch=gpt_epoch,
+        device=device,
     )
 
     #######################
     ####### dataset #######
     #######################
 
-    task_aware = datasets.local.is_task_aware(args["dataset"])
-    env = datasets.local.get_env_name(args["dataset"])
+    task_aware = datasets.local.is_task_aware(env)
+    env = datasets.local.get_env_name(env)
     env = datasets.load_environment(env)
     if task_aware:
         env = datasets.local.TaskWrapper(env)
@@ -79,7 +104,7 @@ def main(args):
     observation_dim = dataset.observation_dim
     action_dim = dataset.action_dim
 
-    value_fn = lambda x: discretizer.value_fn(x, args["percentile"])
+    value_fn = lambda x: discretizer.value_fn(x, percentile)
     preprocess_fn = datasets.get_preprocess_fn(env.spec.id)
 
     #######################
@@ -100,29 +125,27 @@ def main(args):
 
         observation = preprocess_fn(observation)
 
-        if t % args["plan_freq"] == 0:
+        if t % plan_freq == 0:
             ## concatenate previous transitions and current observations to input to model
-            prefix = make_prefix(
-                discretizer, context, observation, args["prefix_context"]
-            )
+            prefix = make_prefix(discretizer, context, observation, prefix_context)
 
             ## sample sequence from model beginning with `prefix`
             sequence = beam_plan(
                 gpt,
                 value_fn,
                 prefix,
-                args["horizon"],
-                args["beam_width"],
-                args["n_expand"],
+                horizon,
+                beam_width,
+                n_expand,
                 observation_dim,
                 action_dim,
                 discount,
-                args["max_context_transitions"],
-                verbose=args["verbose"],
-                k_obs=args["k_obs"],
-                k_act=args["k_act"],
-                cdf_obs=args["cdf_obs"],
-                cdf_act=args["cdf_act"],
+                max_context_transitions,
+                verbose=verbose,
+                k_obs=k_obs,
+                k_act=k_act,
+                cdf_obs=cdf_obs,
+                cdf_act=cdf_act,
             )
 
         else:
@@ -149,7 +172,7 @@ def main(args):
             observation,
             action,
             reward,
-            args["max_context_transitions"],
+            max_context_transitions,
         )
 
         if wandb.run is not None:
@@ -163,11 +186,11 @@ def main(args):
             )
         print(
             f"[ plan ] t: {t} / {T} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
-            f"time: {timer():.2f} | {args['dataset']} | {args['exp_name']} | {args['suffix']}\n"
+            f"time: {timer():.2f} | {dataset} | {exp_name} | {suffix}\n"
         )
 
         ## visualization
-        if t % args["vis_freq"] == 0 or terminal or t == T:
+        if t % vis_freq == 0 or terminal or t == T:
 
             ## save current plan
             renderer.render_plan(
@@ -198,4 +221,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = Parser().parse_args("plan")
-    main(args.as_dict())
+    args = args.as_dict()
+    main(**args, args=args)
