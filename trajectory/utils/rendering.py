@@ -17,11 +17,10 @@ from .video import save_video, save_videos
 from ..datasets import load_environment, get_preprocess_fn
 
 
-def make_renderer(args, env: gym.Env):
-    render_str = getattr(args, "renderer")
-    render_class = getattr(sys.modules[__name__], render_str)
+def make_renderer(dataset, renderer, env: gym.Env, **_):
+    render_class = getattr(sys.modules[__name__], renderer)
     ## get dimensions in case the observations are preprocessed
-    preprocess_fn = get_preprocess_fn(args.dataset)
+    preprocess_fn = get_preprocess_fn(dataset)
     observation = env.reset()
     observation = preprocess_fn(observation)
     return render_class(env=env, observation_dim=observation.size)
