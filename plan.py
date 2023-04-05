@@ -4,8 +4,6 @@ import os
 import pdb
 from os.path import join
 import re
-from ray import tune
-from ray.tune.integration.wandb import wandb_mixin
 
 import wandb
 
@@ -32,14 +30,15 @@ class Parser(utils.Parser):
 #######################
 
 args = Parser().parse_args("plan")
-if args.debug:
+args = args.as_dict()
+if args["debug"]:
     timestamp = datetime.datetime.now().strftime("_%d:%m_%H:%M:%S")
     write_path = os.path.join("/tmp", "restore-path", timestamp)
     os.makedirs(write_path)
 else:
-    name = f"plan-{args.dataset}" if args.name is None else args.name
+    name = f"plan-{args['dataset']}" if args["name"] is None else args["name"]
     wandb.init(
-        project="In-Context Model-Based Planning", name=name, config=args.as_dict()
+        project="In-Context Model-Based Planning", name=name, config=args["as_dict"]()
     )
     write_path = wandb.run.dir
 
@@ -48,31 +47,31 @@ else:
 ####### models ########
 #######################
 
-dataset_dir = f"logs_{args.dataset}"
-wandb.restore("data_config.pkl", run_path=args.loadpath, root=write_path)
+dataset_dir = f"logs_{args['dataset']}"
+wandb.restore("data_config.pkl", run_path=args["loadpath"], root=write_path)
 dataset = utils.load_from_config(write_path, "data_config.pkl")
 
-wandb.restore("model_config.pkl", run_path=args.loadpath, root=write_path)
+wandb.restore("model_config.pkl", run_path=args["loadpath"], root=write_path)
 api = wandb.Api()
-for run_file in api.run(args.loadpath).files():
+for run_file in api.run(args["loadpath"]).files():
     if re.match("state_\d+.pt", run_file.name):
-        wandb.restore(run_file.name, run_path=args.loadpath, root=write_path)
+        wandb.restore(run_file.name, run_path=args["loadpath"], root=write_path)
 gpt, gpt_epoch = utils.load_model(
     write_path,
-    epoch=args.gpt_epoch,
-    device=args.device,
+    epoch=args["gpt_epoch"],
+    device=args["device"],
 )
 
 #######################
 ####### dataset #######
 #######################
 
-task_aware = datasets.local.is_task_aware(args.dataset)
-env = datasets.local.get_env_name(args.dataset)
+task_aware = datasets.local.is_task_aware(args["dataset"])
+env = datasets.local.get_env_name(args["dataset"])
 env = datasets.load_environment(env)
 if task_aware:
     env = datasets.local.TaskWrapper(env)
-renderer = utils.make_renderer(args, env)
+renderer = utils.make_renderer(**args, env=env)
 timer = utils.timer.Timer()
 
 discretizer = dataset.discretizer
@@ -80,7 +79,7 @@ discount = dataset.discount
 observation_dim = dataset.observation_dim
 action_dim = dataset.action_dim
 
-value_fn = lambda x: discretizer.value_fn(x, args.percentile)
+value_fn = lambda x: discretizer.value_fn(x, args["percentile"])
 preprocess_fn = datasets.get_preprocess_fn(env.spec.id)
 
 #######################
@@ -101,27 +100,27 @@ for t in range(T):
 
     observation = preprocess_fn(observation)
 
-    if t % args.plan_freq == 0:
+    if t % args["plan_freq"] == 0:
         ## concatenate previous transitions and current observations to input to model
-        prefix = make_prefix(discretizer, context, observation, args.prefix_context)
+        prefix = make_prefix(discretizer, context, observation, args["prefix_context"])
 
         ## sample sequence from model beginning with `prefix`
         sequence = beam_plan(
             gpt,
             value_fn,
             prefix,
-            args.horizon,
-            args.beam_width,
-            args.n_expand,
+            args["horizon"],
+            args["beam_width"],
+            args["n_expand"],
             observation_dim,
             action_dim,
             discount,
-            args.max_context_transitions,
-            verbose=args.verbose,
-            k_obs=args.k_obs,
-            k_act=args.k_act,
-            cdf_obs=args.cdf_obs,
-            cdf_act=args.cdf_act,
+            args["max_context_transitions"],
+            verbose=args["verbose"],
+            k_obs=args["k_obs"],
+            k_act=args["k_act"],
+            cdf_obs=args["cdf_obs"],
+            cdf_act=args["cdf_act"],
         )
 
     else:
@@ -143,7 +142,12 @@ for t in range(T):
     ## update rollout observations and context transitions
     rollout.append(next_observation.copy())
     context = update_context(
-        context, discretizer, observation, action, reward, args.max_context_transitions
+        context,
+        discretizer,
+        observation,
+        action,
+        reward,
+        args["max_context_transitions"],
     )
 
     if wandb.run is not None:
@@ -157,11 +161,11 @@ for t in range(T):
         )
     print(
         f"[ plan ] t: {t} / {T} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
-        f"time: {timer():.2f} | {args.dataset} | {args.exp_name} | {args.suffix}\n"
+        f"time: {timer():.2f} | {args['dataset']} | {args['exp_name']} | {args['suffix']}\n"
     )
 
     ## visualization
-    if t % args.vis_freq == 0 or terminal or t == T:
+    if t % args["vis_freq"] == 0 or terminal or t == T:
 
         ## save current plan
         renderer.render_plan(
