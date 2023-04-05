@@ -17,22 +17,50 @@ class Parser(utils.Parser):
     name: str = None
 
 
-def main(args):
+def main(
+    args: dict,
+    action_weight: float,
+    attn_pdrop: float,
+    batch_size: int,
+    dataset: str,
+    debug: bool,
+    device: int,
+    discount: float,
+    discretizer: str,
+    embd_pdrop: float,
+    exp_name: str,
+    learning_rate: float,
+    lr_decay: float,
+    N: int,
+    name: str,
+    n_embd: int,
+    n_epochs_ref: int,
+    n_layer: int,
+    n_head: int,
+    n_saves: int,
+    resid_pdrop: float,
+    reward_weight: float,
+    step: int,
+    subsampled_sequence_length: int,
+    termination_penalty: float,
+    value_weight: float,
+    **_,
+):
     #######################
     ######## setup ########
     #######################
 
-    if not args["debug"]:
-        name = f"train-{args['dataset']}" if args["name"] is None else args["name"]
+    if not debug:
+        name = f"train-{dataset}" if name is None else name
         wandb.init(
             project="In-Context Model-Based Planning",
             name=name,
-            config=args["as_dict"](),
+            config=args,
         )
         with open(os.path.join(wandb.run.dir, "config.json"), "w") as f:
             config = {
                 k: v
-                for k, v in args["as_dict"]().items()
+                for k, v in args.as_dict().items()
                 if isinstance(v, (int, float, str, bool, type(None)))
             }
             device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -43,18 +71,18 @@ def main(args):
     ####### dataset #######
     #######################
 
-    sequence_length = args["subsampled_sequence_length"] * args["step"]
+    sequence_length = subsampled_sequence_length * step
 
     dataset_config = utils.Config(
         datasets.DiscretizedDataset,
         savepath=None if wandb.run is None else (wandb.run.dir, "data_config.pkl"),
-        env=args["dataset"],
-        N=args["N"],
-        penalty=args["termination_penalty"],
+        env=dataset,
+        N=N,
+        penalty=termination_penalty,
         sequence_length=sequence_length,
-        step=args["step"],
-        discount=args["discount"],
-        discretizer=args["discretizer"],
+        step=step,
+        discount=discount,
+        discretizer=discretizer,
     )
     if dataset_config.savepath:
         wandb.save(dataset_config.savepath)
@@ -68,7 +96,7 @@ def main(args):
     ######## model ########
     #######################
 
-    block_size = args["subsampled_sequence_length"] * transition_dim - 1
+    block_size = subsampled_sequence_length * transition_dim - 1
     print(
         f"Dataset size: {len(dataset)} | "
         f"Joined dim: {transition_dim} "
@@ -79,30 +107,30 @@ def main(args):
         GPT,
         savepath=None if wandb.run is None else (wandb.run.dir, "model_config.pkl"),
         ## discretization
-        vocab_size=args["N"],
+        vocab_size=N,
         block_size=block_size,
         ## architecture
-        n_layer=args["n_layer"],
-        n_head=args["n_head"],
-        n_embd=args["n_embd"] * args["n_head"],
+        n_layer=n_layer,
+        n_head=n_head,
+        n_embd=n_embd * n_head,
         ## dimensions
         observation_dim=obs_dim,
         action_dim=act_dim,
         transition_dim=transition_dim,
         ## loss weighting
-        action_weight=args["action_weight"],
-        reward_weight=args["reward_weight"],
-        value_weight=args["value_weight"],
+        action_weight=action_weight,
+        reward_weight=reward_weight,
+        value_weight=value_weight,
         ## dropout probabilities
-        embd_pdrop=args["embd_pdrop"],
-        resid_pdrop=args["resid_pdrop"],
-        attn_pdrop=args["attn_pdrop"],
+        embd_pdrop=embd_pdrop,
+        resid_pdrop=resid_pdrop,
+        attn_pdrop=attn_pdrop,
     )
     if model_config.savepath:
         wandb.save(model_config.savepath)
 
     model = model_config()
-    model.to(args["device"])
+    model.to(device)
 
     #######################
     ####### trainer #######
@@ -115,18 +143,18 @@ def main(args):
         utils.Trainer,
         savepath=None if wandb.run is None else (wandb.run.dir, "trainer_config.pkl"),
         # optimization parameters
-        batch_size=args["batch_size"],
-        learning_rate=args["learning_rate"],
+        batch_size=batch_size,
+        learning_rate=learning_rate,
         betas=(0.9, 0.95),
         grad_norm_clip=1.0,
         weight_decay=0.1,  # only applied on matmul weights
         # learning rate decay: linear warmup followed by cosine decay to 10% of original
-        lr_decay=args["lr_decay"],
+        lr_decay=lr_decay,
         warmup_tokens=warmup_tokens,
         final_tokens=final_tokens,
         ## dataloader
         num_workers=0,
-        device=args["device"],
+        device=device,
     )
     if trainer_config.savepath:
         wandb.save(trainer_config.savepath)
@@ -138,13 +166,13 @@ def main(args):
     #######################
 
     ## scale number of epochs to keep number of updates constant
-    n_epochs = int(1e6 / len(dataset) * args["n_epochs_ref"])
-    save_freq = int(n_epochs // args["n_saves"])
+    n_epochs = int(1e6 / len(dataset) * n_epochs_ref)
+    save_freq = int(n_epochs // n_saves)
 
     for epoch in range(n_epochs):
-        print(f"\nEpoch: {epoch} / {n_epochs} | {args['dataset']} | {args['exp_name']}")
+        print(f"\nEpoch: {epoch} / {n_epochs} | {dataset} | {exp_name}")
 
-        trainer.train(model, dataset, args["debug"])
+        trainer.train(model, dataset, debug)
 
         ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
         save_epoch = (epoch + 1) // save_freq * save_freq
@@ -163,4 +191,4 @@ def main(args):
 if __name__ == "__main__":
     args = Parser().parse_args("train")
     args = args.as_dict()
-    main(args)
+    main(**args, args=args)
