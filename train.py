@@ -7,6 +7,7 @@ import wandb
 import trajectory.utils as utils
 import trajectory.datasets as datasets
 from trajectory.models.transformers import GPT
+from utils.helpers import project_name
 
 
 class Parser(utils.Parser):
@@ -53,7 +54,7 @@ def main(
     if not debug:
         name = f"train-{dataset}" if name is None else name
         wandb.init(
-            project="In-Context Model-Based Planning",
+            project=project_name(),
             name=name,
             config=args,
         )

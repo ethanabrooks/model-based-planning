@@ -7,6 +7,7 @@ import warnings
 from distutils.util import strtobool
 
 import numpy as np
+import tomli
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -392,3 +393,9 @@ def clip(value, low, high):
 
     clipped_value = torch.max(torch.min(value, high), low)
     return clipped_value
+
+
+def project_name():
+    with open("pyproject.toml", "rb") as f:
+        pyproject = tomli.load(f)
+    return pyproject["tool"]["poetry"]["name"]
