@@ -15,6 +15,7 @@ from trajectory.search import (
     extract_actions,
     update_context,
 )
+from utils.helpers import project_name
 from utils.tb_logger import TBLogger
 
 
@@ -61,7 +62,7 @@ def main(
     else:
         name = f"plan-{dataset}" if name is None else name
         wandb.init(
-            project="In-Context Model-Based Planning",
+            project=project_name(),
             name=name,
             config=args,
         )

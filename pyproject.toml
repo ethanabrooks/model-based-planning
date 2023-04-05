@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "model-based planning"
+name = "In-Context Model-Based Planning"
 version = "0.1.0"
 description = ""
 authors = ["Ethan Brooks <ethanabrooks@gmail.com>"]
