@@ -4,6 +4,8 @@ import os
 import pdb
 from os.path import join
 import re
+from ray import tune
+from ray.tune.integration.wandb import wandb_mixin
 
 import wandb
 
