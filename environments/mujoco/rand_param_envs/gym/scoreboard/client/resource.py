@@ -3,8 +3,7 @@ import sys
 import warnings
 
 import six.moves.urllib as urllib
-from six import iteritems
-from six import string_types
+from six import iteritems, string_types
 
 from environments.mujoco.rand_param_envs import gym
 from environments.mujoco.rand_param_envs.gym import error

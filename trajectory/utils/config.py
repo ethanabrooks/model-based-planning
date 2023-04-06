@@ -1,5 +1,5 @@
-import os
 import collections
+import os
 import pickle
 
 

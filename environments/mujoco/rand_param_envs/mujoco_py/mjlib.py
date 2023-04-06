@@ -2,6 +2,7 @@ import os
 import sys
 
 from environments.mujoco.rand_param_envs.mujoco_py import config
+
 from .mjtypes import *
 from .util import *
 

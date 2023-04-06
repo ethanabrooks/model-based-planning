@@ -2,8 +2,8 @@ import os
 
 
 def get_docker_username():
-    import subprocess
     import shlex
+    import subprocess
 
     ps = subprocess.Popen(
         shlex.split("docker info"), stdout=subprocess.PIPE, stderr=subprocess.PIPE

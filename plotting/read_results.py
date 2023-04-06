@@ -1,8 +1,9 @@
-import os
 import glob
-import numpy as np
 import json
+import os
 import pdb
+
+import numpy as np
 
 import trajectory.utils as utils
 

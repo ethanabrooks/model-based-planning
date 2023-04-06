@@ -1,9 +1,10 @@
-import numpy as np
-import torch
 import pdb
 
+import numpy as np
+import torch
+
 from .. import utils
-from .sampling import sample_n, get_logp, sort_2d
+from .sampling import get_logp, sample_n, sort_2d
 
 REWARD_DIM = VALUE_DIM = 1
 

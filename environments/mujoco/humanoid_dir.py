@@ -2,11 +2,11 @@
     Based on environment in PEARL:
     https://github.com/katerakelly/oyster/blob/master/rlkit/envs/humanoid_dir.py
 """
-import numpy as np
-from gym.envs.mujoco import HumanoidEnv as HumanoidEnv
-from gym import spaces
-
 import random
+
+import numpy as np
+from gym import spaces
+from gym.envs.mujoco import HumanoidEnv as HumanoidEnv
 
 
 def mass_center(model, sim):

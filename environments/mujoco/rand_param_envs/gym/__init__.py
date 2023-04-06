@@ -57,16 +57,16 @@ del logger_setup
 
 sanity_check_dependencies()
 
+from environments.mujoco.rand_param_envs.gym import wrappers
+from environments.mujoco.rand_param_envs.gym.benchmarks import benchmark_spec
 from environments.mujoco.rand_param_envs.gym.core import (
+    ActionWrapper,
     Env,
+    ObservationWrapper,
+    RewardWrapper,
     Space,
     Wrapper,
-    ObservationWrapper,
-    ActionWrapper,
-    RewardWrapper,
 )
-from environments.mujoco.rand_param_envs.gym.benchmarks import benchmark_spec
 from environments.mujoco.rand_param_envs.gym.envs import make, spec
-from environments.mujoco.rand_param_envs.gym import wrappers
 
 __all__ = ["Env", "Space", "Wrapper", "make", "spec", "wrappers"]

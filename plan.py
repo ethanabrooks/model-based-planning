@@ -2,28 +2,30 @@ import datetime
 import json
 import os
 import pdb
-from os.path import join
 import re
 import time
+from os.path import join
 
-import wandb
-
-import trajectory.utils as utils
-import trajectory.datasets as datasets
-from trajectory.search import (
-    beam_plan,
-    make_prefix,
-    extract_actions,
-    update_context,
-)
-from utils import helpers
-from utils.helpers import project_name
-from utils.writer import Writer
-from utils.tb_logger import TBLogger
 from wandb.sdk.wandb_run import Run
 
+import wandb
+from trajectory.search import beam_plan, extract_actions, make_prefix, update_context
+from trajectory.utils import Parser as UtilsParser
+from trajectory.utils import load_from_config, load_model, make_renderer
+from trajectory.utils.timer import Timer
+from utils import helpers
+from utils.helpers import project_name
+from utils.tb_logger import TBLogger
+from utils.writer import Writer
 
-class Parser(utils.Parser):
+from trajectory.datasets import (  # isort: skip
+    get_preprocess_fn,
+    load_environment,
+    local,
+)
+
+
+class Parser(UtilsParser):
     dataset: str = "halfcheetah-medium-expert-v2"
     config: str = "config.offline"
     debug: bool = False
@@ -78,14 +80,14 @@ def main(
             sleep_time *= 2
 
     env = dataset
-    dataset = utils.load_from_config(writer.directory, "data_config.pkl")
+    dataset = load_from_config(writer.directory, "data_config.pkl")
 
     wandb.restore("model_config.pkl", run_path=loadpath, root=writer.directory)
     api = wandb.Api()
     for run_file in api.run(loadpath).files():
         if re.match("state_\d+.pt", run_file.name):
             wandb.restore(run_file.name, run_path=loadpath, root=writer.directory)
-    gpt, gpt_epoch = utils.load_model(
+    gpt, gpt_epoch = load_model(
         writer.directory,
         epoch=gpt_epoch,
         device=device,
@@ -95,13 +97,13 @@ def main(
     ####### dataset #######
     #######################
 
-    task_aware = datasets.local.is_task_aware(env)
-    env = datasets.local.get_env_name(env)
-    env = datasets.load_environment(env)
+    task_aware = local.is_task_aware(env)
+    env = local.get_env_name(env)
+    env = load_environment(env)
     if task_aware:
-        env = datasets.local.TaskWrapper(env)
-    renderer = utils.make_renderer(**args, env=env)
-    timer = utils.timer.Timer()
+        env = local.TaskWrapper(env)
+    renderer = make_renderer(**args, env=env)
+    timer = Timer()
 
     discretizer = dataset.discretizer
     discount = dataset.discount
@@ -109,7 +111,7 @@ def main(
     action_dim = dataset.action_dim
 
     value_fn = lambda x: discretizer.value_fn(x, percentile)
-    preprocess_fn = datasets.get_preprocess_fn(env.spec.id)
+    preprocess_fn = get_preprocess_fn(env.spec.id)
 
     #######################
     ###### main loop ######
