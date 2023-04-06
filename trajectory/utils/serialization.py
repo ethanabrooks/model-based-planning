@@ -40,7 +40,7 @@ def load_model(*loadpath, epoch=None, device="cuda:0"):
     loadpath = os.path.join(*loadpath)
     config_path = os.path.join(loadpath, "model_config.pkl")
 
-    if epoch is "latest":
+    if epoch == "latest":
         epoch = get_latest_epoch(loadpath)
 
     print(f"[ utils/serialization ] Loading model epoch: {epoch}")
