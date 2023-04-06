@@ -1,6 +1,4 @@
-import os
 import pdb
-import re
 
 import numpy as np
 import torch
@@ -76,7 +74,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         if local_data_path:
             dataset = local.load_dataset(local_data_path, task_aware)
         else:
-            print(f"[ datasets/sequence ] Loading...", end=" ", flush=True)
+            print("[ datasets/sequence ] Loading...", end=" ", flush=True)
             dataset = qlearning_dataset_with_timeouts(
                 env.unwrapped, terminate_on_end=True
             )
@@ -84,7 +82,7 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         preprocess_fn = dataset_preprocess_functions.get(name)
         if preprocess_fn:
-            print(f"[ datasets/sequence ] Modifying environment")
+            print("[ datasets/sequence ] Modifying environment")
             dataset = preprocess_fn(dataset)
         ##
 
@@ -108,7 +106,7 @@ class SequenceDataset(torch.utils.data.Dataset):
             self.rewards_raw[terminal_mask] = penalty
 
         ## segment
-        print(f"[ datasets/sequence ] Segmenting...", end=" ", flush=True)
+        print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
         self.joined_segmented, self.termination_flags, self.path_lengths = segment(
             self.joined_raw, terminals, max_path_length
         )
@@ -184,7 +182,6 @@ class DiscretizedDataset(SequenceDataset):
 
     def __getitem__(self, idx):
         path_ind, start_ind, end_ind = self.indices[idx]
-        path_length = self.path_lengths[path_ind]
 
         joined = self.joined_segmented[path_ind, start_ind : end_ind : self.step]
         terminations = self.termination_flags[path_ind, start_ind : end_ind : self.step]

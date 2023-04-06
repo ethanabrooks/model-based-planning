@@ -1,13 +1,9 @@
-import pdb
 import sys
-import time
-from typing import Optional
 
 import gym
 import matplotlib.pyplot as plt
 import mujoco_py as mjc
 import numpy as np
-import torch
 
 import wandb
 from trajectory.datasets.local import TaskWrapper
