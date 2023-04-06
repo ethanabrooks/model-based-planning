@@ -25,7 +25,7 @@ torchsnapshot = "^0.1.0"
 wandb = "^0.14.0"
 moviepy = "^1.0.3"
 imageio = "^2.27.0"
-ray = "^2.3.1"
+ray = {version = "^2.3.1", extras = ["tune"]}
 
 [tool.poetry.dev-dependencies]
 black = "^22.6.0"

@@ -1049,14 +1049,14 @@ preview = ["glfw-preview"]
 
 [[package]]
 name = "google-auth"
-version = "2.17.1"
+version = "2.17.2"
 description = "Google Authentication Library"
 category = "main"
 optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*"
 files = [
-    {file = "google-auth-2.17.1.tar.gz", hash = "sha256:8f379b46bad381ad2a0b989dfb0c13ad28d3c2a79f27348213f8946a1d15d55a"},
-    {file = "google_auth-2.17.1-py2.py3-none-any.whl", hash = "sha256:357ff22a75b4c0f6093470f21816a825d2adee398177569824e37b6c10069e19"},
+    {file = "google-auth-2.17.2.tar.gz", hash = "sha256:295c80ebb95eac74003c07a696cf3ef6b414e9230ae8894f3843f8215fd2aa56"},
+    {file = "google_auth-2.17.2-py2.py3-none-any.whl", hash = "sha256:544536a43d44dff0f64222e4d027d124989fcb9c10979687e589e1694fba9c94"},
 ]
 
 [package.dependencies]
@@ -3001,9 +3001,12 @@ jsonschema = "*"
 msgpack = ">=1.0.0,<2.0.0"
 numpy = {version = ">=1.19.3", markers = "python_version >= \"3.9\""}
 packaging = {version = "*", markers = "python_version >= \"3.10\""}
+pandas = {version = "*", optional = true, markers = "extra == \"tune\""}
 protobuf = ">=3.15.3,<3.19.5 || >3.19.5"
 pyyaml = "*"
 requests = "*"
+tabulate = {version = "*", optional = true, markers = "extra == \"tune\""}
+tensorboardX = {version = ">=1.9", optional = true, markers = "extra == \"tune\""}
 virtualenv = ">=20.0.24"
 
 [package.extras]
@@ -3393,6 +3396,21 @@ pure-eval = "*"
 tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
+name = "tabulate"
+version = "0.9.0"
+description = "Pretty-print tabular data"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f"},
+    {file = "tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c"},
+]
+
+[package.extras]
+widechars = ["wcwidth"]
+
+[[package]]
 name = "tensorboard"
 version = "2.12.1"
 description = "TensorBoard lets you watch Tensors Flow"
@@ -3441,6 +3459,23 @@ python-versions = "*"
 files = [
     {file = "tensorboard_plugin_wit-1.8.1-py3-none-any.whl", hash = "sha256:ff26bdd583d155aa951ee3b152b3d0cffae8005dc697f72b44a8e8c2a77a8cbe"},
 ]
+
+[[package]]
+name = "tensorboardx"
+version = "2.5"
+description = "TensorBoardX lets you watch Tensors Flow without Tensorflow"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "tensorboardX-2.5-py2.py3-none-any.whl", hash = "sha256:b1d8903f8106e2f4484640a293f9680f9757d5f7d2e699e0672bb2382d988e07"},
+    {file = "tensorboardX-2.5.tar.gz", hash = "sha256:5238ac5eac4a26d8f8381d7f54a2fcd530a134db841af9a9a6427beca93c6776"},
+]
+
+[package.dependencies]
+numpy = "*"
+protobuf = ">=3.8.0"
+six = "*"
 
 [[package]]
 name = "tensordict"
@@ -3735,14 +3770,14 @@ test = ["covdefaults (>=2.2.2)", "coverage (>=7.1)", "coverage-enable-subprocess
 
 [[package]]
 name = "wandb"
-version = "0.14.0"
+version = "0.14.1"
 description = "A CLI and library for interacting with the Weights and Biases API."
 category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "wandb-0.14.0-py3-none-any.whl", hash = "sha256:3e9c1194627e59f6f210f8030fb73f51677e6b908fc4b7c59395f230e5076502"},
-    {file = "wandb-0.14.0.tar.gz", hash = "sha256:2f17b570ca26619ca35bd4ea9628961aae1d91cad56cf26becb917854ea055d3"},
+    {file = "wandb-0.14.1-py3-none-any.whl", hash = "sha256:427bbe6972852d37e209971a400d0eb58169cad373d2100bb68ef0720c1b8fa8"},
+    {file = "wandb-0.14.1.tar.gz", hash = "sha256:bacd290b8be47917b5821c64d961299af6f3b6b27294ecec0d8abe9da8262b23"},
 ]
 
 [package.dependencies]
@@ -3764,6 +3799,7 @@ setuptools = "*"
 typing-extensions = {version = "*", markers = "python_version < \"3.10\""}
 
 [package.extras]
+async = ["httpx (>=0.22.0)"]
 aws = ["boto3"]
 azure = ["azure-storage-blob"]
 gcp = ["google-cloud-storage"]
@@ -3926,4 +3962,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.11"
-content-hash = "e9e7d632843b3a69d58d64be1cdb65eedc2e869e3978e91c85b89d0df8b819c2"
+content-hash = "1d24517219f838c0fc1d5320cb5a29596e1168a1da93d40691c2bf4eaeb341e2"
