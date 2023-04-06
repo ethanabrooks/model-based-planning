@@ -1,7 +1,5 @@
-import json
 import os
 
-import numpy as np
 import torch
 from wandb.sdk.wandb_run import Run
 
@@ -9,7 +7,6 @@ import trajectory.utils as utils
 import wandb
 from trajectory.models.transformers import GPT
 from utils import helpers
-from utils.helpers import project_name
 from utils.writer import Writer
 
 import trajectory.datasets as datasets  # isort: skip
@@ -121,7 +118,7 @@ def main(
     ####### trainer #######
     #######################
 
-    warmup_tokens = len(dataset) * block_size  ## number of tokens seen per epoch
+    warmup_tokens = len(dataset) * block_size  # number of tokens seen per epoch
     final_tokens = 20 * warmup_tokens
 
     trainer_config = utils.Config(
