@@ -1,13 +1,13 @@
-import matplotlib as mpl
 import random
-import numpy as np
-import torch
-from utils import helpers as utl
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-from gym import Env
-from gym import spaces
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+import torch
+from gym import Env, spaces
+
+from utils import helpers as utl
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

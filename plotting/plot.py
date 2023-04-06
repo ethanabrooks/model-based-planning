@@ -1,7 +1,8 @@
-import numpy as np
+import pdb
+
 import matplotlib
 import matplotlib.pyplot as plt
-import pdb
+import numpy as np
 
 from plotting.scores import means
 

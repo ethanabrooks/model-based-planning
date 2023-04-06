@@ -1,7 +1,7 @@
 import os
 import pdb
 
-from doodad.wrappers.easy_launch import sweep_function, save_doodad_config
+from doodad.wrappers.easy_launch import save_doodad_config, sweep_function
 
 codepath = "/home/code"
 script = "scripts/plan.py"

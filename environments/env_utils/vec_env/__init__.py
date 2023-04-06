@@ -1,8 +1,9 @@
 """
 Taken from https://github.com/openai/baselines
 """
-import numpy as np
 from abc import ABC, abstractmethod
+
+import numpy as np
 
 
 def tile_images(img_nhwc):

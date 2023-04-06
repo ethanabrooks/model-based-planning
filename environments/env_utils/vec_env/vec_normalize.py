@@ -4,6 +4,7 @@ Taken from https://github.com/openai/baselines
 import numpy as np
 
 from environments.env_utils.running_mean_std import RunningMeanStd
+
 from . import VecEnvWrapper
 
 

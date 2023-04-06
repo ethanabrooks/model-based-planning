@@ -1,6 +1,7 @@
+import pdb
+
 import torch
 import torch.nn as nn
-import pdb
 
 
 def get_activation(params):

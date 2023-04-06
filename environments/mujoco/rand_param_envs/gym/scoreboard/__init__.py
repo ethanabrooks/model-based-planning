@@ -15,10 +15,10 @@ from environments.mujoco.rand_param_envs.gym.scoreboard.client.resource import (
     FileUpload,
 )
 from environments.mujoco.rand_param_envs.gym.scoreboard.registration import (
-    registry,
-    add_task,
-    add_group,
     add_benchmark,
+    add_group,
+    add_task,
+    registry,
 )
 
 # Discover API key from the environment. (You should never have to

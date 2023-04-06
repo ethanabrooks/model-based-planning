@@ -1,6 +1,7 @@
 import os
-from typing import Optional
 import re
+from typing import Optional
+
 import gym
 import numpy as np
 import yaml
@@ -8,8 +9,8 @@ from torchrl.data import ReplayBuffer
 from torchrl.data.replay_buffers import LazyMemmapStorage
 from torchsnapshot import Snapshot
 
-from environments import parallel_envs
 import environments  # noqa: F401
+from environments import parallel_envs
 
 TASK_AWARE_PATTERN = re.compile(r"^TaskAware(.*)")
 

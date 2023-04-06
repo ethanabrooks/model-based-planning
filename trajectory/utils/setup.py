@@ -1,17 +1,15 @@
-import os
 import importlib
+import os
+import pdb
 import random
+
 import numpy as np
 import torch
 from tap import Tap
-import pdb
 
-from .serialization import mkdir
 from .arrays import set_device
-from .git_utils import (
-    get_git_rev,
-    save_git_diff,
-)
+from .git_utils import get_git_rev, save_git_diff
+from .serialization import mkdir
 
 
 def set_seed(seed):

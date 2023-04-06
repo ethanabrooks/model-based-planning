@@ -2,9 +2,7 @@
 Python bindings for GLFW.
 """
 
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import division, print_function, unicode_literals
 
 __author__ = "Florian Rhiem (florian.rhiem@gmail.com)"
 __copyright__ = "Copyright (c) 2013 Florian Rhiem"
@@ -12,10 +10,10 @@ __license__ = "MIT"
 __version__ = "1.0.1"
 
 import ctypes
-import os
 import glob
-import sys
+import os
 import subprocess
+import sys
 import textwrap
 
 from environments.mujoco.rand_param_envs.mujoco_py import config

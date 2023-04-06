@@ -2,7 +2,7 @@ import numpy as np
 
 from environments.mujoco.rand_param_envs import gym
 from environments.mujoco.rand_param_envs.gym.error import Error
-from environments.mujoco.rand_param_envs.gym.spaces import prng, Discrete, Box
+from environments.mujoco.rand_param_envs.gym.spaces import Box, Discrete, prng
 
 
 class MultiDiscrete(gym.Space):
