@@ -1,9 +1,10 @@
 """
 Based on https://github.com/ikostrikov/pytorch-a2c-ppo-acktr
 """
+import random
+
 import gym
 import torch
-import random
 
 from environments.env_utils.vec_env import VecEnvWrapper
 from environments.env_utils.vec_env.dummy_vec_env import DummyVecEnv

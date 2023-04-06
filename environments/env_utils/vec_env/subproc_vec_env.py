@@ -1,11 +1,11 @@
 """
 Taken from https://github.com/openai/baselines
 """
-from multiprocessing import Process, Pipe
+from multiprocessing import Pipe, Process
 
 import numpy as np
 
-from . import VecEnv, CloudpickleWrapper
+from . import CloudpickleWrapper, VecEnv
 
 
 def worker(remote, parent_remote, env_fn_wrapper):

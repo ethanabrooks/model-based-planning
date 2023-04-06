@@ -1,12 +1,12 @@
 # EXPERIMENTAL: all may be removed soon
 
 from environments.mujoco.rand_param_envs.gym.benchmarks import scoring
-from environments.mujoco.rand_param_envs.gym.benchmarks.registration import (
+from environments.mujoco.rand_param_envs.gym.benchmarks.registration import (  # imports used elsewhere
     benchmark_spec,
     register_benchmark,
-    registry,
     register_benchmark_view,
-)  # imports used elsewhere
+    registry,
+)
 
 register_benchmark(
     id="Atari200M",

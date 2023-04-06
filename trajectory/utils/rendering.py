@@ -1,20 +1,20 @@
-import time
-import sys
-import numpy as np
-import matplotlib.pyplot as plt
-import torch
-import gym
-import mujoco_py as mjc
 import pdb
+import sys
+import time
 from typing import Optional
 
-import wandb
+import gym
+import matplotlib.pyplot as plt
+import mujoco_py as mjc
+import numpy as np
+import torch
 
+import wandb
 from trajectory.datasets.local import TaskWrapper
 
+from ..datasets import get_preprocess_fn, load_environment
 from .arrays import to_np
 from .video import save_video, save_videos
-from ..datasets import load_environment, get_preprocess_fn
 
 
 def make_renderer(dataset, renderer, env: gym.Env, **_):
