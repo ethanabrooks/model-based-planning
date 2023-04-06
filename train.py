@@ -3,11 +3,14 @@ import os
 import numpy as np
 import torch
 import wandb
+from wandb.sdk.wandb_run import Run
 
 import trajectory.utils as utils
 import trajectory.datasets as datasets
 from trajectory.models.transformers import GPT
+from utils import helpers
 from utils.helpers import project_name
+from utils.writer import Writer
 
 
 class Parser(utils.Parser):
@@ -15,7 +18,7 @@ class Parser(utils.Parser):
     config: str = "config.offline"
     results_log_dir: str = None
     debug: bool = False
-    name: str = None
+    name: str = "train"
 
 
 def main(
@@ -40,6 +43,7 @@ def main(
     n_head: int,
     n_saves: int,
     resid_pdrop: float,
+    run: Run,
     reward_weight: float,
     step: int,
     subsampled_sequence_length: int,
@@ -47,26 +51,7 @@ def main(
     value_weight: float,
     **_,
 ):
-    #######################
-    ######## setup ########
-    #######################
-
-    if not debug:
-        name = f"train-{dataset}" if name is None else name
-        wandb.init(
-            project=project_name(),
-            name=name,
-            config=args,
-        )
-        with open(os.path.join(wandb.run.dir, "config.json"), "w") as f:
-            config = {
-                k: v
-                for k, v in args.as_dict().items()
-                if isinstance(v, (int, float, str, bool, type(None)))
-            }
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-            config.update(device=device.type)
-            json.dump(config, f, indent=2)
+    writer = Writer.make(debug, config=args, dataset=dataset, name=name, run=run)
 
     #######################
     ####### dataset #######
@@ -76,7 +61,7 @@ def main(
 
     dataset_config = utils.Config(
         datasets.DiscretizedDataset,
-        savepath=None if wandb.run is None else (wandb.run.dir, "data_config.pkl"),
+        savepath=writer.path("data_config.pkl"),
         env=dataset,
         N=N,
         penalty=termination_penalty,
@@ -85,9 +70,7 @@ def main(
         discount=discount,
         discretizer=discretizer,
     )
-    if dataset_config.savepath:
-        wandb.save(dataset_config.savepath)
-
+    writer.save(dataset_config.savepath)
     dataset = dataset_config()
     obs_dim = dataset.observation_dim
     act_dim = dataset.action_dim
@@ -106,7 +89,7 @@ def main(
 
     model_config = utils.Config(
         GPT,
-        savepath=None if wandb.run is None else (wandb.run.dir, "model_config.pkl"),
+        savepath=writer.path("model_config.pkl"),
         ## discretization
         vocab_size=N,
         block_size=block_size,
@@ -127,8 +110,7 @@ def main(
         resid_pdrop=resid_pdrop,
         attn_pdrop=attn_pdrop,
     )
-    if model_config.savepath:
-        wandb.save(model_config.savepath)
+    writer.save(model_config.savepath)
 
     model = model_config()
     model.to(device)
@@ -142,7 +124,7 @@ def main(
 
     trainer_config = utils.Config(
         utils.Trainer,
-        savepath=None if wandb.run is None else (wandb.run.dir, "trainer_config.pkl"),
+        savepath=writer.path("trainer_config.pkl"),
         # optimization parameters
         batch_size=batch_size,
         learning_rate=learning_rate,
@@ -157,9 +139,7 @@ def main(
         num_workers=0,
         device=device,
     )
-    if trainer_config.savepath:
-        wandb.save(trainer_config.savepath)
-
+    writer.save(trainer_config.savepath)
     trainer = trainer_config()
 
     #######################
@@ -177,19 +157,32 @@ def main(
 
         ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
         save_epoch = (epoch + 1) // save_freq * save_freq
-        if wandb.run is not None:
-            statepath = os.path.join(wandb.run.dir, f"state_{save_epoch}.pt")
-            print(f"Saving model to {statepath}")
+        statepath = os.path.join(writer.directory, f"state_{save_epoch}.pt")
+        print(f"Saving model to {statepath}")
 
-            ## save state to disk
-            state = model.state_dict()
-            torch.save(state, statepath)
-            wandb.save(statepath)
+        ## save state to disk
+        state = model.state_dict()
+        torch.save(state, statepath)
+        writer.save(statepath)
 
     wandb.finish()
 
 
+def get_args():
+    return Parser().parse_args("train")
+
+
+def sweep(**config):
+    args = get_args()
+    return helpers.sweep(
+        main,
+        parser=args,
+        param_space=config,
+        group_name=args.name,
+        dataset=args.dataset,
+    )
+
+
 if __name__ == "__main__":
-    args = Parser().parse_args("train")
-    args = args.as_dict()
-    main(**args, args=args)
+    ARGS = get_args().as_dict()
+    main(**ARGS, args=ARGS, run=None)
