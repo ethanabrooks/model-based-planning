@@ -20,3 +20,4 @@ azure/fuse.cfg.direnv/
 ignore.py
 wandb/
 wandb-key.txt
+sweep-*.py

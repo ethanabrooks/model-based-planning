@@ -25,10 +25,12 @@ def is_task_aware(env: str) -> bool:
     return TASK_AWARE_PATTERN.match(env) is not None
 
 
+with open("local-datasets.yml") as f:
+    LOCAL_DATASETS = yaml.load(f, Loader=yaml.FullLoader)
+
+
 def get_local_datasets():
-    with open("local-datasets.yml") as f:
-        local_datasets = yaml.load(f, Loader=yaml.FullLoader)
-    return local_datasets
+    return LOCAL_DATASETS
 
 
 def get_data_path(env: str) -> Optional[str]:
