@@ -18,6 +18,8 @@ from trajectory.search import (
 from utils.helpers import project_name
 from utils.tb_logger import TBLogger
 
+import torch
+
 
 class Parser(utils.Parser):
     dataset: str = "halfcheetah-medium-expert-v2"
@@ -46,6 +48,7 @@ def main(
     percentile: float,
     plan_freq: int,
     prefix_context: int,
+    seed: int,
     suffix: str,
     verbose: bool,
     vis_freq: int,
@@ -67,6 +70,8 @@ def main(
             config=args,
         )
         write_path = wandb.run.dir
+
+    torch.manual_seed(seed)
 
     #######################
     ####### models ########
