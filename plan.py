@@ -1,7 +1,4 @@
-import datetime
 import json
-import os
-import pdb
 import re
 import time
 from os.path import join
@@ -14,8 +11,6 @@ from trajectory.utils import Parser as UtilsParser
 from trajectory.utils import load_from_config, load_model, make_renderer
 from trajectory.utils.timer import Timer
 from utils import helpers
-from utils.helpers import project_name
-from utils.tb_logger import TBLogger
 from utils.writer import Writer
 
 from trajectory.datasets import (  # isort: skip
@@ -85,7 +80,7 @@ def main(
     wandb.restore("model_config.pkl", run_path=loadpath, root=writer.directory)
     api = wandb.Api()
     for run_file in api.run(loadpath).files():
-        if re.match("state_\d+.pt", run_file.name):
+        if re.match("state_[0-9]+.pt", run_file.name):
             wandb.restore(run_file.name, run_path=loadpath, root=writer.directory)
     gpt, gpt_epoch = load_model(
         writer.directory,
@@ -204,7 +199,7 @@ def main(
 
             ## save rollout thus far
             renderer.render_rollout(
-                join(writer.directory, f"rollout.mp4"), rollout, fps=80
+                join(writer.directory, "rollout.mp4"), rollout, fps=80
             )
 
         if terminal:
