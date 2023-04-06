@@ -1,7 +1,8 @@
 import math
+import pdb
+
 import torch
 import torch.nn as nn
-import pdb
 
 
 class EinLinear(nn.Module):

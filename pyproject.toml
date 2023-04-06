@@ -31,7 +31,7 @@ ray = {version = "^2.3.1", extras = ["tune"]}
 black = "^22.6.0"
 ipdb = "^0.13.9"
 ipython = "^8.4.0"
-pre-commit = "^2.20.0"
+pre-commit = "^3.2.2"
 mypy = "^0.971"
 flake8 = "^5.0.4"
 

@@ -5,8 +5,7 @@ import os
 import numpy as np
 import six
 
-from environments.mujoco.rand_param_envs.gym import Wrapper
-from environments.mujoco.rand_param_envs.gym import error, version
+from environments.mujoco.rand_param_envs.gym import Wrapper, error, version
 from environments.mujoco.rand_param_envs.gym.monitoring import (
     stats_recorder,
     video_recorder,

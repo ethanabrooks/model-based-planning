@@ -1,11 +1,10 @@
-import numpy as np
 import pdb
 
+import numpy as np
+
 from plotting.plot import get_mean
-from plotting.scores import (
-    means as MEANS,
-    errors as ERRORS,
-)
+from plotting.scores import errors as ERRORS
+from plotting.scores import means as MEANS
 
 ALGORITHM_STRINGS = {
     "Trajectory\nTransformer": "TT (Ours)",

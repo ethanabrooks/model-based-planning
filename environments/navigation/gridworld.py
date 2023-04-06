@@ -1,14 +1,14 @@
 import itertools
 import math
 import random
-from torch.nn import functional as F
 
 import gym
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 import numpy as np
 import torch
 from gym import spaces
+from matplotlib.patches import Rectangle
+from torch.nn import functional as F
 
 from utils import helpers as utl
 

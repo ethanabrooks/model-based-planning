@@ -4,22 +4,21 @@ import pickle
 
 # import pickle5 as pickle
 import random
-from typing import Any, Callable
+import urllib
 import warnings
 from distutils.util import strtobool
+from typing import Any, Callable
 
 import numpy as np
 import tomli
 import torch
+import torch.functional as F
 import torch.nn as nn
-from torch.nn import functional as F
 from ray import tune
 from ray.air.integrations.wandb import setup_wandb
-import urllib
-
-from trajectory.utils import Parser
 
 from environments.parallel_envs import make_vec_envs
+from trajectory.utils import Parser
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

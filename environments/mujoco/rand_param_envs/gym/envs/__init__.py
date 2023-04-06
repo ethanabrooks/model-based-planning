@@ -1,7 +1,7 @@
 from environments.mujoco.rand_param_envs.gym.envs.registration import (
-    registry,
-    register,
     make,
+    register,
+    registry,
     spec,
 )
 

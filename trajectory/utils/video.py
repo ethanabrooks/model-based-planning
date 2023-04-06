@@ -1,6 +1,8 @@
 import os
+
 import numpy as np
 import skvideo.io
+
 import wandb
 
 
