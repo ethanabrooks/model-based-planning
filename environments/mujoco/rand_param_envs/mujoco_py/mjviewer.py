@@ -5,7 +5,7 @@ from threading import Lock
 
 import OpenGL.GL as gl
 
-from . import mjcore, mjconstants, glfw
+from . import glfw, mjconstants, mjcore
 from .mjlib import mjlib
 
 logger = logging.getLogger(__name__)

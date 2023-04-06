@@ -1,16 +1,18 @@
 import json
 import os
+
 import numpy as np
 import torch
-import wandb
 from wandb.sdk.wandb_run import Run
 
 import trajectory.utils as utils
-import trajectory.datasets as datasets
+import wandb
 from trajectory.models.transformers import GPT
 from utils import helpers
 from utils.helpers import project_name
 from utils.writer import Writer
+
+import trajectory.datasets as datasets  # isort: skip
 
 
 class Parser(utils.Parser):

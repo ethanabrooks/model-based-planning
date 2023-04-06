@@ -1,6 +1,7 @@
+import pdb
+
 import numpy as np
 import torch
-import pdb
 
 from ..utils.arrays import to_torch
 

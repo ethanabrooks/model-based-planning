@@ -2,8 +2,7 @@ import glob
 import os
 
 from environments.mujoco.rand_param_envs import gym
-from environments.mujoco.rand_param_envs.gym import error, spaces
-from environments.mujoco.rand_param_envs.gym import monitoring
+from environments.mujoco.rand_param_envs.gym import error, monitoring, spaces
 from environments.mujoco.rand_param_envs.gym.envs.registration import register
 from environments.mujoco.rand_param_envs.gym.monitoring.tests import helpers
 from environments.mujoco.rand_param_envs.gym.wrappers import Monitor
