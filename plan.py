@@ -15,17 +15,18 @@ from trajectory.search import (
     extract_actions,
     update_context,
 )
+from utils import helpers
 from utils.helpers import project_name
+from utils.writer import Writer
 from utils.tb_logger import TBLogger
-
-import torch
+from wandb.sdk.wandb_run import Run
 
 
 class Parser(utils.Parser):
     dataset: str = "halfcheetah-medium-expert-v2"
     config: str = "config.offline"
     debug: bool = False
-    name: str = None
+    name: str = "plan"
 
 
 def main(
@@ -48,7 +49,7 @@ def main(
     percentile: float,
     plan_freq: int,
     prefix_context: int,
-    seed: int,
+    run: Run,
     suffix: str,
     verbose: bool,
     vis_freq: int,
@@ -58,37 +59,23 @@ def main(
     ######## setup ########
     #######################
 
-    if debug:
-        timestamp = datetime.datetime.now().strftime("_%d:%m_%H:%M:%S")
-        write_path = os.path.join("/tmp", "restore-path", timestamp)
-        os.makedirs(write_path)
-    else:
-        name = f"plan-{dataset}" if name is None else name
-        wandb.init(
-            project=project_name(),
-            name=name,
-            config=args,
-        )
-        write_path = wandb.run.dir
-
-    torch.manual_seed(seed)
+    writer = Writer.make(debug, config=args, dataset=dataset, name=name, run=run)
 
     #######################
     ####### models ########
     #######################
 
-    dataset_dir = f"logs_{dataset}"
-    wandb.restore("data_config.pkl", run_path=loadpath, root=write_path)
+    wandb.restore("data_config.pkl", run_path=loadpath, root=writer.directory)
     env = dataset
-    dataset = utils.load_from_config(write_path, "data_config.pkl")
+    dataset = utils.load_from_config(writer.directory, "data_config.pkl")
 
-    wandb.restore("model_config.pkl", run_path=loadpath, root=write_path)
+    wandb.restore("model_config.pkl", run_path=loadpath, root=writer.directory)
     api = wandb.Api()
     for run_file in api.run(loadpath).files():
         if re.match("state_\d+.pt", run_file.name):
-            wandb.restore(run_file.name, run_path=loadpath, root=write_path)
+            wandb.restore(run_file.name, run_path=loadpath, root=writer.directory)
     gpt, gpt_epoch = utils.load_model(
-        write_path,
+        writer.directory,
         epoch=gpt_epoch,
         device=device,
     )
@@ -181,15 +168,14 @@ def main(
             max_context_transitions,
         )
 
-        if wandb.run is not None:
-            wandb.log(
-                {
-                    "reward": reward,
-                    "total_reward": total_reward,
-                    "score": score,
-                },
-                step=t,
-            )
+        writer.log(
+            {
+                "reward": reward,
+                "total_reward": total_reward,
+                "score": score,
+            },
+            step=t,
+        )
         print(
             f"[ plan ] t: {t} / {T} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
             f"time: {timer():.2f} | {dataset} | {exp_name} | {suffix}\n"
@@ -200,13 +186,15 @@ def main(
 
             ## save current plan
             renderer.render_plan(
-                join(write_path, f"{t}_plan.mp4"),
+                join(writer.directory, f"{t}_plan.mp4"),
                 sequence_recon,
                 env.state_vector(),
             )
 
             ## save rollout thus far
-            renderer.render_rollout(join(write_path, f"rollout.mp4"), rollout, fps=80)
+            renderer.render_rollout(
+                join(writer.directory, f"rollout.mp4"), rollout, fps=80
+            )
 
         if terminal:
             break
@@ -214,7 +202,7 @@ def main(
         observation = next_observation
 
     ## save result as a json file
-    json_path = join(write_path, "rollout.json")
+    json_path = join(writer.directory, "rollout.json")
     json_data = {
         "score": score,
         "step": t,
@@ -225,7 +213,21 @@ def main(
     json.dump(json_data, open(json_path, "w"), indent=2, sort_keys=True)
 
 
+def get_args():
+    return Parser().parse_args("plan")
+
+
+def sweep(**config):
+    args = get_args()
+    return helpers.sweep(
+        main,
+        parser=args,
+        param_space=config,
+        group_name=args.name,
+        dataset=args.dataset,
+    )
+
+
 if __name__ == "__main__":
-    args = Parser().parse_args("plan")
-    args = args.as_dict()
-    main(**args, args=args)
+    ARGS = get_args().as_dict()
+    main(**ARGS, args=ARGS, run=None)
