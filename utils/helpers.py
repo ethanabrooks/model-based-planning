@@ -1,8 +1,10 @@
+import datetime
 import os
 import pickle
 
 # import pickle5 as pickle
 import random
+from typing import Any, Callable
 import warnings
 from distutils.util import strtobool
 
@@ -11,6 +13,11 @@ import tomli
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from ray import tune
+from ray.air.integrations.wandb import setup_wandb
+import urllib
+
+from trajectory.utils import Parser
 
 from environments.parallel_envs import make_vec_envs
 
@@ -140,7 +147,6 @@ def select_action(
 def get_latent_for_policy(
     args, latent_sample=None, latent_mean=None, latent_logvar=None
 ):
-
     if (latent_sample is None) and (latent_mean is None) and (latent_logvar is None):
         return None
 
@@ -399,3 +405,32 @@ def project_name():
     with open("pyproject.toml", "rb") as f:
         pyproject = tomli.load(f)
     return pyproject["tool"]["poetry"]["name"]
+
+
+def sweep(
+    main: Callable,
+    parser: Parser,
+    param_space: dict[str, Any],
+    group_name: str,
+    dataset: str,
+):
+    parser_params = parser.as_dict()
+    timestamp = datetime.datetime.now().strftime("-%d-%m-%H:%M:%S")
+    group = f"{group_name}-{dataset}-{timestamp}"
+    project = project_name()
+
+    def train_func(sweep_params):
+        params = dict(**parser_params)
+        params.update(sweep_params)
+        run = setup_wandb(
+            config=params, group=group, project=project, rank_zero_only=False
+        )
+        print(
+            f"wandb: ️👪 View group at {run.get_project_url()}/groups/{urllib.parse.quote(group)}/workspace"
+        )
+        return main(**params, args=params, run=run)
+
+    tune.Tuner(
+        trainable=tune.with_resources(train_func, dict(gpu=1)),
+        param_space=param_space,
+    ).fit()
