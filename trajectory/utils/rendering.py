@@ -136,7 +136,7 @@ class Renderer:
         if type(dim) == int:
             dim = (dim, dim)
 
-        self.viewer.render(*dim)
+        self.viewer.render(*dim, camera_id=-1)
         data = self.viewer.read_pixels(*dim, depth=False)
         data = data[::-1, :, :]
         return data
@@ -208,7 +208,7 @@ class PointRenderer:
             actions = np.diff(states, axis=0)
 
         for state, action in zip(states, actions):
-            ax.arrow(*state, *action)
+            ax.arrow(*state, *(0.2 * action))
 
         plt.savefig(savepath + ".png")
         if wandb.run is not None:
