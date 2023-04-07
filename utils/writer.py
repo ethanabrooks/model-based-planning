@@ -26,6 +26,9 @@ class Writer:
     def directory(self):
         return self._directory
 
+    def load_artifact(self, name: str):
+        return self.run.use_artifact(name).download()
+
     def log(self, *args, **kwargs):
         self.run.log(*args, **kwargs)
 
