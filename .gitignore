@@ -21,3 +21,4 @@ ignore.py
 wandb/
 wandb-key.txt
 sweep-*.py
+ignore.*
