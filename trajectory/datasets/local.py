@@ -11,6 +11,7 @@ from torchrl.data.replay_buffers import LazyMemmapStorage
 from torchsnapshot import Snapshot
 
 import environments  # noqa: F401
+import wandb
 from environments import parallel_envs
 
 TASK_AWARE_PATTERN = re.compile(r"^TaskAware(.*)")
@@ -35,13 +36,13 @@ def get_local_datasets():
     return LOCAL_DATASETS
 
 
-def get_data_path(env: str) -> Optional[str]:
+def get_artifact_name(env: str) -> Optional[str]:
     datasets = get_local_datasets()
     return datasets.get(env)
 
 
 def is_local_dataset(env: str) -> bool:
-    return get_data_path(env) is not None
+    return get_artifact_name(env) is not None
 
 
 def load_environment(env: str) -> gym.Env:
@@ -60,15 +61,39 @@ def load_environment(env: str) -> gym.Env:
     return env
 
 
-def load_dataset(path: str, task_aware: bool) -> dict[str, np.ndarray]:
-    full_path = os.path.join(os.environ["LOCAL_DATASET_PATH"], path)
-    replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
+def load_dataset(artifact_name: str, task_aware: bool) -> dict[str, np.ndarray]:
     print(
-        f"[ datasets/local ] Loading dataset from {full_path}...", end=" ", flush=True
+        f"[ datasets/local ] Loading dataset from {artifact_name}...",
+        end=" ",
+        flush=True,
     )
-    snapshot = Snapshot(path=full_path)
-    snapshot.restore(dict(replay_buffer=replay_buffer))
+
+    # download artifact
+    if wandb.run is None:
+        api = wandb.Api()
+        artifact = api.artifact(artifact_name)
+    else:
+        artifact = wandb.run.use_artifact(artifact_name)
+    artifact_dir = artifact.download()
+
+    # load buffers
+    buffers = {}
+    for path in os.listdir(artifact_dir):
+        if re.match(r"\d+", path):
+            replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
+            snapshot = Snapshot(path=os.path.join(artifact_dir, path))
+            snapshot.restore(dict(replay_buffer=replay_buffer))
+            buffers[int(path)] = replay_buffer
+
     print("✓")
+
+    # merge buffers
+    size = sum(len(buffer) for buffer in buffers.values())
+    buffers = sorted(buffers.items(), key=lambda x: x[0])
+    replay_buffer = ReplayBuffer(LazyMemmapStorage(size, scratch_dir="/tmp"))
+    for _, buffer in buffers:
+        replay_buffer.extend(buffer[:])
+
     memmap_tensors = replay_buffer[: len(replay_buffer)]
     rename = dict(
         state="observations",

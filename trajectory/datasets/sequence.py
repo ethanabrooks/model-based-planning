@@ -70,9 +70,9 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.max_path_length = max_path_length
         self.device = device
 
-        local_data_path = local.get_data_path(name)
-        if local_data_path:
-            dataset = local.load_dataset(local_data_path, task_aware)
+        artifact_name = local.get_artifact_name(name)
+        if artifact_name:
+            dataset = local.load_dataset(artifact_name, task_aware)
         else:
             print("[ datasets/sequence ] Loading...", end=" ", flush=True)
             dataset = qlearning_dataset_with_timeouts(
