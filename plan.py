@@ -57,6 +57,7 @@ def main(
     #######################
     ######## setup ########
     #######################
+    assert any(name in dataset for name in ["SparsePointEnv", "HalfCheetahVel"])
 
     writer = Writer.make(debug, config=args, dataset=dataset, name=name, run=run)
 

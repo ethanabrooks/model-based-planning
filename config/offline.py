@@ -137,7 +137,13 @@ halfcheetah_medium_v2 = {
     },
 }
 
+sparse_point_env_train = {
+    "batch_size": 200,
+    "subsampled_sequence_length": 100,
+}
+
 SparsePointEnv_v0 = {
+    "train": sparse_point_env_train,
     "plan": {
         "renderer": "PointRenderer",
         "loadpath": "rldl/In-Context Model-Based Planning/qaweo3eu",
@@ -145,19 +151,28 @@ SparsePointEnv_v0 = {
 }
 
 TaskAwareSparsePointEnv_v0 = {
+    "train": sparse_point_env_train,
     "plan": {
         "renderer": "PointRenderer",
         "loadpath": "rldl/In-Context Model-Based Planning/1ftcg48f",
     },
 }
 
+
+half_cheetah_vel_train = {
+    "batch_size": 64,
+    "subsampled_sequence_length": 50,
+}
+
 HalfCheetahVel_v0 = {
+    "train": half_cheetah_vel_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/0pw2xylg",
     },
 }
 
 TaskAwareHalfCheetahVel_v0 = {
+    "train": half_cheetah_vel_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/d81x86fp",
     },
