@@ -137,27 +137,42 @@ halfcheetah_medium_v2 = {
     },
 }
 
+sparse_point_env_train = {
+    "batch_size": 200,
+    "subsampled_sequence_length": 100,
+}
+
 SparsePointEnv_v0 = {
+    "train": sparse_point_env_train,
     "plan": {
         "renderer": "PointRenderer",
-        "loadpath": "rldl/In-Context Model-Based Planning/cxuuozux",
+        "loadpath": "rldl/In-Context Model-Based Planning/sawhikj3",
     },
 }
 
 TaskAwareSparsePointEnv_v0 = {
+    "train": sparse_point_env_train,
     "plan": {
         "renderer": "PointRenderer",
-        "loadpath": "rldl/In-Context Model-Based Planning/1wsiujcs",
+        "loadpath": "rldl/In-Context Model-Based Planning/1p9b1m45",
     },
 }
 
+
+half_cheetah_vel_train = {
+    "batch_size": 64,
+    "subsampled_sequence_length": 50,
+}
+
 HalfCheetahVel_v0 = {
+    "train": half_cheetah_vel_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/vw1i5wf5",
     },
 }
 
 TaskAwareHalfCheetahVel_v0 = {
+    "train": half_cheetah_vel_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/q72fbi9c",
     },
