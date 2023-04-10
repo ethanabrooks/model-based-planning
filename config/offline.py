@@ -58,6 +58,7 @@ base = {
         "cdf_act": 0.6,
         "percentile": "mean",
         "max_context_transitions": 5,
+        "n_episodes": 10,
         "prefix_context": True,
         "vis_freq": 50,
         "exp_name": watch(args_to_watch),

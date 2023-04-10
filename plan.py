@@ -1,3 +1,4 @@
+import itertools
 import json
 import re
 from os.path import join
@@ -43,6 +44,7 @@ def main(
     max_context_transitions: int,
     name: str,
     n_expand: int,
+    n_episodes: int,
     percentile: float,
     plan_freq: int,
     prefix_context: int,
@@ -110,8 +112,10 @@ def main(
     ## previous (tokenized) transitions for conditioning transformer
     context = []
 
-    T = env.spec.max_episode_steps
-    for t in range(T):
+    ## episode counter
+    e = 0
+
+    for t in itertools.count():
 
         observation = preprocess_fn(observation)
 
@@ -174,12 +178,12 @@ def main(
             step=t,
         )
         print(
-            f"[ plan ] t: {t} / {T} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
+            f"[ plan ] t: {t} | e: {e} / {n_episodes} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
             f"time: {timer():.2f} | {dataset} | {exp_name} | {suffix}\n"
         )
 
         ## visualization
-        if t % vis_freq == 0 or terminal or t == T:
+        if t % vis_freq == 0 or terminal:
 
             ## save current plan
             renderer.render_plan(
@@ -194,9 +198,12 @@ def main(
             )
 
         if terminal:
-            break
-
-        observation = next_observation
+            e += 1
+            if e == n_episodes:
+                break
+            observation = env.reset()
+        else:
+            observation = next_observation
 
     ## save result as a json file
     json_path = join(writer.directory, "rollout.json")
