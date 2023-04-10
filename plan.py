@@ -57,10 +57,11 @@ def main(
     vis_freq: int,
     **_,
 ):
-    assert dataset == "TaskAwareSparsePointEnv-v0"
+    assert "SparsePointEnv-v0" in dataset
     #######################
     ######## setup ########
     #######################
+    assert any(name in dataset for name in ["SparsePointEnv", "HalfCheetahVel"])
 
     writer = Writer.make(
         debug, config=args, dataset=dataset, name=name, notes=notes, run=run
