@@ -410,10 +410,11 @@ TAGS = [
     "multi-replay-buffers",
     "extend-content-transitions",
     "mask-terminations",
-    "train-prefixes",
     "pad-model-inputs",
     "single-task-per-buffer",
     "multi-episode-contexts",
+    "train-prefixes",
+    "extended-context",
 ]
 
 
