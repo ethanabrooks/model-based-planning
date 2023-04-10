@@ -188,9 +188,7 @@ class PointRenderer:
         self.observation_dim = observation_dim
         self.action_dim = np.prod(self.env.action_space.shape)
 
-    def renders(
-        self, savepath: str, X: np.ndarray, actions: Optional[np.ndarray] = None
-    ):
+    def renders(self, savepath: str, X: np.ndarray):
         fig, ax = plt.subplots()
 
         assert X.ndim == 2
@@ -204,15 +202,14 @@ class PointRenderer:
         else:
             states = X
 
-        # plot the states
-        ax.plot(*states.T, "-o")
+        xs, ys = states.T
 
-        # plot the actions as arrows
-        if actions is None:
-            actions = np.diff(states, axis=0)
+        # calculate the u and v components of the vectors
+        u = np.diff(xs)
+        v = np.diff(ys)
 
-        for state, action in zip(states, actions):
-            ax.arrow(*state, *(0.2 * action))
+        # plot a vector field with quiver
+        plt.quiver(xs[:-1], ys[:-1], u, v, angles="xy", scale_units="xy", scale=1)
 
         plt.savefig(savepath + ".png")
         if wandb.run is not None:
@@ -235,7 +232,7 @@ class PointRenderer:
         sequence = to_np(sequence)
 
         states, actions, *_ = split(sequence, self.observation_dim, self.action_dim)
-        self.renders(savepath, states, actions)
+        self.renders(savepath, states)
 
     def render_rollout(self, savepath, states, **video_kwargs):
         if type(states) is list:
