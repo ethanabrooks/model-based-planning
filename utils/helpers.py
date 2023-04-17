@@ -406,7 +406,7 @@ def project_name():
     return pyproject["tool"]["poetry"]["name"]
 
 
-TAGS = ["single-multi-task-history"]
+TAGS = ["multi-single-task-histories"]
 
 
 def sweep(

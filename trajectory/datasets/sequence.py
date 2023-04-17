@@ -150,7 +150,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         ).cumsum(axis=1)
         discount_array = np.triu(discount**exponents)
 
-        for i, (start, end) in enumerate(tqdm(episode_boundaries.T[:-1])):
+        for i, (start, end) in enumerate(tqdm(episode_boundaries.T)):
             [ep_rewards] = rewards[start:end].T
             # ep_rewards = np.pad(ep_rewards, (0, 1), constant_values=penalty or 0)
             l = ep_rewards.size

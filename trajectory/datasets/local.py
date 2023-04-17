@@ -8,11 +8,10 @@ import yaml
 from torchrl.data import ReplayBuffer
 from torchrl.data.replay_buffers import LazyMemmapStorage
 from torchsnapshot import Snapshot
-import wandb
 
 import environments  # noqa: F401
+import wandb
 from environments import parallel_envs
-
 
 TASK_AWARE_PATTERN = re.compile(r"^TaskAware(.*)")
 
@@ -60,25 +59,25 @@ def load_environment(env: str) -> gym.Env:
 
 
 def load_dataset(artifact_name: str, task_aware: bool) -> dict[str, np.ndarray]:
-    print(
-        f"[ datasets/local ] Loading dataset from {artifact_name}...",
-        end=" ",
-        flush=True,
-    )
-
     # download artifact
     api = wandb.Api()
     artifact = api.artifact(artifact_name)
     artifact_dir = artifact.download()
 
+    print(
+        f"[ datasets/local ] Loading dataset from {artifact_dir}...",
+        end=" ",
+        flush=True,
+    )
+
     # load buffers
     buffers = {}
-    for path in os.listdir(artifact_dir):
+    for path in os.listdir(f"{artifact_dir}/0"):
         if re.match(r"\d+", path):
             replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
-            snapshot = Snapshot(path=os.path.join(artifact_dir, path))
-            snapshot.restore(dict(replay_buffer=replay_buffer))
-            buffers[int(path)] = replay_buffer
+            buffers[path] = replay_buffer
+    snapshot = Snapshot(path=artifact_dir)
+    snapshot.restore(buffers)
 
     print("✓")
 
@@ -87,7 +86,9 @@ def load_dataset(artifact_name: str, task_aware: bool) -> dict[str, np.ndarray]:
     buffers = sorted(buffers.items(), key=lambda x: x[0])
     replay_buffer = ReplayBuffer(LazyMemmapStorage(size, scratch_dir="/tmp"))
     for _, buffer in buffers:
-        replay_buffer.extend(buffer[:])
+        tensordict = buffer[:]
+        tensordict.set_at_("done", True, -1)  # terminate last transition per task
+        replay_buffer.extend(tensordict)
 
     memmap_tensors = replay_buffer[: len(replay_buffer)]
     rename = dict(
