@@ -53,21 +53,15 @@ class SequenceDataset(torch.utils.data.Dataset):
         sequence_length=250,
         step=10,
         discount=0.99,
-        max_path_length=1000,
         penalty=None,
         device="cuda:0",
     ):
-        print(
-            f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
-        )
-
         task_aware = local.is_task_aware(env)
         env = local.get_env_name(env)
         env = load_environment(env)
         name = env.spec.id
         self.sequence_length = sequence_length
         self.step = step
-        self.max_path_length = max_path_length
         self.device = device
 
         artifact_name = local.get_artifact_name(name)
@@ -92,6 +86,22 @@ class SequenceDataset(torch.utils.data.Dataset):
         rewards = dataset["rewards"]
         terminals = dataset["terminals"]
         realterminals = dataset["realterminals"]
+        terminals = realterminals
+
+        episode_boundaries, _ = np.where(realterminals)
+        episode_boundaries = np.stack(
+            [
+                np.pad(1 + episode_boundaries, (1, 0)),
+                np.pad(1 + episode_boundaries, (0, 1)),
+            ]
+        )
+        episode_boundaries[1, -1] = len(realterminals)
+        episode_lengths = np.diff(episode_boundaries, axis=0)
+        self.max_path_length = max_path_length = np.max(episode_lengths) + 1
+
+        print(
+            f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
+        )
 
         self.observations_raw = observations
         self.actions_raw = actions
@@ -116,7 +126,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         print("✓")
 
         self.discount = discount
-        self.discounts = (discount ** np.arange(self.max_path_length))[:, None]
+        self.discounts = (discount ** np.arange(max_path_length))[:, None]
 
         ## [ n_paths x max_path_length x 1 ]
         self.values_segmented = np.zeros(self.rewards_segmented.shape)
