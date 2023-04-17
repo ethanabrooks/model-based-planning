@@ -2,6 +2,7 @@ import pdb
 
 import numpy as np
 import torch
+from tqdm import tqdm
 
 from trajectory.datasets import local
 from trajectory.utils import discretization
@@ -131,7 +132,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         ## [ n_paths x max_path_length x 1 ]
         self.values_segmented = np.zeros(self.rewards_segmented.shape)
 
-        for t in range(max_path_length):
+        for t in tqdm(range(max_path_length)):
             ## [ n_paths x 1 ]
             V = (self.rewards_segmented[:, t + 1 :] * self.discounts[: -t - 1]).sum(
                 axis=1
@@ -142,6 +143,24 @@ class SequenceDataset(torch.utils.data.Dataset):
         values_raw = self.values_segmented.squeeze(axis=-1).reshape(-1)
         values_mask = ~self.termination_flags.reshape(-1)
         self.values_raw = values_raw[values_mask, None]
+
+        values_segmented = np.zeros(self.rewards_segmented.shape)
+        exponents = np.triu(
+            np.ones((max_path_length, max_path_length), dtype=int), 1
+        ).cumsum(axis=1)
+        discount_array = np.triu(discount**exponents)
+
+        for i, (start, end) in enumerate(tqdm(episode_boundaries.T[:-1])):
+            [ep_rewards] = rewards[start:end].T
+            # ep_rewards = np.pad(ep_rewards, (0, 1), constant_values=penalty or 0)
+            l = ep_rewards.size
+            discounts = discount_array[:l, :l]
+            ep_values = discounts @ ep_rewards
+            values_segmented[i, : l - 1] = ep_values[1:, None]
+
+        assert np.allclose(self.values_segmented, values_segmented)
+        self.values_segmented = values_segmented
+
         self.joined_raw = np.concatenate(
             [self.joined_raw, self.rewards_raw, self.values_raw], axis=-1
         )
