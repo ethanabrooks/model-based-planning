@@ -129,7 +129,16 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.rewards_segmented, *_ = segment(
             self.rewards_raw, terminals, max_path_length
         )
-        realterminals_segmented, *_ = segment(realterminals, terminals, max_path_length)
+        terminals = dataset["terminals"][:cutoff]
+        joined_segmented, termination_flags, path_lengths = segment(
+            self.joined_raw, terminals, get_max_path_length(terminals)
+        )
+        rewards_segmented, *_ = segment(
+            self.rewards_raw, terminals, get_max_path_length(terminals)
+        )
+        realterminals_segmented, *_ = segment(
+            realterminals, terminals, get_max_path_length(terminals)
+        )
         print("✓")
 
         ## add missing final termination
@@ -156,7 +165,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         values_mask = ~self.termination_flags.reshape(-1)
         self.values_raw = values_raw[values_mask, None]
 
-        values_segmented = np.zeros(self.rewards_segmented.shape)
+        values_segmented = np.zeros(rewards_segmented.shape)
         max_ep_len = get_max_path_length(realterminals)
         exponents = np.triu(np.ones((max_ep_len, max_ep_len), dtype=int), 1).cumsum(
             axis=1
@@ -170,15 +179,28 @@ class SequenceDataset(torch.utils.data.Dataset):
         row_change = np.diff(np.pad(rows, (1, 0))) > 0
         ep_starts[row_change] = 0
 
-        for row, start, end in tqdm(np.stack([rows, ep_starts, ep_ends], axis=1)):
+        for i, (row, start, end) in enumerate(
+            tqdm(np.stack([rows, ep_starts, ep_ends], axis=1))
+        ):
             assert start < end
-            [ep_rewards] = self.rewards_segmented[row, start:end].T
+            [ep_rewards] = rewards_segmented[row, start:end].T
             l = ep_rewards.size
             discounts = discount_array[:l, :l]
             ep_values = discounts @ ep_rewards
             values_segmented[row, start : end - 1] = ep_values[1:, None]
+            assert np.allclose(
+                rewards_segmented[row, start : end - 1],
+                self.rewards_segmented[i, : end - 1 - start],
+            )
+            assert np.allclose(
+                joined_segmented[row, start : end - 1],
+                self.joined_segmented[i, : end - 1 - start],
+            )
+            assert np.allclose(
+                values_segmented[row, start : end - 1],
+                self.values_segmented[i, : end - 1 - start],
+            )
 
-        assert np.allclose(self.values_segmented, values_segmented)
         self.values_segmented = values_segmented
 
         self.joined_raw = np.concatenate(
