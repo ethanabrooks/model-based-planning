@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Optional
 
@@ -60,12 +61,6 @@ def load_environment(env: str) -> gym.Env:
 
 
 def load_dataset(artifact_name: str, task_aware: bool) -> dict[str, np.ndarray]:
-    print(
-        f"[ datasets/local ] Loading dataset from {artifact_name}...",
-        end=" ",
-        flush=True,
-    )
-
     # download artifact
     if wandb.run is None:
         api = wandb.Api()
@@ -74,12 +69,35 @@ def load_dataset(artifact_name: str, task_aware: bool) -> dict[str, np.ndarray]:
         artifact = wandb.run.use_artifact(artifact_name)
     artifact_dir = artifact.download()
 
+    print(
+        f"[ datasets/local ] Loading dataset from {artifact_dir}...",
+        end=" ",
+        flush=True,
+    )
+
     # load buffers
-    replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
+    buffers = {}
+    for path in os.listdir(f"{artifact_dir}/0"):
+        if re.match(r"\d+", path):
+            replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
+            buffers[path] = replay_buffer
     snapshot = Snapshot(path=artifact_dir)
-    snapshot.restore(dict(replay_buffer=replay_buffer))
+    snapshot.restore(buffers)
 
     print("✓")
+
+    # merge buffers
+    size = sum(len(buffer) for buffer in buffers.values())
+    buffers = sorted(buffers.items(), key=lambda x: x[0])
+    replay_buffer = ReplayBuffer(LazyMemmapStorage(size, scratch_dir="/tmp"))
+    for _, buffer in buffers:
+        tensordict = buffer[:].squeeze(1)
+        [done_mdp] = tensordict["done_mdp"].T
+        (*_, last) = done_mdp.nonzero()
+        tensordict.set_at_(
+            "done", True, last.item()
+        )  # terminate last transition per task
+        replay_buffer.extend(tensordict)
 
     memmap_tensors = replay_buffer[: len(replay_buffer)]
     rename = dict(
