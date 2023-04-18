@@ -407,6 +407,9 @@ def project_name():
     return pyproject["tool"]["poetry"]["name"]
 
 
+TAGS = ["single-multi-task-history"]
+
+
 def sweep(
     main: Callable,
     parser: Parser,
@@ -423,7 +426,7 @@ def sweep(
         params = dict(**parser_params)
         params.update(sweep_params)
         run = setup_wandb(
-            config=params, group=group, project=project, rank_zero_only=False
+            config=params, group=group, project=project, rank_zero_only=False, tags=TAGS
         )
         print(
             f"wandb: ️👪 View group at {run.get_project_url()}/groups/{urllib.parse.quote(group)}/workspace"

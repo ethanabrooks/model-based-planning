@@ -8,7 +8,7 @@ import torch
 import wandb
 from wandb.sdk.wandb_run import Run
 
-from utils.helpers import project_name
+from utils.helpers import TAGS, project_name
 
 
 class Writer:
@@ -17,7 +17,7 @@ class Writer:
     ) -> None:
         name = f"{name}-{dataset}"
         if run is None:
-            wandb.init(config=config, name=name, project=project_name())
+            wandb.init(config=config, name=name, project=project_name(), tags=TAGS)
             run = wandb.run
         self.run = run
         self._directory = run.dir
