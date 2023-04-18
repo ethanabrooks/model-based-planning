@@ -160,11 +160,6 @@ class SequenceDataset(torch.utils.data.Dataset):
             )
             self.values_segmented[:, t] = V
 
-        ## add (r, V) to `joined`
-        values_raw = self.values_segmented.squeeze(axis=-1).reshape(-1)
-        values_mask = ~self.termination_flags.reshape(-1)
-        self.values_raw = values_raw[values_mask, None]
-
         values_segmented = np.zeros(rewards_segmented.shape)
         max_ep_len = get_max_path_length(realterminals)
         exponents = np.triu(np.ones((max_ep_len, max_ep_len), dtype=int), 1).cumsum(
@@ -201,7 +196,16 @@ class SequenceDataset(torch.utils.data.Dataset):
                 self.values_segmented[i, : end - 1 - start],
             )
 
+        self.joined_segmented = joined_segmented
+        self.termination_flags = termination_flags
+        self.path_lengths = path_lengths
+        self.rewards_segmented = rewards_segmented
         self.values_segmented = values_segmented
+
+        ## add (r, V) to `joined`
+        values_raw = self.values_segmented.squeeze(axis=-1).reshape(-1)
+        values_mask = ~self.termination_flags.reshape(-1)
+        self.values_raw = values_raw[values_mask, None]
 
         self.joined_raw = np.concatenate(
             [self.joined_raw, self.rewards_raw, self.values_raw], axis=-1
