@@ -87,7 +87,6 @@ class SequenceDataset(torch.utils.data.Dataset):
         rewards = dataset["rewards"]
         terminals = dataset["terminals"]
         realterminals = dataset["realterminals"]
-        terminals = realterminals
 
         def get_max_path_length(terms):
             ends, _ = np.where(terms)
@@ -123,6 +122,9 @@ class SequenceDataset(torch.utils.data.Dataset):
         realterminals_segmented, *_ = segment(
             realterminals, terminals, max_path_length, "terminals"
         )
+        realterminals_segmented, *_ = segment(
+            realterminals, terminals, max_path_length, "realterminals"
+        )
         print("✓")
 
         ## add missing final termination
@@ -135,20 +137,6 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.discounts = (discount ** np.arange(max_path_length))[:, None]
 
         ## [ n_paths x max_path_length x 1 ]
-        self.values_segmented = np.zeros(self.rewards_segmented.shape)
-
-        for t in tqdm(range(max_path_length)):
-            ## [ n_paths x 1 ]
-            V = (self.rewards_segmented[:, t + 1 :] * self.discounts[: -t - 1]).sum(
-                axis=1
-            )
-            self.values_segmented[:, t] = V
-
-        ## add (r, V) to `joined`
-        values_raw = self.values_segmented.squeeze(axis=-1).reshape(-1)
-        values_mask = ~self.termination_flags.reshape(-1)
-        self.values_raw = values_raw[values_mask, None]
-
         values_segmented = np.zeros(self.rewards_segmented.shape)
         max_ep_len = get_max_path_length(realterminals)
         exponents = np.triu(np.ones((max_ep_len, max_ep_len), dtype=int), 1).cumsum(
@@ -163,7 +151,9 @@ class SequenceDataset(torch.utils.data.Dataset):
         row_change = np.diff(np.pad(rows, (1, 0))) > 0
         ep_starts[row_change] = 0
 
-        for row, start, end in tqdm(np.stack([rows, ep_starts, ep_ends], axis=1)):
+        for i, (row, start, end) in enumerate(
+            tqdm(np.stack([rows, ep_starts, ep_ends], axis=1))
+        ):
             assert start < end
             [ep_rewards] = self.rewards_segmented[row, start:end].T
             l = ep_rewards.size
@@ -171,8 +161,12 @@ class SequenceDataset(torch.utils.data.Dataset):
             ep_values = discounts @ ep_rewards
             values_segmented[row, start : end - 1] = ep_values[1:, None]
 
-        assert np.allclose(self.values_segmented, values_segmented)
         self.values_segmented = values_segmented
+
+        ## add (r, V) to `joined`
+        values_raw = self.values_segmented.squeeze(axis=-1).reshape(-1)
+        values_mask = ~self.termination_flags.reshape(-1)
+        self.values_raw = values_raw[values_mask, None]
 
         self.joined_raw = np.concatenate(
             [self.joined_raw, self.rewards_raw, self.values_raw], axis=-1
