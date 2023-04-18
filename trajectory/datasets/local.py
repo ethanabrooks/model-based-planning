@@ -47,7 +47,7 @@ def load_environment(env: str) -> gym.Env:
         env,
         seed=None,
         rank=None,
-        episodes_per_task=1,
+        episodes_per_task=None,
         tasks=None,
         add_done_info=None,
     )
