@@ -87,6 +87,15 @@ class SequenceDataset(torch.utils.data.Dataset):
         rewards = dataset["rewards"]
         terminals = dataset["terminals"]
         realterminals = dataset["realterminals"]
+
+        cutoff = 315000
+        observations = observations[:cutoff]
+        actions = actions[:cutoff]
+        next_observations = next_observations[:cutoff]
+        rewards = rewards[:cutoff]
+        terminals = terminals[:cutoff]
+        realterminals = realterminals[:cutoff]
+
         terminals = realterminals
 
         def get_max_path_length(terms):
