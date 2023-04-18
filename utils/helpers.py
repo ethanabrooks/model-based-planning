@@ -410,6 +410,7 @@ TAGS = [
     "multi-replay-buffers",
     "single-task-histories",
     "512-tasks",
+    "multi-episode-contexts",
 ]
 
 
