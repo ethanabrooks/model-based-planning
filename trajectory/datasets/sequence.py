@@ -88,14 +88,6 @@ class SequenceDataset(torch.utils.data.Dataset):
         terminals = dataset["terminals"]
         realterminals = dataset["realterminals"]
 
-        cutoff = 315000
-        observations = observations[:cutoff]
-        actions = actions[:cutoff]
-        next_observations = next_observations[:cutoff]
-        rewards = rewards[:cutoff]
-        terminals = terminals[:cutoff]
-        realterminals = realterminals[:cutoff]
-
         def get_max_path_length(terms):
             ends, _ = np.where(terms)
             starts = np.pad(ends + 1, (1, 0))
