@@ -109,6 +109,8 @@ class PointEnv(Env):
     ):
 
         num_episodes = args.max_rollouts_per_task
+        if num_episodes is None:
+            num_episodes = 1
 
         # --- initialise things we want to keep track of ---
 
@@ -144,7 +146,7 @@ class PointEnv(Env):
             hidden_state = None
 
         # keep track of what task we're in and the position of the cheetah
-        pos = [[] for _ in range(args.max_rollouts_per_task)]
+        pos = [[] for _ in range(num_episodes)]
         start_pos = state
 
         for episode_idx in range(num_episodes):

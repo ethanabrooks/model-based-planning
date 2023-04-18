@@ -46,7 +46,7 @@ class VariBadWrapper(gym.Wrapper):
             self.env.unwrapped.num_states = None
 
         if add_done_info is None:
-            if episodes_per_task > 1:
+            if episodes_per_task is not None and episodes_per_task > 1:
                 self.add_done_info = True
             else:
                 self.add_done_info = False
@@ -76,18 +76,6 @@ class VariBadWrapper(gym.Wrapper):
 
         # count timesteps in BAMDP
         self.step_count_bamdp = 0.0
-        # the horizon in the BAMDP is the one in the MDP times the number of episodes per task,
-        # and if we train a policy that maximises the return over all episodes
-        # we add transitions to the reset start in-between episodes
-        try:
-            self.horizon_bamdp = self.episodes_per_task * self.env._max_episode_steps
-        except AttributeError:
-            self.horizon_bamdp = (
-                self.episodes_per_task * self.env.unwrapped._max_episode_steps
-            )
-
-        # add dummy timesteps in-between episodes for resetting the MDP
-        self.horizon_bamdp += self.episodes_per_task - 1
 
         # this tells us if we have reached the horizon in the underlying MDP
         self.done_mdp = True
