@@ -146,7 +146,7 @@ SparsePointEnv_v0 = {
     "train": sparse_point_env_train,
     "plan": {
         "renderer": "PointRenderer",
-        "loadpath": "rldl/In-Context Model-Based Planning/qaweo3eu",
+        "loadpath": "rldl/In-Context Model-Based Planning/4ld4fvfx",
     },
 }
 
@@ -154,7 +154,7 @@ TaskAwareSparsePointEnv_v0 = {
     "train": sparse_point_env_train,
     "plan": {
         "renderer": "PointRenderer",
-        "loadpath": "rldl/In-Context Model-Based Planning/1ftcg48f",
+        "loadpath": "rldl/In-Context Model-Based Planning/3o76hppm",
     },
 }
 
@@ -167,14 +167,14 @@ half_cheetah_vel_train = {
 HalfCheetahVel_v0 = {
     "train": half_cheetah_vel_train,
     "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/0pw2xylg",
+        "loadpath": "rldl/In-Context Model-Based Planning/2fmepun3",
     },
 }
 
 TaskAwareHalfCheetahVel_v0 = {
     "train": half_cheetah_vel_train,
     "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/d81x86fp",
+        "loadpath": "rldl/In-Context Model-Based Planning/9hs4as28",
     },
 }
 
