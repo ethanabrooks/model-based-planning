@@ -89,7 +89,7 @@ def load_dataset(artifact_name: str, task_aware: bool) -> dict[str, np.ndarray]:
     buffers = sorted(buffers.items(), key=lambda x: x[0])
     replay_buffer = ReplayBuffer(LazyMemmapStorage(size, scratch_dir="/tmp"))
     for _, buffer in buffers:
-        tensordict = buffer[:].squeeze(1)
+        tensordict = buffer[:]
         [done_mdp] = tensordict["done_mdp"].T
         (*_, last) = done_mdp.nonzero()
         tensordict.set_at_(
