@@ -54,6 +54,7 @@ def main(
     vis_freq: int,
     **_,
 ):
+    assert dataset == "TaskAwareSparsePointEnv-v0"
     #######################
     ######## setup ########
     #######################
