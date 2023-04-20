@@ -406,7 +406,7 @@ def project_name():
     return pyproject["tool"]["poetry"]["name"]
 
 
-TAGS = ["single-multi-task-history", "single-replay-buffer", "new-format"]
+TAGS = ["multi-replay-buffers"]
 
 
 def sweep(
