@@ -1,3 +1,4 @@
+import math
 import os
 
 import torch
@@ -146,8 +147,8 @@ def main(
     #######################
 
     ## scale number of epochs to keep number of updates constant
-    n_epochs = int(1e6 / len(dataset) * n_epochs_ref)
-    save_freq = max(1, int(n_epochs // n_saves))
+    n_epochs = math.ceil(1e6 / len(dataset) * n_epochs_ref)
+    save_freq = math.ceil(n_epochs / n_saves)
 
     for epoch in range(n_epochs):
         print(f"\nEpoch: {epoch} / {n_epochs} | {dataset} | {exp_name}")
