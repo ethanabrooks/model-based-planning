@@ -1,3 +1,4 @@
+import itertools
 import json
 import re
 import time
@@ -119,8 +120,7 @@ def main(
     ## previous (tokenized) transitions for conditioning transformer
     context = []
 
-    T = env.spec.max_episode_steps
-    for t in range(T):
+    for t in itertools.count():
         observation = preprocess_fn(observation)
 
         if t % plan_freq == 0:
@@ -182,12 +182,12 @@ def main(
             step=t,
         )
         print(
-            f"[ plan ] t: {t} / {T} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
+            f"[ plan ] t: {t} / {env.spec.max_episode_steps} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
             f"time: {timer():.2f} | {dataset} | {exp_name} | {suffix}\n"
         )
 
         ## visualization
-        if t % vis_freq == 0 or terminal or t == T:
+        if t % vis_freq == 0 or terminal:
             ## save current plan
             renderer.render_plan(
                 join(writer.directory, f"{t}_plan.mp4"),
