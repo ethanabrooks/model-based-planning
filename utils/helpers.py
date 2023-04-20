@@ -412,6 +412,7 @@ TAGS = [
     "mask-terminations",
     "train-prefixes",
     "pad-model-inputs",
+    "single-task-per-buffer",
 ]
 
 
