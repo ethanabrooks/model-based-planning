@@ -1,4 +1,3 @@
-import os
 import re
 from typing import Optional
 
@@ -76,22 +75,11 @@ def load_dataset(artifact_name: str, task_aware: bool) -> dict[str, np.ndarray]:
     artifact_dir = artifact.download()
 
     # load buffers
-    buffers = {}
-    for path in os.listdir(artifact_dir):
-        if re.match(r"\d+", path):
-            replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
-            snapshot = Snapshot(path=os.path.join(artifact_dir, path))
-            snapshot.restore(dict(replay_buffer=replay_buffer))
-            buffers[int(path)] = replay_buffer
+    replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
+    snapshot = Snapshot(path=artifact_dir)
+    snapshot.restore(dict(replay_buffer=replay_buffer))
 
     print("✓")
-
-    # merge buffers
-    size = sum(len(buffer) for buffer in buffers.values())
-    buffers = sorted(buffers.items(), key=lambda x: x[0])
-    replay_buffer = ReplayBuffer(LazyMemmapStorage(size, scratch_dir="/tmp"))
-    for _, buffer in buffers:
-        replay_buffer.extend(buffer[:])
 
     memmap_tensors = replay_buffer[: len(replay_buffer)]
     rename = dict(
