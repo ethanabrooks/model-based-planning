@@ -49,9 +49,9 @@ def load_environment(env: str) -> gym.Env:
         env,
         seed=None,
         rank=None,
-        episodes_per_task=None,
+        episodes_per_task=10,
         tasks=None,
-        add_done_info=None,
+        add_done_info=False,
     )
     env = thunk()
     env = NormalizedScoreWrapper(env)
