@@ -6,7 +6,6 @@ import mujoco_py as mjc
 import numpy as np
 
 import wandb
-from trajectory.datasets.local import TaskWrapper
 
 from ..datasets import get_preprocess_fn, load_environment
 from .arrays import to_np
@@ -148,7 +147,7 @@ class Renderer:
             images.append(img)
         return np.stack(images, axis=0)
 
-    def render_plan(self, savepath, sequence, state, fps=30):
+    def render_plan(self, savepath, sequence, state, env, fps=30):
         """
         state : np.array[ observation_dim ]
         sequence : np.array[ horizon x transition_dim ]
@@ -167,8 +166,8 @@ class Renderer:
         rollout_states = rollout_from_state(self.env, state, actions)
 
         videos = [
-            self.renders(sequence[:, : self.observation_dim]),
-            self.renders(rollout_states),
+            self.renders(sequence[:, : self.observation_dim], env),
+            self.renders(rollout_states, env),
         ]
 
         save_videos(savepath, *videos, fps=fps)
@@ -184,28 +183,47 @@ class PointRenderer:
         self.observation_dim = observation_dim
         self.action_dim = np.prod(self.env.action_space.shape)
 
-    def renders(self, savepath: str, X: np.ndarray):
-        fig, ax = plt.subplots()
+    def renders(self, savepath: str, states: np.ndarray, env):
+        figsize = (5.5, 4)
+        fig, axis = plt.subplots(1, 1, figsize=figsize)
+        xlim = (-1.3, 1.3)
 
-        assert X.ndim == 2
-        if isinstance(self.env, TaskWrapper):
-            states, tasks = np.split(X, 2, -1)
-            task, *_ = tasks
-            assert np.all(tasks == task[None])
+        ## Necessary because of insane circular import error
+        from environments.navigation.point_robot import semi_circle_goal_sampler
 
-            # plot the task using * notation to unpack the task array
-            ax.plot(*task, "r*")
+        if env.unwrapped.goal_sampler == semi_circle_goal_sampler:
+            ylim = (-0.3, 1.3)
         else:
-            states = X
+            ylim = (-1.3, 1.3)
+        curr_task = env.get_task()
 
-        xs, ys = states.T
+        # plot goal
+        axis.scatter(*curr_task, marker="x", color="k", s=50)
+        # radius where we get reward
+        if hasattr(env, "goal_radius"):
+            circle1 = plt.Circle(
+                curr_task, env.goal_radius, color="c", alpha=0.2, edgecolor="none"
+            )
+            plt.gca().add_artist(circle1)
 
-        # calculate the u and v components of the vectors
-        u = np.diff(xs)
-        v = np.diff(ys)
+        # plot (semi-)circle
+        r = 1.0
+        if env.unwrapped.goal_sampler == semi_circle_goal_sampler:
+            angle = np.linspace(0, np.pi, 100)
+        else:
+            angle = np.linspace(0, 2 * np.pi, 100)
+        goal_range = r * np.array((np.cos(angle), np.sin(angle)))
+        plt.plot(goal_range[0], goal_range[1], "k--", alpha=0.1)
 
-        # plot a vector field with quiver
-        plt.quiver(xs[:-1], ys[:-1], u, v, angles="xy", scale_units="xy", scale=1)
+        # plot trajectory
+        axis.plot(states[:, 0], states[:, 1], "-")
+        axis.scatter(*states[0, :2], marker=".", s=50)
+
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.xticks([])
+        plt.yticks([])
+        plt.tight_layout()
 
         plt.savefig(savepath + ".png")
         if wandb.run is not None:
@@ -213,7 +231,7 @@ class PointRenderer:
         plt.close()
         print(f"[ attentive/utils/visualization ] Saved to: {savepath}")
 
-    def render_plan(self, savepath, sequence, state):
+    def render_plan(self, savepath, sequence, state, env):
         """
         state : np.array[ observation_dim ]
         sequence : np.array[ horizon x transition_dim ]
@@ -228,12 +246,12 @@ class PointRenderer:
         sequence = to_np(sequence)
 
         states, actions, *_ = split(sequence, self.observation_dim, self.action_dim)
-        self.renders(savepath, states)
+        self.renders(savepath, states, env)
 
-    def render_rollout(self, savepath, states, **video_kwargs):
+    def render_rollout(self, savepath, states, env, **video_kwargs):
         if type(states) is list:
             states = np.stack(states, axis=0)
-        self.renders(savepath, states)
+        self.renders(savepath, states, env)
 
 
 # --------------------------------- planning callbacks ---------------------------------#

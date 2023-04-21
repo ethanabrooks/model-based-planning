@@ -193,11 +193,12 @@ def main(
                 join(writer.directory, f"{t}_plan.mp4"),
                 sequence_recon,
                 env.state_vector(),
+                env,
             )
 
             ## save rollout thus far
             renderer.render_rollout(
-                join(writer.directory, "rollout.mp4"), rollout, fps=80
+                join(writer.directory, "rollout.mp4"), rollout, env, fps=80
             )
 
         if terminal:
