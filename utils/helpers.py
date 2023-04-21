@@ -411,6 +411,7 @@ TAGS = [
     "extend-content-transitions",
     "mask-terminations",
     "train-prefixes",
+    "pad-model-inputs",
 ]
 
 
