@@ -164,7 +164,6 @@ def main(
                 join(writer.directory, f"{t}_plan.mp4"),
                 sequence_recon,
                 env.state_vector(),
-                env,
             )
 
         ## [ action_dim ] index into sampled trajectory to grab first action
@@ -207,7 +206,7 @@ def main(
         if t % vis_freq == 0 or terminal or terminal_mdp:
             ## save rollout thus far
             renderer.render_rollout(
-                join(writer.directory, "rollout.mp4"), rollout, env, fps=80
+                join(writer.directory, "rollout.mp4"), rollout, fps=80
             )
 
         if terminal_mdp:

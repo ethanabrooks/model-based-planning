@@ -148,7 +148,7 @@ class Renderer:
             images.append(img)
         return np.stack(images, axis=0)
 
-    def render_plan(self, savepath, sequence, state, env, fps=30):
+    def render_plan(self, savepath, sequence, state, fps=30):
         """
         state : np.array[ observation_dim ]
         sequence : np.array[ horizon x transition_dim ]
@@ -167,8 +167,8 @@ class Renderer:
         rollout_states = rollout_from_state(self.env, state, actions)
 
         videos = [
-            self.renders(sequence[:, : self.observation_dim], env),
-            self.renders(rollout_states, env),
+            self.renders(sequence[:, : self.observation_dim]),
+            self.renders(rollout_states),
         ]
 
         save_videos(savepath, *videos, fps=fps)
@@ -184,7 +184,7 @@ class PointRenderer:
         self.observation_dim = observation_dim
         self.action_dim = np.prod(self.env.action_space.shape)
 
-    def renders(self, savepath: str, states: np.ndarray, env):
+    def renders(self, savepath: str, states: np.ndarray):
         assert states.ndim == 2
         figsize = (5.5, 4)
         fig, axis = plt.subplots(1, 1, figsize=figsize)
@@ -193,11 +193,11 @@ class PointRenderer:
         ## Necessary because of insane circular import error
         from environments.navigation.point_robot import semi_circle_goal_sampler
 
-        if env.unwrapped.goal_sampler == semi_circle_goal_sampler:
+        if self.env.unwrapped.goal_sampler == semi_circle_goal_sampler:
             ylim = (-0.3, 1.3)
         else:
             ylim = (-1.3, 1.3)
-        curr_task = env.get_task()
+        curr_task = self.env.get_task()
 
         # plot goal
         axis.scatter(*curr_task, marker="x", color="k", s=50)
@@ -209,15 +209,15 @@ class PointRenderer:
                 axis.plot(*task, marker="*", color="r")  # plot imagined/observed tasks
 
         # radius where we get reward
-        if hasattr(env, "goal_radius"):
+        if hasattr(self.env, "goal_radius"):
             circle1 = plt.Circle(
-                curr_task, env.goal_radius, color="c", alpha=0.2, edgecolor="none"
+                curr_task, self.env.goal_radius, color="c", alpha=0.2, edgecolor="none"
             )
             plt.gca().add_artist(circle1)
 
         # plot (semi-)circle
         r = 1.0
-        if env.unwrapped.goal_sampler == semi_circle_goal_sampler:
+        if self.env.unwrapped.goal_sampler == semi_circle_goal_sampler:
             angle = np.linspace(0, np.pi, 100)
         else:
             angle = np.linspace(0, 2 * np.pi, 100)
@@ -240,7 +240,7 @@ class PointRenderer:
         plt.close()
         print(f"[ attentive/utils/visualization ] Saved to: {savepath}")
 
-    def render_plan(self, savepath, sequence, state, env):
+    def render_plan(self, savepath, sequence, state):
         """
         state : np.array[ observation_dim ]
         sequence : np.array[ horizon x transition_dim ]
@@ -255,12 +255,12 @@ class PointRenderer:
         sequence = to_np(sequence)
 
         states, actions, *_ = split(sequence, self.observation_dim, self.action_dim)
-        self.renders(savepath, states, env)
+        self.renders(savepath, states)
 
-    def render_rollout(self, savepath, states, env, **video_kwargs):
+    def render_rollout(self, savepath, states, **video_kwargs):
         if type(states) is list:
             states = np.stack(states, axis=0)
-        self.renders(savepath, states, env)
+        self.renders(savepath, states)
 
 
 # --------------------------------- planning callbacks ---------------------------------#
