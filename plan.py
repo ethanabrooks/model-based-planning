@@ -123,6 +123,8 @@ def main(
     ## previous (tokenized) transitions for conditioning transformer
     context = []
 
+    terminal_mdp = True  # trigger visualization on first timestep
+
     for t in itertools.count():
         observation = preprocess_fn(observation)
 
@@ -154,6 +156,16 @@ def main(
 
         ## [ horizon x transition_dim ] convert sampled tokens to continuous trajectory
         sequence_recon = discretizer.reconstruct(sequence)
+
+        ## visualization
+        if t % vis_freq == 0 or terminal_mdp:
+            ## save current plan
+            renderer.render_plan(
+                join(writer.directory, f"{t}_plan.mp4"),
+                sequence_recon,
+                env.state_vector(),
+                env,
+            )
 
         ## [ action_dim ] index into sampled trajectory to grab first action
         action = extract_actions(sequence_recon, observation_dim, action_dim, t=0)
@@ -193,14 +205,6 @@ def main(
 
         ## visualization
         if t % vis_freq == 0 or terminal or terminal_mdp:
-            ## save current plan
-            renderer.render_plan(
-                join(writer.directory, f"{t}_plan.mp4"),
-                sequence_recon,
-                env.state_vector(),
-                env,
-            )
-
             ## save rollout thus far
             renderer.render_rollout(
                 join(writer.directory, "rollout.mp4"), rollout, env, fps=80
