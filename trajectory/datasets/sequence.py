@@ -184,6 +184,8 @@ class SequenceDataset(torch.utils.data.Dataset):
         indices = []
         for path_ind, length in enumerate(self.path_lengths):
             end = length - 1
+            for j in range(1, sequence_length):
+                indices.append((path_ind, 0, j))  # train prefixes
             for i in range(end):
                 indices.append((path_ind, i, i + sequence_length))
 
@@ -225,8 +227,17 @@ class DiscretizedDataset(SequenceDataset):
 
         joined = self.joined_segmented[path_ind, start_ind : end_ind : self.step]
         terminations = self.termination_flags[path_ind, start_ind : end_ind : self.step]
+        terminations = np.pad(
+            terminations,
+            (0, self.sequence_length - len(terminations)),
+            constant_values=True,
+        )
 
         joined_discrete = self.discretizer.discretize(joined)
+        joined, joined_discrete = [
+            np.pad(x, [(0, self.sequence_length - len(joined_discrete)), (0, 0)])
+            for x in [joined, joined_discrete]
+        ]
 
         ## replace with termination token if the sequence has ended
         assert (
