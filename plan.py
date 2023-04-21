@@ -206,6 +206,7 @@ def main(
 
         if terminal_mdp:
             context = []
+            rollout = []
         if terminal:
             break
 
