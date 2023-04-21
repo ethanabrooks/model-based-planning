@@ -156,7 +156,7 @@ def main(
         action = extract_actions(sequence_recon, observation_dim, action_dim, t=0)
 
         ## execute action in environment
-        next_observation, reward, terminal, _ = env.step(action)
+        next_observation, reward, terminal, info = env.step(action)
 
         ## update return
         total_reward += reward
@@ -186,8 +186,10 @@ def main(
             f"time: {timer():.2f} | {dataset} | {exp_name} | {suffix}\n"
         )
 
+        terminal_mdp = bool(info.get("done_mdp"))
+
         ## visualization
-        if t % vis_freq == 0 or terminal:
+        if t % vis_freq == 0 or terminal or terminal_mdp:
             ## save current plan
             renderer.render_plan(
                 join(writer.directory, f"{t}_plan.mp4"),
@@ -201,6 +203,8 @@ def main(
                 join(writer.directory, "rollout.mp4"), rollout, env, fps=80
             )
 
+        if terminal_mdp:
+            context = []
         if terminal:
             break
 
