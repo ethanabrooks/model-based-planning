@@ -6,6 +6,7 @@ import mujoco_py as mjc
 import numpy as np
 
 import wandb
+from trajectory.datasets.local import TaskWrapper
 
 from ..datasets import get_preprocess_fn, load_environment
 from .arrays import to_np
@@ -184,6 +185,10 @@ class PointRenderer:
         self.action_dim = np.prod(self.env.action_space.shape)
 
     def renders(self, savepath: str, states: np.ndarray, env):
+        assert states.ndim == 2
+        if isinstance(self.env, TaskWrapper):
+            states, tasks = np.split(states, 2, -1)
+
         figsize = (5.5, 4)
         fig, axis = plt.subplots(1, 1, figsize=figsize)
         xlim = (-1.3, 1.3)
@@ -199,6 +204,10 @@ class PointRenderer:
 
         # plot goal
         axis.scatter(*curr_task, marker="x", color="k", s=50)
+
+        for task in tasks:
+            axis.plot(*task, marker="*", color="r")  # plot imagined/observed tasks
+
         # radius where we get reward
         if hasattr(env, "goal_radius"):
             circle1 = plt.Circle(
