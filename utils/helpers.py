@@ -406,7 +406,12 @@ def project_name():
     return pyproject["tool"]["poetry"]["name"]
 
 
-TAGS = ["multi-replay-buffers", "extend-content-transitions", "mask-terminations"]
+TAGS = [
+    "multi-replay-buffers",
+    "extend-content-transitions",
+    "mask-terminations",
+    "train-prefixes",
+]
 
 
 def sweep(
