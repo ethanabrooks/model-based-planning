@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 # -------------------------------- helper functions --------------------------------#
 
@@ -78,9 +79,11 @@ def forward(model, x, max_block=None, allow_crop=True, crop_increment=None, **kw
         assert n_crop % crop_increment == 0
         x = x[:, n_crop:]
 
-    logits, _ = model(x, **kwargs)
+    _, d = x.shape
+    padded = F.pad(x, (0, block_size - d))
+    logits, _ = model(padded, **kwargs)
 
-    return logits
+    return logits[:, :d]
 
 
 def get_logp(model, x, temperature=1.0, topk=None, cdf=None, **forward_kwargs):
