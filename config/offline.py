@@ -147,7 +147,7 @@ SparsePointEnv_v0 = {
 TaskAwareSparsePointEnv_v0 = {
     "plan": {
         "renderer": "PointRenderer",
-        "loadpath": "rldl/In-Context Model-Based Planning/42saqsl0",
+        "loadpath": "rldl/In-Context Model-Based Planning/dv921eei",
     },
 }
 

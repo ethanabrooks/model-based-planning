@@ -240,10 +240,9 @@ class DiscretizedDataset(SequenceDataset):
         ).contiguous()
 
         ## don't compute loss for parts of the prediction that extend
-        ## beyond the max path length
-        traj_inds = torch.arange(start_ind, end_ind, self.step)
+        ## beyond the episode boundary
         mask = torch.ones(joined_discrete.shape, dtype=torch.bool)
-        mask[traj_inds > self.max_path_length - self.step] = 0
+        mask[terminations] = False
 
         ## flatten everything
         joined_discrete = joined_discrete.view(-1)
