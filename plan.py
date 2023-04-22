@@ -1,4 +1,3 @@
-import itertools
 import json
 import re
 import time
@@ -122,8 +121,9 @@ def main(
     context = []
 
     terminal_mdp = True  # trigger visualization on first timestep
+    t = T = 0
 
-    for t in itertools.count():
+    while True:
         observation = preprocess_fn(observation)
 
         if t % plan_freq == 0:
@@ -191,10 +191,10 @@ def main(
                 "total_reward": total_reward,
                 "score": score,
             },
-            step=t,
+            step=T,
         )
         print(
-            f"[ plan ] t: {t} / {env.spec.max_episode_steps} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
+            f"[ plan ] t: {T} / {env.spec.max_episode_steps} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
             f"time: {timer():.2f} | {dataset} | {exp_name} | {suffix}\n"
         )
 
@@ -207,9 +207,12 @@ def main(
                 join(writer.directory, "rollout.mp4"), rollout, fps=80
             )
 
+        t += 1
+        T += 1
         if terminal_mdp:
             context = []
             rollout = []
+            t = 0
         if terminal:
             break
 
