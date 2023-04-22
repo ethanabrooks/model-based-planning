@@ -412,7 +412,7 @@ TAGS = [
     "mask-terminations",
     "train-prefixes",
     "pad-model-inputs",
-    "64-tasks",
+    "512-tasks",
 ]
 
 
