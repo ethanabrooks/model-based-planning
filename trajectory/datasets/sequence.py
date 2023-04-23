@@ -19,13 +19,11 @@ def segment(observations, terminals, max_path_length, name: str):
     assert len(observations) == len(terminals)
     observation_dim = observations.shape[1]
 
-    trajectories = [[]]
-    for obs, term in tqdm(
-        zip(observations, terminals), total=len(observations), desc=f"Segmenting {name}"
-    ):
-        trajectories[-1].append(obs)
-        if term.squeeze():
-            trajectories.append([])
+    # Find indices of ones in Y
+    indices, _ = np.where(terminals == 1)
+
+    # Split X into segments
+    trajectories = np.split(observations, indices + 1)
 
     if len(trajectories[-1]) == 0:
         trajectories = trajectories[:-1]
@@ -34,7 +32,7 @@ def segment(observations, terminals, max_path_length, name: str):
     trajectories = [np.stack(traj, axis=0) for traj in trajectories]
 
     n_trajectories = len(trajectories)
-    path_lengths = [len(traj) for traj in trajectories]
+    path_lengths = np.diff(np.pad(1 + indices, (1, 0)))
 
     ## pad trajectories to be of equal length
     trajectories_pad = np.zeros(
