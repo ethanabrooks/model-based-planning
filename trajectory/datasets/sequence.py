@@ -12,7 +12,7 @@ from .d4rl import load_environment, qlearning_dataset_with_timeouts
 from .preprocessing import dataset_preprocess_functions
 
 
-def segment(observations, terminals, max_path_length):
+def segment(observations, terminals, max_path_length, name: str):
     """
     segment `observations` into trajectories according to `terminals`
     """
@@ -20,7 +20,9 @@ def segment(observations, terminals, max_path_length):
     observation_dim = observations.shape[1]
 
     trajectories = [[]]
-    for obs, term in zip(observations, terminals):
+    for obs, term in tqdm(
+        zip(observations, terminals), total=len(observations), desc=f"Segmenting {name}"
+    ):
         trajectories[-1].append(obs)
         if term.squeeze():
             trajectories.append([])
@@ -39,7 +41,7 @@ def segment(observations, terminals, max_path_length):
         (n_trajectories, max_path_length, observation_dim), dtype=trajectories[0].dtype
     )
     early_termination = np.zeros((n_trajectories, max_path_length), dtype=bool)
-    for i, traj in enumerate(trajectories):
+    for i, traj in enumerate(tqdm(trajectories, desc=f"Padding {name}")):
         path_length = path_lengths[i]
         trajectories_pad[i, :path_length] = traj
         early_termination[i, path_length:] = 1
@@ -115,12 +117,14 @@ class SequenceDataset(torch.utils.data.Dataset):
         ## segment
         print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
         self.joined_segmented, self.termination_flags, self.path_lengths = segment(
-            self.joined_raw, terminals, max_path_length
+            self.joined_raw, terminals, max_path_length, "observations/actions"
         )
         self.rewards_segmented, *_ = segment(
-            self.rewards_raw, terminals, max_path_length
+            self.rewards_raw, terminals, max_path_length, "rewards"
         )
-        realterminals_segmented, *_ = segment(realterminals, terminals, max_path_length)
+        realterminals_segmented, *_ = segment(
+            realterminals, terminals, max_path_length, "terminals"
+        )
         print("✓")
 
         ## add missing final termination
