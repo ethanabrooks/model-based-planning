@@ -1,4 +1,15 @@
-SparsePointEnv-v0: rldl/varibad/SparsePointEnv-v0-multitask:v10
-HalfCheetahVel-v0: rldl/varibad/HalfCheetahVel-v0-multitask:v0
-HalfCheetahDir-v0: rldl/varibad/HalfCheetahDir-v0-multitask:v0
-AntGoal-v0: rldl/varibad/AntGoal-v0-multitask:v0
+SparsePointEnv-v0:
+  - rldl/varibad/SparsePointEnv-v0-multitask:v19
+  - rldl/varibad/SparsePointEnv-v0-multitask:v21
+  - rldl/varibad/SparsePointEnv-v0-multitask:v22
+  - rldl/varibad/SparsePointEnv-v0-multitask:v25
+  - rldl/varibad/SparsePointEnv-v0-multitask:v26
+  - rldl/varibad/SparsePointEnv-v0-multitask:v28
+  - rldl/varibad/SparsePointEnv-v0-multitask:v29
+  - rldl/varibad/SparsePointEnv-v0-multitask:v30
+HalfCheetahVel-v0:
+  - rldl/varibad/HalfCheetahVel-v0-multitask:v0
+HalfCheetahDir-v0:
+  - rldl/varibad/HalfCheetahDir-v0-multitask:v0
+AntGoal-v0:
+  - rldl/varibad/AntGoal-v0-multitask:v0
