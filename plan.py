@@ -25,6 +25,7 @@ class Parser(UtilsParser):
     config: str = "config.offline"
     debug: bool = False
     name: str = "plan"
+    notes: str = None
 
 
 def main(
@@ -44,6 +45,7 @@ def main(
     max_context_transitions: int,
     name: str,
     n_expand: int,
+    notes: str,
     percentile: float,
     plan_freq: int,
     prefix_context: int,
@@ -58,7 +60,9 @@ def main(
     ######## setup ########
     #######################
 
-    writer = Writer.make(debug, config=args, dataset=dataset, name=name, run=run)
+    writer = Writer.make(
+        debug, config=args, dataset=dataset, name=name, notes=notes, run=run
+    )
 
     #######################
     ####### models ########

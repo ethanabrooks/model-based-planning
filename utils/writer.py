@@ -13,11 +13,13 @@ from utils.helpers import TAGS, project_name
 
 class Writer:
     def __init__(
-        self, config: dict, dataset: str, name: str, run: Optional[Run]
+        self, config: dict, dataset: str, name: str, notes: str, run: Optional[Run]
     ) -> None:
         name = f"{name}-{dataset}"
         if run is None:
-            wandb.init(config=config, name=name, project=project_name(), tags=TAGS)
+            wandb.init(
+                config=config, name=name, notes=notes, project=project_name(), tags=TAGS
+            )
             run = wandb.run
         self.run = run
         self._directory = run.dir
@@ -44,11 +46,18 @@ class Writer:
             json.dump(config, f, indent=2)
 
     @staticmethod
-    def make(debug: bool, config: dict, dataset: str, name: str, run: Optional[Run]):
+    def make(
+        debug: bool,
+        config: dict,
+        dataset: str,
+        name: str,
+        notes: str,
+        run: Optional[Run],
+    ):
         return (
             DebugWriter()
             if debug
-            else Writer(config=config, dataset=dataset, name=name, run=run)
+            else Writer(config=config, dataset=dataset, name=name, notes=notes, run=run)
         )
 
     def path(self, fname: str):
