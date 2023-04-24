@@ -20,6 +20,7 @@ class Parser(utils.Parser):
     debug: bool = False
     name: str = "train"
     notes: str = None
+    trajectory_transformer: bool = False
 
 
 def main(
@@ -49,6 +50,7 @@ def main(
     step: int,
     subsampled_sequence_length: int,
     termination_penalty: float,
+    trajectory_transformer: bool,
     total_iters: int,
     value_weight: float,
     **_,
@@ -73,6 +75,7 @@ def main(
         step=step,
         discount=discount,
         discretizer=discretizer,
+        trajectory_transformer=trajectory_transformer,
     )
     writer.save(dataset_config.savepath)
     dataset = dataset_config()
