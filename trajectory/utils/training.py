@@ -1,9 +1,8 @@
 import math
 
 import torch
-from torch.utils.data.dataloader import DataLoader
-
 import wandb
+from torch.utils.data.dataloader import DataLoader
 
 from .timer import Timer
 

@@ -4,8 +4,8 @@ import gym
 import matplotlib.pyplot as plt
 import mujoco_py as mjc
 import numpy as np
-
 import wandb
+
 from trajectory.datasets.local import TaskWrapper
 
 from ..datasets import get_preprocess_fn, load_environment
