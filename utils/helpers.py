@@ -408,10 +408,8 @@ def project_name():
 
 TAGS = [
     "multi-replay-buffers",
-    "extend-content-transitions",
-    "mask-terminations",
-    "train-prefixes",
-    "pad-model-inputs",
+    "single-task-histories",
+    "512-tasks",
 ]
 
 
