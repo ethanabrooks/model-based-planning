@@ -216,7 +216,6 @@ def main(
         t += 1
         T += 1
         if terminal_mdp:
-            context = []
             rollout = []
             t = 0
         if terminal:
