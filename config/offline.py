@@ -21,7 +21,7 @@ base = {
         "n_layer": 4,
         "n_head": 4,
         ## number of epochs for a 1M-size dataset; n_epochs = 1M / dataset_size * n_epochs_ref
-        "n_epochs_ref": 10,
+        "total_iters": 200_000,
         "n_saves": 3,
         "logbase": logbase,
         "device": "cuda",
@@ -147,7 +147,7 @@ SparsePointEnv_v0 = {
 TaskAwareSparsePointEnv_v0 = {
     "plan": {
         "renderer": "PointRenderer",
-        "loadpath": "rldl/In-Context Model-Based Planning/tyo37n3q",
+        "loadpath": "rldl/In-Context Model-Based Planning/4yqc4oi0",
     },
 }
 
