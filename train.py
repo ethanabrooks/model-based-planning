@@ -40,7 +40,6 @@ def main(
     name: str,
     notes: str,
     n_embd: int,
-    n_epochs_ref: int,
     n_layer: int,
     n_head: int,
     n_saves: int,
@@ -50,6 +49,7 @@ def main(
     step: int,
     subsampled_sequence_length: int,
     termination_penalty: float,
+    total_iters: int,
     value_weight: float,
     **_,
 ):
@@ -142,6 +142,7 @@ def main(
         ## dataloader
         num_workers=0,
         device=device,
+        total_iters=total_iters,
     )
     writer.save(trainer_config.savepath)
     trainer = trainer_config()
@@ -151,7 +152,7 @@ def main(
     #######################
 
     ## scale number of epochs to keep number of updates constant
-    n_epochs = math.ceil(1e6 / len(dataset) * n_epochs_ref)
+    n_epochs = math.ceil(total_iters / len(dataset))
     save_freq = math.ceil(n_epochs / n_saves)
 
     for epoch in range(n_epochs):

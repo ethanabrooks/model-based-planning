@@ -27,7 +27,6 @@ class Trainer:
         return self.optimizer
 
     def train(self, model, dataset, debug, n_epochs=1, log_freq=100):
-
         config = self.config
         optimizer = self.get_optimizer(model)
         model.train(True)
@@ -42,11 +41,9 @@ class Trainer:
         )
 
         for _ in range(n_epochs):
-
             losses = []
             timer = Timer()
             for it, batch in enumerate(loader):
-
                 batch = to(batch, self.device)
 
                 # forward the model
@@ -100,9 +97,11 @@ class Trainer:
                             step=cuml_it,
                         )
                     print(
-                        f"[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {len(loader):4d} ] ",
+                        f"[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {min(config.total_iters, len(loader)):4d} ] ",
                         f"train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | "
                         f"t: {timer():.2f}",
                     )
+                if cuml_it >= config.total_iters:
+                    break
 
             self.n_epochs += 1
