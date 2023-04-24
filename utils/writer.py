@@ -5,9 +5,9 @@ from pprint import pprint
 from typing import Optional
 
 import torch
+import wandb
 from wandb.sdk.wandb_run import Run
 
-import wandb
 from utils.helpers import TAGS, project_name
 
 

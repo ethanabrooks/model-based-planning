@@ -4,6 +4,7 @@ from typing import Optional
 
 import gym
 import numpy as np
+import wandb
 import yaml
 from torchrl.data import ReplayBuffer
 from torchrl.data.replay_buffers import LazyMemmapStorage
