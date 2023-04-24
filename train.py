@@ -19,6 +19,7 @@ class Parser(utils.Parser):
     results_log_dir: str = None
     debug: bool = False
     name: str = "train"
+    notes: str = None
 
 
 def main(
@@ -37,6 +38,7 @@ def main(
     lr_decay: float,
     N: int,
     name: str,
+    notes: str,
     n_embd: int,
     n_epochs_ref: int,
     n_layer: int,
@@ -51,7 +53,9 @@ def main(
     value_weight: float,
     **_,
 ):
-    writer = Writer.make(debug, config=args, dataset=dataset, name=name, run=run)
+    writer = Writer.make(
+        debug, config=args, dataset=dataset, name=name, notes=notes, run=run
+    )
 
     #######################
     ####### dataset #######
