@@ -56,6 +56,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         discount=0.99,
         penalty=None,
         device="cuda:0",
+        trajectory_transformer: bool = False,
     ):
         task_aware = local.is_task_aware(env)
         env = local.get_env_name(env)
@@ -87,6 +88,8 @@ class SequenceDataset(torch.utils.data.Dataset):
         rewards = dataset["rewards"]
         terminals = dataset["terminals"]
         realterminals = dataset["realterminals"]
+        if trajectory_transformer:
+            terminals = realterminals
 
         def get_max_path_length(terms):
             ends, _ = np.where(terms)

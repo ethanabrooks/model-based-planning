@@ -26,6 +26,7 @@ class Parser(UtilsParser):
     debug: bool = False
     name: str = "plan"
     notes: str = None
+    trajectory_transformer: bool = False
 
 
 def main(
@@ -51,6 +52,7 @@ def main(
     prefix_context: int,
     run: Run,
     suffix: str,
+    trajectory_transformer: bool,
     verbose: bool,
     vis_freq: int,
     **_,
@@ -214,6 +216,8 @@ def main(
         t += 1
         T += 1
         if terminal_mdp:
+            if trajectory_transformer:
+                context = []
             rollout = []
             t = 0
         if terminal:
