@@ -153,7 +153,9 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         ## get valid indices
         indices = []
-        for path_ind, length in enumerate(self.path_lengths):
+        for path_ind, length in enumerate(
+            tqdm(self.path_lengths, desc="Assign indices")
+        ):
             end = length - 1
             for j in range(1, sequence_length):
                 indices.append((path_ind, 0, j))  # train prefixes
