@@ -112,14 +112,7 @@ class SequenceDataset(torch.utils.data.Dataset):
             self.joined_raw, done_bamdp, max_path_length, "observations/actions"
         )
         rewards_segmented, *_ = segment(rewards, done_bamdp, max_path_length, "rewards")
-        done_segmented, *_ = segment(done_mdp, done_bamdp, max_path_length, "done_mdp")
         print("✓")
-
-        ## add missing final termination
-        [last_term] = self.done_flags[-1, :].nonzero()
-        if last_term.size:
-            [start_term, *_] = last_term
-            done_segmented[-1, start_term - 1] = True
 
         ## [ n_paths x max_path_length x 1 ]
         values = np.zeros(rewards.shape)
