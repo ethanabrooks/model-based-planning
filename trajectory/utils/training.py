@@ -41,7 +41,6 @@ class Trainer:
         )
 
         for _ in range(n_epochs):
-            losses = []
             timer = Timer()
             for it, batch in enumerate(loader):
                 batch = to(batch, self.device)
@@ -49,7 +48,6 @@ class Trainer:
                 # forward the model
                 with torch.set_grad_enabled(True):
                     logits, loss = model(*batch)
-                    losses.append(loss.item())
 
                 # backprop and update the parameters
                 model.zero_grad()
@@ -86,9 +84,19 @@ class Trainer:
                 if it % log_freq == 0:
                     cuml_it = it + len(loader) * self.n_epochs
                     if not debug:
+                        _, targets, mask = batch
+                        argmax_accuracy = logits.argmax(-1) == targets
+                        argmax_accuracy = argmax_accuracy[mask].float().mean()
+                        probs = torch.softmax(logits[0], dim=-1)
+                        [exp_accuracy] = torch.gather(
+                            probs, dim=-1, index=targets[0, :, None]
+                        ).T  # just use first batch index for speed
+                        exp_accuracy = exp_accuracy[mask[0]].float().mean()
                         wandb.log(
                             {
                                 "train loss": loss.item(),
+                                "argmax accuracy": argmax_accuracy.item(),
+                                "exp accuracy": exp_accuracy.item(),
                                 "lr": lr,
                                 "lr_mult": lr_mult,
                                 "epoch": self.n_epochs,
