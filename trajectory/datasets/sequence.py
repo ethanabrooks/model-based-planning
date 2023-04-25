@@ -55,68 +55,14 @@ class SequenceDataset(torch.utils.data.Dataset):
         discount: float,
         penalty: Optional[float],
     ):
-        task_aware = local.is_task_aware(env)
-        env = local.get_env_name(env)
-        env = load_environment(env)
-        name = env.spec.id
         self.sequence_length = sequence_length
         self.step = step
 
-        artifact_names = local.get_artifact_name(name)
-        if artifact_names:
-            dataset = local.load_dataset(artifact_names, task_aware)
-        else:
-            print("[ datasets/sequence ] Loading...", end=" ", flush=True)
-            dataset = qlearning_dataset_with_timeouts(
-                env.unwrapped, terminate_on_end=True
-            )
-            print("✓")
-
-        preprocess_fn = dataset_preprocess_functions.get(name)
-        if preprocess_fn:
-            print("[ datasets/sequence ] Modifying environment")
-            dataset = preprocess_fn(dataset)
-            dataset["done_mdp"] = dataset["terminals"]
-            dataset["done_bamdp"] = dataset["terminals"]
-            del dataset["terminals"]
-            del dataset["realterminals"]
-
-        observations = dataset["observations"]
-        actions = dataset["actions"]
-        rewards = dataset["rewards"]
-        done_bamdp = dataset["done_bamdp"]
-        done_mdp = dataset["done_mdp"]
-        if trajectory_transformer:
-            done_bamdp = done_mdp
-
-        def get_max_path_length(terms):
-            ends, _ = np.where(terms)
-            starts = np.pad(ends + 1, (1, 0))
-            return np.max(np.diff(starts))
-
-        max_path_length = get_max_path_length(done_bamdp)
-
-        ## [ n_paths x max_path_length x 1 ]
-        values = np.zeros(rewards.shape)
-        max_ep_len = get_max_path_length(done_mdp)
-        exponents = np.triu(np.ones((max_ep_len, max_ep_len), dtype=int), 1).cumsum(
-            axis=1
+        observations, actions, rewards, done_mdp, done_bamdp, values = self.init(
+            env, discount, trajectory_transformer
         )
-        discount_array = np.triu(discount**exponents)
 
-        ep_ends, _ = np.where(done_mdp)
-        ep_ends += 1
-        ep_starts = np.pad(ep_ends, (1, 0))[:-1]
-
-        for start, length in tqdm(
-            np.stack([ep_starts, ep_ends], axis=1), desc="Computing values"
-        ):
-            assert start < length
-            [ep_rewards] = rewards[start:length].T
-            l = ep_rewards.size
-            discounts = discount_array[:l, :l]
-            ep_values = discounts @ ep_rewards
-            values[start : length - 1] = ep_values[1:, None]
+        max_path_length = self.get_max_path_length(done_bamdp)
 
         print(
             f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
@@ -178,6 +124,70 @@ class SequenceDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.indices)
+
+    @staticmethod
+    def get_max_path_length(terms):
+        ends, _ = np.where(terms)
+        starts = np.pad(ends + 1, (1, 0))
+        return np.max(np.diff(starts))
+
+    @classmethod
+    def init(cls, env: str, discount: float, trajectory_transformer: bool):
+        task_aware = local.is_task_aware(env)
+        env = local.get_env_name(env)
+        env = load_environment(env)
+        name = env.spec.id
+
+        artifact_names = local.get_artifact_name(name)
+        if artifact_names:
+            dataset = local.load_dataset(artifact_names, task_aware)
+        else:
+            print("[ datasets/sequence ] Loading...", end=" ", flush=True)
+            dataset = qlearning_dataset_with_timeouts(
+                env.unwrapped, terminate_on_end=True
+            )
+            print("✓")
+
+        preprocess_fn = dataset_preprocess_functions.get(name)
+        if preprocess_fn:
+            print("[ datasets/sequence ] Modifying environment")
+            dataset = preprocess_fn(dataset)
+            dataset["done_mdp"] = dataset["terminals"]
+            dataset["done_bamdp"] = dataset["terminals"]
+            del dataset["terminals"]
+            del dataset["realterminals"]
+
+        observations = dataset["observations"]
+        actions = dataset["actions"]
+        rewards = dataset["rewards"]
+        done_bamdp = dataset["done_bamdp"]
+        done_mdp = dataset["done_mdp"]
+        if trajectory_transformer:
+            done_bamdp = done_mdp
+
+        ## [ n_paths x max_path_length x 1 ]
+        values = np.zeros(rewards.shape)
+        max_ep_len = cls.get_max_path_length(done_mdp)
+        exponents = np.triu(np.ones((max_ep_len, max_ep_len), dtype=int), 1).cumsum(
+            axis=1
+        )
+        discount_array = np.triu(discount**exponents)
+
+        ep_ends, _ = np.where(done_mdp)
+        ep_ends += 1
+        ep_starts = np.pad(ep_ends, (1, 0))[:-1]
+
+        for start, length in tqdm(
+            np.stack([ep_starts, ep_ends], axis=1), desc="Computing values"
+        ):
+            assert start < length
+            [ep_rewards] = rewards[start:length].T
+            l = ep_rewards.size
+            discounts = discount_array[:l, :l]
+            ep_values = discounts @ ep_rewards
+            values[start : length - 1] = ep_values[1:, None]
+
+        return observations, actions, rewards, done_mdp, done_bamdp, values
 
 
 class DiscretizedDataset(SequenceDataset):
