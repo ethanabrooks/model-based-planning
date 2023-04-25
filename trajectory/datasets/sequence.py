@@ -1,4 +1,5 @@
 import pdb
+from typing import Optional
 
 import numpy as np
 import torch
@@ -55,12 +56,11 @@ class SequenceDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         env: str,
-        sequence_length=250,
-        step=10,
-        discount=0.99,
-        penalty=None,
-        device="cuda:0",
-        trajectory_transformer: bool = False,
+        trajectory_transformer: bool,
+        sequence_length: int,
+        step: int,
+        discount: float,
+        penalty: Optional[float],
     ):
         task_aware = local.is_task_aware(env)
         env = local.get_env_name(env)
@@ -68,7 +68,6 @@ class SequenceDataset(torch.utils.data.Dataset):
         name = env.spec.id
         self.sequence_length = sequence_length
         self.step = step
-        self.device = device
 
         artifact_names = local.get_artifact_name(name)
         if artifact_names:
@@ -87,7 +86,6 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         observations = dataset["observations"]
         actions = dataset["actions"]
-        next_observations = dataset["next_observations"]
         rewards = dataset["rewards"]
         done_bamdp = dataset["done"]
         done_mdp = dataset["done_mdp"]
@@ -99,32 +97,24 @@ class SequenceDataset(torch.utils.data.Dataset):
             starts = np.pad(ends + 1, (1, 0))
             return np.max(np.diff(starts))
 
-        self.max_path_length = max_path_length = get_max_path_length(done_bamdp)
+        max_path_length = get_max_path_length(done_bamdp)
 
         print(
             f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
         )
-
-        self.observations_raw = observations
-        self.actions_raw = actions
-        self.next_observations_raw = next_observations
         self.joined_raw = np.concatenate([observations, actions], axis=-1)
-        self.rewards_raw = rewards
-        self.done_raw = done_bamdp
 
         ## done penalty
         if penalty is not None:
             done_mask = done_mdp.squeeze()
-            self.rewards_raw[done_mask] = penalty
+            rewards[done_mask] = penalty
 
         ## segment
         print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
         self.joined_segmented, self.done_flags, self.path_lengths = segment(
             self.joined_raw, done_bamdp, max_path_length, "observations/actions"
         )
-        self.rewards_segmented, *_ = segment(
-            self.rewards_raw, done_bamdp, max_path_length, "rewards"
-        )
+        rewards_segmented, *_ = segment(rewards, done_bamdp, max_path_length, "rewards")
         done_segmented, *_ = segment(done_mdp, done_bamdp, max_path_length, "done_mdp")
         print("✓")
 
@@ -134,11 +124,8 @@ class SequenceDataset(torch.utils.data.Dataset):
             [start_term, *_] = last_term
             done_segmented[-1, start_term - 1] = True
 
-        self.discount = discount
-        self.discounts = (discount ** np.arange(max_path_length))[:, None]
-
         ## [ n_paths x max_path_length x 1 ]
-        values_segmented = np.zeros(self.rewards_segmented.shape)
+        values_segmented = np.zeros(rewards_segmented.shape)
         max_ep_len = get_max_path_length(done_mdp)
         exponents = np.triu(np.ones((max_ep_len, max_ep_len), dtype=int), 1).cumsum(
             axis=1
@@ -156,24 +143,22 @@ class SequenceDataset(torch.utils.data.Dataset):
             track(np.stack([rows, ep_starts, ep_ends], axis=1))
         ):
             assert start < end
-            [ep_rewards] = self.rewards_segmented[row, start:end].T
+            [ep_rewards] = rewards_segmented[row, start:end].T
             l = ep_rewards.size
             discounts = discount_array[:l, :l]
             ep_values = discounts @ ep_rewards
             values_segmented[row, start : end - 1] = ep_values[1:, None]
 
-        self.values_segmented = values_segmented
-
         ## add (r, V) to `joined`
-        values_raw = self.values_segmented.squeeze(axis=-1).reshape(-1)
+        values_raw = values_segmented.squeeze(axis=-1).reshape(-1)
         values_mask = ~self.done_flags.reshape(-1)
-        self.values_raw = values_raw[values_mask, None]
+        values_raw = values_raw[values_mask, None]
 
         self.joined_raw = np.concatenate(
-            [self.joined_raw, self.rewards_raw, self.values_raw], axis=-1
+            [self.joined_raw, rewards, values_raw], axis=-1
         )
         self.joined_segmented = np.concatenate(
-            [self.joined_segmented, self.rewards_segmented, self.values_segmented],
+            [self.joined_segmented, rewards_segmented, values_segmented],
             axis=-1,
         )
 
@@ -199,13 +184,6 @@ class SequenceDataset(torch.utils.data.Dataset):
             [
                 self.joined_segmented,
                 np.zeros((n_trajectories, sequence_length - 1, joined_dim)),
-            ],
-            axis=1,
-        )
-        self.d = np.concatenate(
-            [
-                self.done_flags,
-                np.ones((n_trajectories, sequence_length - 1), dtype=bool),
             ],
             axis=1,
         )
