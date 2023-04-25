@@ -156,6 +156,7 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         ## get valid indices
         indices = []
+        indices2 = []
         for path_ind, length in enumerate(
             track(self.path_lengths, description="Assign indices")
         ):
@@ -165,7 +166,15 @@ class SequenceDataset(torch.utils.data.Dataset):
             for i in range(end):
                 indices.append((path_ind, i, i + sequence_length))
 
+            starts = np.arange(1 - sequence_length, end)
+            ends = starts + sequence_length
+            idxs = path_ind * np.ones_like(starts)
+            starts = np.clip(starts, 0, None)
+            indices2.append(np.stack([idxs, starts, ends]))
+
         self.indices = np.array(indices)
+        self.indices2 = np.concatenate(indices2, axis=1).T
+        assert np.all(np.sort(self.indices2, axis=0) == np.sort(self.indices, axis=0))
         self.observation_dim = observations.shape[1]
         self.action_dim = actions.shape[1]
         self.joined_dim = self.joined_raw.shape[1]
