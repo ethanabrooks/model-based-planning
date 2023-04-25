@@ -3,11 +3,12 @@ from typing import Optional
 
 import numpy as np
 import torch
-from tqdm import tqdm
+from rich.progress import track
 
 from trajectory.datasets import local
 from trajectory.utils import discretization
 from trajectory.utils.arrays import to_torch
+from trajectory.utils.setup import console
 
 from .d4rl import load_environment, qlearning_dataset_with_timeouts
 from .preprocessing import dataset_preprocess_functions
@@ -37,7 +38,7 @@ def segment(observations, done, max_path_length, name: str):
         (n_trajectories, max_path_length, observation_dim), dtype=trajectories[0].dtype
     )
     done_flags = np.zeros((n_trajectories, max_path_length), dtype=bool)
-    for i, traj in enumerate(tqdm(trajectories, desc=f"Padding {name}")):
+    for i, traj in enumerate(track(trajectories, description=f"Padding {name}", expand=True)):
         path_length = path_lengths[i]
         trajectories_pad[i, :path_length] = traj
         done_flags[i, path_length:] = 1
@@ -64,8 +65,8 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         max_path_length = self.get_max_path_length(done_bamdp)
 
-        print(
-            f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
+        console.log(
+            f"Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
         )
         self.joined_raw = np.concatenate([observations, actions], axis=-1)
 
@@ -99,7 +100,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         ## get valid indices
         indices = []
         for path_ind, length in enumerate(
-            tqdm(self.path_lengths - 1, desc="Assign indices")
+            track(self.path_lengths - 1, description="Assign indices")
         ):
             starts = np.arange(1 - sequence_length, length)
             ends = starts + sequence_length
@@ -177,8 +178,8 @@ class SequenceDataset(torch.utils.data.Dataset):
         ep_ends += 1
         ep_starts = np.pad(ep_ends, (1, 0))[:-1]
 
-        for start, length in tqdm(
-            np.stack([ep_starts, ep_ends], axis=1), desc="Computing values"
+        for start, length in track(
+            np.stack([ep_starts, ep_ends], axis=1), description="Computing values"
         ):
             assert start < length
             [ep_rewards] = rewards[start:length].T

@@ -1,6 +1,9 @@
 import math
 
 import torch
+from rich import box
+from rich.live import Live
+from rich.table import Table
 from torch.utils.data.dataloader import DataLoader
 
 import wandb
@@ -41,74 +44,90 @@ class Trainer:
             num_workers=config.num_workers,
         )
 
-        for _ in range(n_epochs):
-            timer = Timer()
-            for it, batch in enumerate(loader):
-                batch = _, targets, mask = to(batch, self.device)
+        table = Table(box=box.HORIZONTALS)
+        columns = [
+            "train loss",
+            "argmax accuracy",
+            "exp accuracy",
+            "lr",
+            "lr_mult",
+            "iteration",
+            "time",
+        ]
+        for column in columns:
+            table.add_column(column)
 
-                # forward the model
-                with torch.set_grad_enabled(True):
-                    logits, loss = model(*batch)
-                    argmax_accuracy = logits.argmax(-1) == targets
-                    argmax_accuracy = argmax_accuracy[mask].float().mean()
-                    [exp_accuracy] = torch.gather(
-                        logits[0], dim=-1, index=targets[0, :, None]
-                    ).T  # just use first batch index for speed
-                    exp_accuracy = exp_accuracy[mask[0]].float().mean()
+        with Live(table, refresh_per_second=4):  # update 4 times a second to feel fluid
+            for _ in range(n_epochs):
+                timer = Timer()
+                for it, batch in enumerate(loader):
+                    batch = _, targets, mask = to(batch, self.device)
 
-                # backprop and update the parameters
-                model.zero_grad()
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(
-                    model.parameters(), config.grad_norm_clip
-                )
-                optimizer.step()
+                    # forward the model
+                    with torch.set_grad_enabled(True):
+                        logits, loss = model(*batch)
+                        argmax_accuracy = logits.argmax(-1) == targets
+                        argmax_accuracy = argmax_accuracy[mask].float().mean()
+                        [exp_accuracy] = torch.gather(
+                            logits[0], dim=-1, index=targets[0, :, None]
+                        ).T  # just use first batch index for speed
+                        exp_accuracy = exp_accuracy[mask[0]].float().mean()
 
-                # decay the learning rate based on our progress
-                if config.lr_decay:
-                    y = batch[-2]
-                    self.n_tokens += (
-                        y != vocab_size
-                    ).sum()  # number of tokens processed this step
-                    if self.n_tokens < config.warmup_tokens:
-                        # linear warmup
-                        lr_mult = float(self.n_tokens) / float(
-                            max(1, config.warmup_tokens)
-                        )
-                    else:
-                        # cosine learning rate decay
-                        progress = float(self.n_tokens - config.warmup_tokens) / float(
-                            max(1, config.final_tokens - config.warmup_tokens)
-                        )
-                        lr_mult = max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
-                    lr = config.learning_rate * lr_mult
-                    for param_group in optimizer.param_groups:
-                        param_group["lr"] = lr
-                else:
-                    lr = config.learning_rate
-
-                # report progress
-                if it % log_freq == 0:
-                    cuml_it = it + len(loader) * self.n_epochs
-                    if not debug:
-                        wandb.log(
-                            {
-                                "train loss": loss.item(),
-                                "argmax accuracy": argmax_accuracy.item(),
-                                "exp accuracy": exp_accuracy.item(),
-                                "lr": lr,
-                                "lr_mult": lr_mult,
-                                "epoch": self.n_epochs,
-                                "iteration": it,
-                            },
-                            step=cuml_it,
-                        )
-                    print(
-                        f"[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {min(config.total_iters, len(loader)):4d} ] ",
-                        f"train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | "
-                        f"t: {timer():.2f}",
+                    # backprop and update the parameters
+                    model.zero_grad()
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(
+                        model.parameters(), config.grad_norm_clip
                     )
-                if cuml_it >= config.total_iters:
-                    break
+                    optimizer.step()
+
+                    # decay the learning rate based on our progress
+                    if config.lr_decay:
+                        y = batch[-2]
+                        self.n_tokens += (
+                            y != vocab_size
+                        ).sum()  # number of tokens processed this step
+                        if self.n_tokens < config.warmup_tokens:
+                            # linear warmup
+                            lr_mult = float(self.n_tokens) / float(
+                                max(1, config.warmup_tokens)
+                            )
+                        else:
+                            # cosine learning rate decay
+                            progress = float(
+                                self.n_tokens - config.warmup_tokens
+                            ) / float(
+                                max(1, config.final_tokens - config.warmup_tokens)
+                            )
+                            lr_mult = max(
+                                0.1, 0.5 * (1.0 + math.cos(math.pi * progress))
+                            )
+                        lr = config.learning_rate * lr_mult
+                        for param_group in optimizer.param_groups:
+                            param_group["lr"] = lr
+                    else:
+                        lr = config.learning_rate
+
+                    # report progress
+                    if it % log_freq == 0:
+                        log = {
+                            "train loss": loss.item(),
+                            "argmax accuracy": argmax_accuracy.item(),
+                            "exp accuracy": exp_accuracy.item(),
+                            "lr": lr,
+                            "lr_mult": lr_mult,
+                        }
+                        cuml_it = it + len(loader) * self.n_epochs
+                        if not debug:
+                            wandb.log(
+                                log,
+                                step=cuml_it,
+                            )
+
+                        log.update(iteration=cuml_it, time=f"{timer():.2f}")
+                        row = [str(log[k]) for k in columns]
+                        table.add_row(*row)
+                    if cuml_it >= config.total_iters:
+                        break
 
             self.n_epochs += 1

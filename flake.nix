@@ -88,6 +88,7 @@
           poetry
           poetryEnv
           ffmpeg
+          graphviz
         ];
         PYTHONBREAKPOINT = "ipdb.set_trace";
         shellHook = ''

@@ -5,11 +5,14 @@ import random
 
 import numpy as np
 import torch
+from rich.console import Console
 from tap import Tap
 
 from .arrays import set_device
 from .git_utils import get_git_rev, save_git_diff
 from .serialization import mkdir
+
+console = Console()
 
 
 def set_seed(seed):
@@ -37,7 +40,7 @@ def watch(args_to_watch):
 class Parser(Tap):
     def save(self):
         fullpath = os.path.join(self.savepath, "args.json")
-        print(f"[ utils/setup ] Saved args to {fullpath}")
+        console.log(f"Saved args to {fullpath}")
         super().save(fullpath, skip_unpicklable=True)
 
     def parse_args(self, experiment=None):
@@ -58,19 +61,17 @@ class Parser(Tap):
         Load parameters from config file
         """
         dataset = args.dataset.replace("-", "_")
-        print(f"[ utils/setup ] Reading config: {args.config}:{dataset}")
+        console.log(f"Reading config: {args.config}:{dataset}")
         module = importlib.import_module(args.config)
         params = getattr(module, "base")[experiment]
 
         if hasattr(module, dataset) and experiment in getattr(module, dataset):
-            print(
-                f"[ utils/setup ] Using overrides | config: {args.config} | dataset: {dataset}"
-            )
+            console.log(f"Using overrides: {dict(config=args.config, dataset=dataset)}")
             overrides = getattr(module, dataset)[experiment]
             params.update(overrides)
         else:
-            print(
-                f"[ utils/setup ] Not using overrides | config: {args.config} | dataset: {dataset}"
+            console.log(
+                f"Not using overrides: {dict(config=args.config, dataset=args.dataset)}"
             )
 
         for key, val in params.items():
@@ -86,19 +87,17 @@ class Parser(Tap):
         if not len(extras):
             return
 
-        print(f"[ utils/setup ] Found extras: {extras}")
+        console.log(f"Found extras: {extras}")
         assert (
             len(extras) % 2 == 0
         ), f"Found odd number ({len(extras)}) of extras: {extras}"
         for i in range(0, len(extras), 2):
             key = extras[i].replace("--", "")
             val = extras[i + 1]
-            assert hasattr(
-                args, key
-            ), f"[ utils/setup ] {key} not found in config: {args.config}"
+            assert hasattr(args, key), f"{key} not found in config: {args.config}"
             old_val = getattr(args, key)
             old_type = type(old_val)
-            print(f"[ utils/setup ] Overriding config | {key} : {old_val} --> {val}")
+            console.log(f"Overriding config | {key} : {old_val} --> {val}")
             if val == "None":
                 val = None
             elif val == "latest":
@@ -120,7 +119,7 @@ class Parser(Tap):
         exp_name = getattr(args, "exp_name")
         if callable(exp_name):
             exp_name_string = exp_name(args)
-            print(f"[ utils/setup ] Setting exp_name to: {exp_name_string}")
+            console.log(f"Setting exp_name to: {exp_name_string}")
             setattr(args, "exp_name", exp_name_string)
 
     def get_commit(self, args):
@@ -130,4 +129,4 @@ class Parser(Tap):
         try:
             save_git_diff(os.path.join(args.savepath, "diff.txt"))
         except:
-            print("[ utils/setup ] WARNING: did not save git diff")
+            console.log("WARNING: did not save git diff")

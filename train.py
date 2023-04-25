@@ -2,11 +2,14 @@ import math
 import os
 
 import torch
+from rich import box
+from rich.table import Table
 from wandb.sdk.wandb_run import Run
 
 import trajectory.utils as utils
 import wandb
 from trajectory.models.transformers import GPT
+from trajectory.utils.setup import console
 from utils import helpers
 from utils.writer import Writer
 
@@ -89,11 +92,17 @@ def main(
     #######################
 
     block_size = subsampled_sequence_length * transition_dim - 1
-    print(
-        f"Dataset size: {len(dataset)} | "
-        f"Joined dim: {transition_dim} "
-        f"(observation: {obs_dim}, action: {act_dim}) | Block size: {block_size}"
-    )
+    table = Table(show_header=False, box=box.HORIZONTALS)
+    for k, v in {
+        "Dataset size": f"{len(dataset)}",
+        "Joined dim": f"{transition_dim}",
+        "Block size": f"{block_size}",
+        "Observation dim": f"{obs_dim}",
+        "Action dim": f"{act_dim}",
+        "block_size": f"{block_size}",
+    }.items():
+        table.add_row(k, v)
+    console.print(table)
 
     model_config = utils.Config(
         GPT,
