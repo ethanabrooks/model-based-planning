@@ -1,5 +1,4 @@
 import math
-import pdb
 
 import numpy as np
 import torch
@@ -225,10 +224,7 @@ class GPT(nn.Module):
             t_ = x_.shape[1]
             x_pad_ = x_pad[:, i].view(b, n_states, embedding_dim)[:, :t_]
             print(i, x_.shape, x_pad_.shape)
-            try:
-                assert (x_ == x_pad_).all()
-            except:
-                pdb.set_trace()
+            assert (x_ == x_pad_).all()
 
     def forward(self, idx, targets=None, mask=None):
         """
