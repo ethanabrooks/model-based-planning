@@ -12,15 +12,15 @@ from .d4rl import load_environment, qlearning_dataset_with_timeouts
 from .preprocessing import dataset_preprocess_functions
 
 
-def segment(observations, terminals, max_path_length, name: str):
+def segment(observations, done, max_path_length, name: str):
     """
     segment `observations` into trajectories according to `terminals`
     """
-    assert len(observations) == len(terminals)
+    assert len(observations) == len(done)
     observation_dim = observations.shape[1]
 
     # Find indices of ones in Y
-    indices, _ = np.where(terminals == 1)
+    indices, _ = np.where(done == 1)
 
     # Split X into segments
     trajectories = np.split(observations, indices + 1)
@@ -42,13 +42,13 @@ def segment(observations, terminals, max_path_length, name: str):
     trajectories_pad = np.zeros(
         (n_trajectories, max_path_length, observation_dim), dtype=trajectories[0].dtype
     )
-    early_termination = np.zeros((n_trajectories, max_path_length), dtype=bool)
+    done_flags = np.zeros((n_trajectories, max_path_length), dtype=bool)
     for i, traj in enumerate(track(trajectories, description=f"Padding {name}")):
         path_length = path_lengths[i]
         trajectories_pad[i, :path_length] = traj
-        early_termination[i, path_length:] = 1
+        done_flags[i, path_length:] = 1
 
-    return trajectories_pad, early_termination, path_lengths
+    return trajectories_pad, done_flags, path_lengths
 
 
 class SequenceDataset(torch.utils.data.Dataset):
@@ -84,23 +84,22 @@ class SequenceDataset(torch.utils.data.Dataset):
         if preprocess_fn:
             print("[ datasets/sequence ] Modifying environment")
             dataset = preprocess_fn(dataset)
-        ##
 
         observations = dataset["observations"]
         actions = dataset["actions"]
         next_observations = dataset["next_observations"]
         rewards = dataset["rewards"]
-        terminals = dataset["terminals"]
-        realterminals = dataset["realterminals"]
+        done_bamdp = dataset["done"]
+        done_mdp = dataset["done_mdp"]
         if trajectory_transformer:
-            terminals = realterminals
+            done_bamdp = done_mdp
 
         def get_max_path_length(terms):
             ends, _ = np.where(terms)
             starts = np.pad(ends + 1, (1, 0))
             return np.max(np.diff(starts))
 
-        self.max_path_length = max_path_length = get_max_path_length(terminals)
+        self.max_path_length = max_path_length = get_max_path_length(done_bamdp)
 
         print(
             f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
@@ -111,47 +110,42 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.next_observations_raw = next_observations
         self.joined_raw = np.concatenate([observations, actions], axis=-1)
         self.rewards_raw = rewards
-        self.terminals_raw = terminals
+        self.done_raw = done_bamdp
 
-        ## terminal penalty
+        ## done penalty
         if penalty is not None:
-            terminal_mask = realterminals.squeeze()
-            self.rewards_raw[terminal_mask] = penalty
+            done_mask = done_mdp.squeeze()
+            self.rewards_raw[done_mask] = penalty
 
         ## segment
         print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
-        self.joined_segmented, self.termination_flags, self.path_lengths = segment(
-            self.joined_raw, terminals, max_path_length, "observations/actions"
+        self.joined_segmented, self.done_flags, self.path_lengths = segment(
+            self.joined_raw, done_bamdp, max_path_length, "observations/actions"
         )
         self.rewards_segmented, *_ = segment(
-            self.rewards_raw, terminals, max_path_length, "rewards"
+            self.rewards_raw, done_bamdp, max_path_length, "rewards"
         )
-        realterminals_segmented, *_ = segment(
-            realterminals, terminals, max_path_length, "terminals"
-        )
-        realterminals_segmented, *_ = segment(
-            realterminals, terminals, max_path_length, "realterminals"
-        )
+        done_segmented, *_ = segment(done_mdp, done_bamdp, max_path_length, "done_mdp")
         print("✓")
 
         ## add missing final termination
-        [last_term] = self.termination_flags[-1, :].nonzero()
+        [last_term] = self.done_flags[-1, :].nonzero()
         if last_term.size:
             [start_term, *_] = last_term
-            realterminals_segmented[-1, start_term - 1] = True
+            done_segmented[-1, start_term - 1] = True
 
         self.discount = discount
         self.discounts = (discount ** np.arange(max_path_length))[:, None]
 
         ## [ n_paths x max_path_length x 1 ]
         values_segmented = np.zeros(self.rewards_segmented.shape)
-        max_ep_len = get_max_path_length(realterminals)
+        max_ep_len = get_max_path_length(done_mdp)
         exponents = np.triu(np.ones((max_ep_len, max_ep_len), dtype=int), 1).cumsum(
             axis=1
         )
         discount_array = np.triu(discount**exponents)
 
-        rows, cols, zeros = np.where(realterminals_segmented)
+        rows, cols, zeros = np.where(done_segmented)
         del zeros
         ep_ends = cols + 1
         ep_starts = np.pad(ep_ends, (1, 0))[:-1]
@@ -172,7 +166,7 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         ## add (r, V) to `joined`
         values_raw = self.values_segmented.squeeze(axis=-1).reshape(-1)
-        values_mask = ~self.termination_flags.reshape(-1)
+        values_mask = ~self.done_flags.reshape(-1)
         self.values_raw = values_raw[values_mask, None]
 
         self.joined_raw = np.concatenate(
@@ -208,9 +202,9 @@ class SequenceDataset(torch.utils.data.Dataset):
             ],
             axis=1,
         )
-        self.termination_flags = np.concatenate(
+        self.d = np.concatenate(
             [
-                self.termination_flags,
+                self.done_flags,
                 np.ones((n_trajectories, sequence_length - 1), dtype=bool),
             ],
             axis=1,
@@ -231,10 +225,10 @@ class DiscretizedDataset(SequenceDataset):
         path_ind, start_ind, end_ind = self.indices[idx]
 
         joined = self.joined_segmented[path_ind, start_ind : end_ind : self.step]
-        terminations = self.termination_flags[path_ind, start_ind : end_ind : self.step]
-        terminations = np.pad(
-            terminations,
-            (0, self.sequence_length - len(terminations)),
+        done = self.done_flags[path_ind, start_ind : end_ind : self.step]
+        done = np.pad(
+            done,
+            (0, self.sequence_length - len(done)),
             constant_values=True,
         )
 
@@ -244,11 +238,13 @@ class DiscretizedDataset(SequenceDataset):
             for x in [joined, joined_discrete]
         ]
 
-        ## replace with termination token if the sequence has ended
+        ## replace with done token if the sequence has ended
         assert (
-            joined[terminations] == 0
-        ).all(), f"Everything after termination should be 0: {path_ind} | {start_ind} | {end_ind}"
-        joined_discrete[terminations] = self.N
+            joined[done] == 0
+        ).all(), (
+            f"Everything after done, should be 0: {path_ind} | {start_ind} | {end_ind}"
+        )
+        joined_discrete[done] = self.N
 
         ## [ (sequence_length / skip) x observation_dim]
         joined_discrete = to_torch(
@@ -258,7 +254,7 @@ class DiscretizedDataset(SequenceDataset):
         ## don't compute loss for parts of the prediction that extend
         ## beyond the episode boundary
         mask = torch.ones(joined_discrete.shape, dtype=torch.bool)
-        mask[terminations] = False
+        mask[done] = False
 
         ## flatten everything
         joined_discrete = joined_discrete.view(-1)
