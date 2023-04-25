@@ -1,8 +1,9 @@
 import math
 
 import torch
-import wandb
 from torch.utils.data.dataloader import DataLoader
+
+import wandb
 
 from .timer import Timer
 
@@ -41,15 +42,19 @@ class Trainer:
         )
 
         for _ in range(n_epochs):
-            losses = []
             timer = Timer()
             for it, batch in enumerate(loader):
-                batch = to(batch, self.device)
+                batch = _, targets, mask = to(batch, self.device)
 
                 # forward the model
                 with torch.set_grad_enabled(True):
                     logits, loss = model(*batch)
-                    losses.append(loss.item())
+                    argmax_accuracy = logits.argmax(-1) == targets
+                    argmax_accuracy = argmax_accuracy[mask].float().mean()
+                    [exp_accuracy] = torch.gather(
+                        logits[0], dim=-1, index=targets[0, :, None]
+                    ).T  # just use first batch index for speed
+                    exp_accuracy = exp_accuracy[mask[0]].float().mean()
 
                 # backprop and update the parameters
                 model.zero_grad()
@@ -89,6 +94,8 @@ class Trainer:
                         wandb.log(
                             {
                                 "train loss": loss.item(),
+                                "argmax accuracy": argmax_accuracy.item(),
+                                "exp accuracy": exp_accuracy.item(),
                                 "lr": lr,
                                 "lr_mult": lr_mult,
                                 "epoch": self.n_epochs,
