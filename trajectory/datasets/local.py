@@ -4,11 +4,11 @@ from typing import Optional
 
 import gym
 import numpy as np
-import wandb
 import yaml
 from torchrl.data import ReplayBuffer
 from torchrl.data.replay_buffers import LazyMemmapStorage
 from torchsnapshot import Snapshot
+import wandb
 
 import environments  # noqa: F401
 import wandb
@@ -103,12 +103,7 @@ def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.nd
         replay_buffer.extend(tensordict)
 
     memmap_tensors = replay_buffer[: len(replay_buffer)]
-    rename = dict(
-        state="observations",
-        next_state="next_observations",
-        done="terminals",
-        done_mdp="realterminals",
-    )
+    rename = dict(state="observations", next_state="next_observations")
 
     def preprocess(v):
         v = v.numpy()
