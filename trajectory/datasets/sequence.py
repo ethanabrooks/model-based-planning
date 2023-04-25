@@ -122,6 +122,30 @@ class SequenceDataset(torch.utils.data.Dataset):
             done_segmented[-1, start_term - 1] = True
 
         ## [ n_paths x max_path_length x 1 ]
+        values = np.zeros(rewards.shape)
+        max_ep_len = get_max_path_length(done_mdp)
+        exponents = np.triu(np.ones((max_ep_len, max_ep_len), dtype=int), 1).cumsum(
+            axis=1
+        )
+        discount_array = np.triu(discount**exponents)
+
+        ep_ends, _ = np.where(done_mdp)
+        ep_ends += 1
+        ep_starts = np.pad(ep_ends, (1, 0))[:-1]
+
+        for start, end in tqdm(
+            np.stack([ep_starts, ep_ends], axis=1), desc="Computing values"
+        ):
+            assert start < end
+            [ep_rewards] = rewards[start:end].T
+            l = ep_rewards.size
+            discounts = discount_array[:l, :l]
+            ep_values = discounts @ ep_rewards
+            values[start : end - 1] = ep_values[1:, None]
+
+        values_segmented2, *_ = segment(values, done_bamdp, max_path_length, "values")
+
+        ## [ n_paths x max_path_length x 1 ]
         values_segmented = np.zeros(rewards_segmented.shape)
         max_ep_len = get_max_path_length(done_mdp)
         exponents = np.triu(np.ones((max_ep_len, max_ep_len), dtype=int), 1).cumsum(
@@ -145,6 +169,8 @@ class SequenceDataset(torch.utils.data.Dataset):
             discounts = discount_array[:l, :l]
             ep_values = discounts @ ep_rewards
             values_segmented[row, start : end - 1] = ep_values[1:, None]
+
+        assert np.allclose(values_segmented, values_segmented2)
 
         ## add (r, V) to `joined`
         values_raw = values_segmented.squeeze(axis=-1).reshape(-1)

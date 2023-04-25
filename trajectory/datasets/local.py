@@ -106,7 +106,9 @@ def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.nd
         replay_buffer.extend(tensordict)
 
     memmap_tensors = replay_buffer[: len(replay_buffer)]
-    rename = dict(state="observations", next_state="next_observations")
+    rename = dict(
+        done="done_bamdp", state="observations", next_state="next_observations"
+    )
 
     def preprocess(v):
         v = v.numpy()
