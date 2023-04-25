@@ -13,6 +13,7 @@ from torchsnapshot import Snapshot
 import environments  # noqa: F401
 import wandb
 from environments import parallel_envs
+from utils.timer import Timer
 
 TASK_AWARE_PATTERN = re.compile(r"^TaskAware(.*)")
 
@@ -63,7 +64,7 @@ def load_environment(env: str) -> gym.Env:
 
 def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.ndarray]:
     buffers = []
-    for artifact_name in artifact_names:
+    for i, artifact_name in enumerate(artifact_names, start=1):
         # download artifact
         if wandb.run is None:
             api = wandb.Api()
@@ -72,12 +73,6 @@ def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.nd
             artifact = wandb.run.use_artifact(artifact_name)
         artifact_dir = artifact.download()
 
-        print(
-            f"[ datasets/local ] Loading dataset from {artifact_dir}...",
-            end=" ",
-            flush=True,
-        )
-
         # load buffers
         run_buffers = {}
         for path in os.listdir(f"{artifact_dir}/0"):
@@ -85,10 +80,11 @@ def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.nd
                 replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
                 run_buffers[path] = replay_buffer
         snapshot = Snapshot(path=artifact_dir)
-        snapshot.restore(run_buffers)
+        with Timer(
+            desc=f"[ {i}/{len(artifact_names)} ] Restoring data from {artifact_dir}"
+        ):
+            snapshot.restore(run_buffers)
         buffers.extend(run_buffers.values())
-
-        print("✓")
 
     # merge buffers
     size = sum(len(buffer) for buffer in buffers)
