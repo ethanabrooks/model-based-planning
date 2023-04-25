@@ -129,15 +129,15 @@ class SequenceDataset(torch.utils.data.Dataset):
         ep_ends += 1
         ep_starts = np.pad(ep_ends, (1, 0))[:-1]
 
-        for start, end in track(
+        for start, length in track(
             np.stack([ep_starts, ep_ends], axis=1), description="Computing values"
         ):
-            assert start < end
-            [ep_rewards] = rewards[start:end].T
+            assert start < length
+            [ep_rewards] = rewards[start:length].T
             l = ep_rewards.size
             discounts = discount_array[:l, :l]
             ep_values = discounts @ ep_rewards
-            values[start : end - 1] = ep_values[1:, None]
+            values[start : length - 1] = ep_values[1:, None]
 
         values_segmented, *_ = segment(values, done_bamdp, max_path_length, "values")
 
@@ -158,15 +158,14 @@ class SequenceDataset(torch.utils.data.Dataset):
         indices = []
         indices2 = []
         for path_ind, length in enumerate(
-            track(self.path_lengths, description="Assign indices")
+            track(self.path_lengths - 1, description="Assign indices")
         ):
-            end = length - 1
             for j in range(1, sequence_length):
                 indices.append((path_ind, 0, j))  # train prefixes
-            for i in range(end):
+            for i in range(length):
                 indices.append((path_ind, i, i + sequence_length))
 
-            starts = np.arange(1 - sequence_length, end)
+            starts = np.arange(1 - sequence_length, length)
             ends = starts + sequence_length
             idxs = path_ind * np.ones_like(starts)
             starts = np.clip(starts, 0, None)
