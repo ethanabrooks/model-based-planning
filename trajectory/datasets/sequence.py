@@ -2,7 +2,7 @@ import pdb
 
 import numpy as np
 import torch
-from tqdm import tqdm
+from rich.progress import track
 
 from trajectory.datasets import local
 from trajectory.utils import discretization
@@ -46,7 +46,7 @@ def segment(observations, terminals, max_path_length, name: str):
         (n_trajectories, max_path_length, observation_dim), dtype=trajectories[0].dtype
     )
     early_termination = np.zeros((n_trajectories, max_path_length), dtype=bool)
-    for i, traj in enumerate(tqdm(trajectories, desc=f"Padding {name}")):
+    for i, traj in enumerate(track(trajectories, description=f"Padding {name}")):
         path_length = path_lengths[i]
         trajectories_pad[i, :path_length] = traj
         early_termination[i, path_length:] = 1
@@ -162,7 +162,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         ep_starts[row_change] = 0
 
         for i, (row, start, end) in enumerate(
-            tqdm(np.stack([rows, ep_starts, ep_ends], axis=1))
+            track(np.stack([rows, ep_starts, ep_ends], axis=1))
         ):
             assert start < end
             [ep_rewards] = self.rewards_segmented[row, start:end].T
@@ -189,7 +189,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         ## get valid indices
         indices = []
         for path_ind, length in enumerate(
-            tqdm(self.path_lengths, desc="Assign indices")
+            track(self.path_lengths, description="Assign indices")
         ):
             end = length - 1
             for j in range(1, sequence_length):
