@@ -2,6 +2,10 @@ import collections
 import os
 import pickle
 
+from rich.console import Console
+
+console = Console()
+
 
 class Config(collections.Mapping):
     def __init__(self, _class, verbose=True, savepath=None, **kwargs):
@@ -12,7 +16,7 @@ class Config(collections.Mapping):
             self._dict[key] = val
 
         if verbose:
-            print(self)
+            console.print(self)
 
         if savepath is not None:
             savepath = os.path.join(*savepath) if type(savepath) is tuple else savepath
@@ -20,12 +24,11 @@ class Config(collections.Mapping):
             print(f"Saved config to: {savepath}\n")
         self.savepath = savepath
 
-    def __repr__(self):
-        string = f"\nConfig: {self._class}\n"
+    def __rich_repr__(self):
+        yield self._class
         for key in sorted(self._dict.keys()):
             val = self._dict[key]
-            string += f"    {key}: {val}\n"
-        return string
+            yield key, val
 
     def __iter__(self):
         return iter(self._dict)

@@ -2,6 +2,7 @@ import math
 
 import torch
 import wandb
+from rich.console import Console
 from torch.utils.data.dataloader import DataLoader
 
 from .timer import Timer
@@ -9,6 +10,9 @@ from .timer import Timer
 
 def to(xs, device):
     return [x.to(device) for x in xs]
+
+
+console = Console()
 
 
 class Trainer:
@@ -22,7 +26,7 @@ class Trainer:
 
     def get_optimizer(self, model):
         if self.optimizer is None:
-            print(f"[ utils/training ] Making optimizer at epoch {self.n_epochs}")
+            console.log(f"Making optimizer at epoch {self.n_epochs}")
             self.optimizer = model.configure_optimizers(self.config)
         return self.optimizer
 
