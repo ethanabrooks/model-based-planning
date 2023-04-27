@@ -6,6 +6,7 @@ import gym
 import numpy as np
 import wandb
 import yaml
+from rich.progress import track
 from torchrl.data import ReplayBuffer
 from torchrl.data.replay_buffers import LazyMemmapStorage
 from torchsnapshot import Snapshot
@@ -93,7 +94,7 @@ def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.nd
             size, scratch_dir="/tmp" if wandb.run is None else wandb.run.dir
         )
     )
-    for buffer in buffers:
+    for buffer in track(buffers, description="Merging buffers"):
         tensordict = buffer[:]
         [done_mdp] = tensordict["done_mdp"].T
         (*_, last) = done_mdp.nonzero()

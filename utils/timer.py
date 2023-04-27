@@ -1,49 +1,40 @@
-import threading
 import time
+from contextlib import contextmanager
+from datetime import timedelta
 from typing import Optional
 
-
-class Timer:
-    def __init__(self, desc: Optional[str] = None, print_freq: float = 0.01):
-        self.start_time = None
-        self.thread = threading.Thread(target=self._print_elapsed_time)
-        self.thread.daemon = True
-        self.stop_flag = False
-        self.desc = desc
-        self.print_freq = print_freq
-
-    def __enter__(self):
-        self.start_time = time.time()
-        self.thread.start()
-
-    def __exit__(self, *_, **__):
-        self.stop_flag = True
-        self.thread.join()
-
-    def _print_elapsed_time(self):
-        while not self.stop_flag:
-            elapsed_time = time.time() - self.start_time
-            hours, remainder = divmod(elapsed_time, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            msg = f"{seconds:.2f}"
-            if minutes > 0 or hours > 0:
-                msg = f"{int(minutes):02d}:{msg}"
-            else:
-                msg = f"{msg} s"
-            if hours > 0:
-                msg = f"{int(hours):02d}:{msg}"
-            if self.desc:
-                msg = f"{self.desc}: {msg}"
-            print(f"\r{msg}", end="")
-            time.sleep(self.print_freq)  # adjust the printing frequency as needed
-        print()
+from rich.progress import Progress, ProgressColumn, Task, TextColumn
+from rich.text import Text
 
 
-def long_running_operation():
-    time.sleep(1)  # replace with your operation
+class TimeElapsedColumn(ProgressColumn):
+    """Renders time elapsed."""
+
+    def render(self, task: Task) -> Text:
+        """Show time elapsed."""
+        elapsed = task.finished_time if task.finished else task.elapsed
+        if elapsed is None:
+            return Text("-:--:--", style="progress.elapsed")
+        delta = timedelta(seconds=elapsed)
+        return Text(str(delta), style="progress.elapsed")
+
+
+@contextmanager
+def Timer(desc: Optional[str] = None, print_freq: float = 0.01):
+    columns = [TimeElapsedColumn()]
+    if desc:
+        columns = [TextColumn(f"[progress.description]{desc}:"), *columns]
+
+    with Progress(*columns) as progress:
+        progress.add_task(desc, total=None)
+        yield
 
 
 if __name__ == "__main__":
+
+    def long_running_operation():
+        time.sleep(1)  # replace with your operation
+
     with Timer(desc="sleeping") as timer:
         long_running_operation()
     with Timer() as timer:

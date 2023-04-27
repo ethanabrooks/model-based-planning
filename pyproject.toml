@@ -23,6 +23,7 @@ torchrl = "^0.0.5"
 torchsnapshot = "^0.1.0"
 wandb = "^0.14.0"
 ray = {version = "^2.3.1", extras = ["tune"]}
+rich = "^13.3.4"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.6.0"
