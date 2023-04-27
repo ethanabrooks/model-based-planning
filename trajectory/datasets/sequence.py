@@ -28,9 +28,6 @@ def segment(observations, terminals, max_path_length, name: str):
     if len(trajectories[-1]) == 0:
         trajectories = trajectories[:-1]
 
-    ## list of arrays because trajectories lengths will be different
-    trajectories = [np.stack(traj, axis=0) for traj in trajectories]
-
     n_trajectories = len(trajectories)
     path_lengths = np.diff(np.pad(1 + indices, (1, 0)))
 
