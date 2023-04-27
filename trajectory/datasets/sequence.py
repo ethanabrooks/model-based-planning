@@ -34,6 +34,13 @@ def segment(observations, terminals, max_path_length, name: str):
     n_trajectories = len(trajectories)
     path_lengths = np.diff(np.pad(1 + indices, (1, 0)))
 
+    if len(path_lengths) == len(trajectories) - 1:
+        path_lengths = np.append(path_lengths, len(trajectories[-1]))
+    elif len(path_lengths) != len(trajectories):
+        raise ValueError(
+            f"Path lengths {path_lengths} and trajectories {trajectories} are not compatible"
+        )
+
     ## pad trajectories to be of equal length
     trajectories_pad = np.zeros(
         (n_trajectories, max_path_length, observation_dim), dtype=trajectories[0].dtype
