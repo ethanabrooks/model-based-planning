@@ -1,12 +1,12 @@
 SparsePointEnv-v0:
-  - rldl/varibad/SparsePointEnv-v0-multitask:v39
-  - rldl/varibad/SparsePointEnv-v0-multitask:v40
-  - rldl/varibad/SparsePointEnv-v0-multitask:v41
-  - rldl/varibad/SparsePointEnv-v0-multitask:v42
-  - rldl/varibad/SparsePointEnv-v0-multitask:v43
-  - rldl/varibad/SparsePointEnv-v0-multitask:v44
-  - rldl/varibad/SparsePointEnv-v0-multitask:v45
-  - rldl/varibad/SparsePointEnv-v0-multitask:v46
+  - rldl/varibad/SparsePointEnv-v0-multitask:v47
+  - rldl/varibad/SparsePointEnv-v0-multitask:v48
+  - rldl/varibad/SparsePointEnv-v0-multitask:v49
+  - rldl/varibad/SparsePointEnv-v0-multitask:v50
+  - rldl/varibad/SparsePointEnv-v0-multitask:v51
+  - rldl/varibad/SparsePointEnv-v0-multitask:v52
+  - rldl/varibad/SparsePointEnv-v0-multitask:v53
+  - rldl/varibad/SparsePointEnv-v0-multitask:v54
 HalfCheetahVel-v0:
   - rldl/varibad/HalfCheetahVel-v0-multitask:v0
 HalfCheetahDir-v0:
