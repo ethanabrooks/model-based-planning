@@ -1,5 +1,3 @@
-import pdb
-
 import numpy as np
 import torch
 
@@ -33,8 +31,6 @@ def beam_plan(
     """
     x : tensor[ 1 x input_sequence_length ]
     """
-
-    inp = x.clone()
 
     # convert max number of transitions to max number of tokens
     transition_dim = observation_dim + action_dim + REWARD_DIM + VALUE_DIM
@@ -133,7 +129,6 @@ def beam_search(model, x, n_steps, beam_width=512, goal=None, **sample_kwargs):
     cumulative_logp = torch.zeros(batch_size, 1, device=x.device)
 
     for t in range(n_steps):
-
         if goal is not None:
             goal_rep = goal.repeat(len(x), 1)
             logp = get_logp(model, x, goal=goal_rep, **sample_kwargs)
