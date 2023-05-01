@@ -146,7 +146,7 @@ SparsePointEnv_v0 = {
     "train": sparse_point_env_train,
     "plan": {
         "renderer": "PointRenderer",
-        "loadpath": "rldl/In-Context Model-Based Planning/sawhikj3",
+        "loadpath": "rldl/In-Context Model-Based Planning/gq3ryjo2",
     },
 }
 
@@ -154,7 +154,7 @@ TaskAwareSparsePointEnv_v0 = {
     "train": sparse_point_env_train,
     "plan": {
         "renderer": "PointRenderer",
-        "loadpath": "rldl/In-Context Model-Based Planning/1p9b1m45",
+        "loadpath": "rldl/In-Context Model-Based Planning/bajkiy0e",
     },
 }
 
