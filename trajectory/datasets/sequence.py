@@ -195,6 +195,9 @@ class DiscretizedDataset(SequenceDataset):
         self.N = N
         discretizer_class = getattr(discretization, discretizer)
         self.discretizer = discretizer_class(self.joined_raw, N)
+        self.discretizer.discount = self.discount
+        self.discretizer.observation_dim = self.observation_dim
+        self.discretizer.action_dim = self.action_dim
 
     def __getitem__(self, idx):
         path_ind, start_ind, end_ind = self.indices[idx]

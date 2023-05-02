@@ -3,12 +3,12 @@ import re
 import time
 from os.path import join
 
+import wandb
 from wandb.sdk.wandb_run import Run
 
-import wandb
 from trajectory.search import beam_plan, extract_actions, make_prefix, update_context
 from trajectory.utils import Parser as UtilsParser
-from trajectory.utils import load_from_config, load_model, make_renderer
+from trajectory.utils import load_model, make_renderer
 from trajectory.utils.timer import Timer
 from utils import helpers
 from utils.writer import Writer
@@ -74,7 +74,7 @@ def main(
     sleep_time = 1
     while True:
         try:
-            wandb.restore("data_config.pkl", run_path=loadpath, root=writer.directory)
+            wandb.restore("discretizer.pkl", run_path=loadpath, root=writer.directory)
             break
         except wandb.errors.CommError as e:
             print(e)
@@ -83,7 +83,7 @@ def main(
             sleep_time *= 2
 
     env = dataset
-    dataset = load_from_config(writer.directory, "data_config.pkl")
+    discretizer = writer.load_pickle("discretizer.pkl")
 
     wandb.restore("model_config.pkl", run_path=loadpath, root=writer.directory)
     api = wandb.Api()
@@ -97,7 +97,7 @@ def main(
     )
 
     #######################
-    ####### dataset #######
+    ####### env #######
     #######################
 
     task_aware = local.is_task_aware(env)
@@ -108,10 +108,9 @@ def main(
     renderer = make_renderer(**args, env=env)
     timer = Timer()
 
-    discretizer = dataset.discretizer
-    discount = dataset.discount
-    observation_dim = dataset.observation_dim
-    action_dim = dataset.action_dim
+    discount = discretizer.discount
+    observation_dim = discretizer.observation_dim
+    action_dim = discretizer.action_dim
 
     value_fn = lambda x: discretizer.value_fn(x, percentile)
     preprocess_fn = get_preprocess_fn(env.spec.id)

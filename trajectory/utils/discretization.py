@@ -1,5 +1,3 @@
-import pdb
-
 import numpy as np
 import torch
 
@@ -8,7 +6,6 @@ from .arrays import to_np, to_torch
 
 class QuantileDiscretizer:
     def __init__(self, data, N):
-        self.data = data
         self.N = N
 
         n_points_per_bin = int(np.ceil(len(data) / N))
@@ -32,7 +29,7 @@ class QuantileDiscretizer:
         # if (self.diffs[:,-1] == 0).any():
         # 	raise RuntimeError('rebin for sparse reward tasks')
 
-        self._test()
+        self._test(data)
 
     def __call__(self, x):
         indices = self.discretize(x)
@@ -40,10 +37,10 @@ class QuantileDiscretizer:
         error = np.abs(recon - x).max(0)
         return indices, recon, error
 
-    def _test(self):
+    def _test(self, data):
         print("[ utils/discretization ] Testing...", end=" ", flush=True)
-        inds = np.random.randint(0, len(self.data), size=1000)
-        X = self.data[inds]
+        inds = np.random.randint(0, len(data), size=1000)
+        X = data[inds]
         indices = self.discretize(X)
         recon = self.reconstruct(indices)
         ## make sure reconstruction error is less than the max allowed per dimension
@@ -84,7 +81,6 @@ class QuantileDiscretizer:
         return indices
 
     def reconstruct(self, indices, subslice=(None, None)):
-
         if torch.is_tensor(indices):
             indices = to_np(indices)
 

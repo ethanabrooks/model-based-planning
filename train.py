@@ -81,11 +81,14 @@ def main(
         discretizer=discretizer,
         trajectory_transformer=trajectory_transformer,
     )
-    writer.save(dataset_config.savepath)
     dataset = dataset_config()
     obs_dim = dataset.observation_dim
     act_dim = dataset.action_dim
     transition_dim = dataset.joined_dim
+
+    discretizer_fname = "discretizer.pkl"
+    writer.dump_pickle(dataset.discretizer, discretizer_fname)
+    writer.save(writer.path(discretizer_fname))
 
     #######################
     ######## model ########

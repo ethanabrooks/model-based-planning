@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import pickle
 from pprint import pprint
 from typing import Optional
 
@@ -48,6 +49,16 @@ class Writer:
             config.update(device=device.type)
             json.dump(config, f, indent=2)
 
+    def dump_pickle(self, obj, fname: str):
+        save_path = self.path(fname)
+        with open(save_path, "wb") as f:
+            pickle.dump(obj, f)
+
+    def load_pickle(self, fname: str):
+        load_path = self.path(fname)
+        with open(load_path, "rb") as f:
+            return pickle.load(f)
+
     @staticmethod
     def make(
         debug: bool,
@@ -82,9 +93,6 @@ class DebugWriter(Writer):
 
     def dump_config(self, args: dict):
         del args
-
-    def path(self, fname: str):
-        del fname
 
     def save(self, path: str):
         del path
