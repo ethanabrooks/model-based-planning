@@ -62,33 +62,10 @@ class SequenceDataset(torch.utils.data.Dataset):
         discount: float,
         penalty: Optional[float],
     ):
-        task_aware = local.is_task_aware(env)
-        env = local.get_env_name(env)
-        env = load_environment(env)
-        name = env.spec.id
         self.sequence_length = sequence_length
         self.step = step
+        observations, actions, rewards, done_bamdp, done_mdp = self.init(env)
 
-        artifact_names = local.get_artifact_name(name)
-        if artifact_names:
-            dataset = local.load_dataset(artifact_names, task_aware)
-        else:
-            print("[ datasets/sequence ] Loading...", end=" ", flush=True)
-            dataset = qlearning_dataset_with_timeouts(
-                env.unwrapped, terminate_on_end=True
-            )
-            print("✓")
-
-        preprocess_fn = dataset_preprocess_functions.get(name)
-        if preprocess_fn:
-            print("[ datasets/sequence ] Modifying environment")
-            dataset = preprocess_fn(dataset)
-
-        observations = dataset["observations"]
-        actions = dataset["actions"]
-        rewards = dataset["rewards"]
-        done_bamdp = dataset["done"]
-        done_mdp = dataset["done_mdp"]
         if trajectory_transformer:
             done_bamdp = done_mdp
 
@@ -182,6 +159,34 @@ class SequenceDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.indices)
+
+    def init(self, env: str):
+        task_aware = local.is_task_aware(env)
+        env = local.get_env_name(env)
+        env = load_environment(env)
+        name = env.spec.id
+
+        artifact_names = local.get_artifact_name(name)
+        if artifact_names:
+            dataset = local.load_dataset(artifact_names, task_aware)
+        else:
+            print("[ datasets/sequence ] Loading...", end=" ", flush=True)
+            dataset = qlearning_dataset_with_timeouts(
+                env.unwrapped, terminate_on_end=True
+            )
+            print("✓")
+
+        preprocess_fn = dataset_preprocess_functions.get(name)
+        if preprocess_fn:
+            print("[ datasets/sequence ] Modifying environment")
+            dataset = preprocess_fn(dataset)
+
+        observations = dataset["observations"]
+        actions = dataset["actions"]
+        rewards = dataset["rewards"]
+        done_bamdp = dataset["done"]
+        done_mdp = dataset["done_mdp"]
+        return observations, actions, rewards, done_bamdp, done_mdp
 
 
 class DiscretizedDataset(SequenceDataset):
