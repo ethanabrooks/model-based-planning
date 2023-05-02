@@ -109,14 +109,6 @@ class SequenceDataset(torch.utils.data.Dataset):
             done_mask = done_mdp.squeeze()
             rewards[done_mask] = penalty
 
-        ## segment
-        print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
-        self.joined_segmented, self.done_flags, self.path_lengths = segment(
-            self.joined_raw, done_bamdp, max_path_length, "observations/actions"
-        )
-        rewards_segmented, *_ = segment(rewards, done_bamdp, max_path_length, "rewards")
-        print("✓")
-
         ## [ n_paths x max_path_length x 1 ]
         values = np.zeros(rewards.shape)
         max_ep_len = get_max_path_length(done_mdp)
@@ -139,7 +131,14 @@ class SequenceDataset(torch.utils.data.Dataset):
             ep_values = discounts @ ep_rewards
             values[start : length - 1] = ep_values[1:, None]
 
+        ## segment
+        print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
+        self.joined_segmented, self.done_flags, self.path_lengths = segment(
+            self.joined_raw, done_bamdp, max_path_length, "observations/actions"
+        )
+        rewards_segmented, *_ = segment(rewards, done_bamdp, max_path_length, "rewards")
         values_segmented, *_ = segment(values, done_bamdp, max_path_length, "values")
+        print("✓")
 
         ## add (r, V) to `joined`
         values_raw = values_segmented.squeeze(axis=-1).reshape(-1)
