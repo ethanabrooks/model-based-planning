@@ -96,11 +96,14 @@ class Trainer:
                             probs, dim=-1, index=targets[0, :, None]
                         ).T  # just use first batch index for speed
                         exp_accuracy = exp_accuracy[mask[0]].float().mean()
+                        norms = [p.norm().item() for p in model.parameters()]
+                        global_norm = sum(x**2 for x in norms) ** 0.5
                         wandb.log(
                             {
                                 "train loss": loss.item(),
                                 "argmax accuracy": argmax_accuracy.item(),
                                 "exp accuracy": exp_accuracy.item(),
+                                "global norm": global_norm,
                                 "lr": lr,
                                 "lr_mult": lr_mult,
                                 "epoch": self.n_epochs,
