@@ -4,10 +4,11 @@ import pickle
 
 # import pickle5 as pickle
 import random
+import shutil
 import urllib
 import warnings
 from distutils.util import strtobool
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import numpy as np
 import tomli
@@ -16,6 +17,10 @@ import torch.functional as F
 import torch.nn as nn
 from ray import tune
 from ray.air.integrations.wandb import setup_wandb
+from rich import box
+from rich.console import Console
+from rich.layout import Layout
+from rich.table import Table
 
 from environments.parallel_envs import make_vec_envs
 from trajectory.utils import Parser
@@ -442,3 +447,73 @@ def sweep(
         trainable=tune.with_resources(train_func, dict(gpu=1)),
         param_space=param_space,
     ).fit()
+
+
+def generate_table(rows, columns):
+    layout = Layout()
+    console = Console()
+    rows = list(rows)
+
+    # This would also get the height:
+    # render_map = layout.render(console, console.options)
+    # render_map[layout].region.height
+    _, n_rows = os.get_terminal_size()
+
+    while n_rows >= 0:
+        table = Table(box=box.HORIZONTALS)
+        for column in columns:
+            table.add_column(column)
+
+        for row in rows[-n_rows:]:
+            table.add_row(*[f"{row[c]:.3f}" for c in columns])
+
+        layout.update(table)
+
+        render_map = layout.render(console, console.options)
+
+        if len(render_map[layout].render[-1]) > 2:
+            # The table is overflowing
+            n_rows -= 1
+        else:
+            break
+
+    return table
+
+
+console = Console()
+
+
+def print_row(
+    row: dict[str, Any],
+    show_header: bool = True,
+    format: Optional[dict[str, Callable[[Any], str]]] = None,
+    widths: Optional[dict[str, float]] = None,
+):
+    if format is None:
+        format = {}
+    if widths is None:
+        widths = {}
+    for k, v in widths.items():
+        assert 0 < v < 1, f"Widths should be between 0 and 1, got {v} for {k}"
+    assert sum(widths.values()) <= 1, f"Sum of widths should be <= 1, got:\n{widths}"
+
+    term_size = shutil.get_terminal_size((80, 20))
+
+    claimed = sum(widths.values())
+    remaining = 1 - claimed
+    default_width = remaining / (len(row) - len(widths))
+    widths = {k: widths.get(k, default_width) for k in row}
+
+    def col_width(col: str):
+        return int(np.round(widths[col] * term_size.columns))
+
+    if show_header:
+        header = [f"{k:<{col_width(k)}}" for k in row]
+        console.print("".join(header), style="underline")
+    row_str = ""
+    for column, value in row.items():
+        value_str = format.get(column, str)(value)
+        # Set the width of each column to 10 characters
+        value_str = f"{value_str:<{col_width(column)}}"
+        row_str += f"{value_str}"
+    console.print(row_str)

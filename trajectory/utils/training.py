@@ -5,7 +5,7 @@ import wandb
 from rich.console import Console
 from torch.utils.data.dataloader import DataLoader
 
-from .timer import Timer
+from utils.helpers import print_row
 
 
 def to(xs, device):
@@ -45,7 +45,6 @@ class Trainer:
         )
 
         for _ in range(n_epochs):
-            timer = Timer()
             for it, batch in enumerate(loader):
                 batch = to(batch, self.device)
 
@@ -87,35 +86,43 @@ class Trainer:
                 # report progress
                 if it % log_freq == 0:
                     cuml_it = it + len(loader) * self.n_epochs
-                    if not debug:
-                        _, targets, mask = batch
-                        argmax_accuracy = logits.argmax(-1) == targets
-                        argmax_accuracy = argmax_accuracy[mask].float().mean()
-                        probs = torch.softmax(logits[0], dim=-1)
-                        [exp_accuracy] = torch.gather(
-                            probs, dim=-1, index=targets[0, :, None]
-                        ).T  # just use first batch index for speed
-                        exp_accuracy = exp_accuracy[mask[0]].float().mean()
-                        norms = [p.norm().item() for p in model.parameters()]
-                        global_norm = sum(x**2 for x in norms) ** 0.5
-                        wandb.log(
-                            {
-                                "train loss": loss.item(),
-                                "argmax accuracy": argmax_accuracy.item(),
-                                "exp accuracy": exp_accuracy.item(),
-                                "global norm": global_norm,
-                                "lr": lr,
-                                "lr_mult": lr_mult,
-                                "epoch": self.n_epochs,
-                                "iteration": it,
-                            },
-                            step=cuml_it,
-                        )
-                    print(
-                        f"[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {min(config.total_iters, len(loader)):4d} ] ",
-                        f"train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | "
-                        f"t: {timer():.2f}",
+                    _, targets, mask = batch
+                    argmax_accuracy = logits.argmax(-1) == targets
+                    argmax_accuracy = argmax_accuracy[mask].float().mean()
+                    probs = torch.softmax(logits[0], dim=-1)
+                    [exp_accuracy] = torch.gather(
+                        probs, dim=-1, index=targets[0, :, None]
+                    ).T  # just use first batch index for speed
+                    exp_accuracy = exp_accuracy[mask[0]].float().mean()
+                    norms = [p.norm().item() for p in model.parameters()]
+                    global_norm = sum(x**2 for x in norms) ** 0.5
+                    log = {
+                        "train loss": loss.item(),
+                        "argmax accuracy": argmax_accuracy.item(),
+                        "exp accuracy": exp_accuracy.item(),
+                        "global norm": global_norm,
+                        "lr": lr,
+                        "lr_mult": lr_mult,
+                        "epoch": self.n_epochs,
+                        "iteration": it,
+                    }
+                    print_row(
+                        log,
+                        show_header=it % (log_freq * 30) == 0,
+                        format={
+                            "train loss": lambda x: f"{x:.2f}",
+                            "argmax accuracy": lambda x: f"{x:.2%}",
+                            "exp accuracy": lambda x: f"{x:.2%}",
+                            "global norm": lambda x: f"{x:.2f}",
+                            "lr": lambda x: f"{x:.2e}",
+                            "lr_mult": lambda x: f"{x:.2f}",
+                            "iteration": lambda x: f"{x:,}/{config.total_iters:,} ({x / config.total_iters:.1%})",
+                        },
+                        widths=dict(iteration=0.2),
                     )
+                    if not debug:
+                        wandb.log(log, step=cuml_it)
+
                 if cuml_it >= config.total_iters:
                     break
 
