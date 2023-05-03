@@ -13,45 +13,6 @@ from .d4rl import load_environment, qlearning_dataset_with_timeouts
 from .preprocessing import dataset_preprocess_functions
 
 
-def segment(observations, done, max_path_length, name: str):
-    """
-    segment `observations` into trajectories according to `terminals`
-    """
-    assert len(observations) == len(done)
-    observation_dim = observations.shape[1]
-
-    # Find indices of ones in Y
-    indices, _ = np.where(done == 1)
-
-    # Split X into segments
-    trajectories = np.split(observations, indices + 1)
-
-    if len(trajectories[-1]) == 0:
-        trajectories = trajectories[:-1]
-
-    n_trajectories = len(trajectories)
-    path_lengths = np.diff(np.pad(1 + indices, (1, 0)))
-
-    if len(path_lengths) == len(trajectories) - 1:
-        path_lengths = np.append(path_lengths, len(trajectories[-1]))
-    elif len(path_lengths) != len(trajectories):
-        raise ValueError(
-            f"Path lengths {path_lengths} and trajectories {trajectories} are not compatible"
-        )
-
-    ## pad trajectories to be of equal length
-    trajectories_pad = np.zeros(
-        (n_trajectories, max_path_length, observation_dim), dtype=trajectories[0].dtype
-    )
-    done_flags = np.zeros((n_trajectories, max_path_length), dtype=bool)
-    for i, traj in enumerate(track(trajectories, description=f"Padding {name}")):
-        path_length = path_lengths[i]
-        trajectories_pad[i, :path_length] = traj
-        done_flags[i, path_length:] = 1
-
-    return trajectories_pad, done_flags, path_lengths
-
-
 class SequenceDataset(torch.utils.data.Dataset):
     def __init__(
         self,
@@ -110,11 +71,53 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         ## segment
         print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
+
+        def segment(observations, name: str):
+            """
+            segment `observations` into trajectories according to `terminals`
+            """
+            assert len(observations) == len(done_bamdp)
+            observation_dim = observations.shape[1]
+
+            # Find indices of ones in Y
+            indices, _ = np.where(done_bamdp == 1)
+
+            # Split X into segments
+            trajectories = np.split(observations, indices + 1)
+
+            if len(trajectories[-1]) == 0:
+                trajectories = trajectories[:-1]
+
+            n_trajectories = len(trajectories)
+            path_lengths = np.diff(np.pad(1 + indices, (1, 0)))
+
+            if len(path_lengths) == len(trajectories) - 1:
+                path_lengths = np.append(path_lengths, len(trajectories[-1]))
+            elif len(path_lengths) != len(trajectories):
+                raise ValueError(
+                    f"Path lengths {path_lengths} and trajectories {trajectories} are not compatible"
+                )
+
+            ## pad trajectories to be of equal length
+            trajectories_pad = np.zeros(
+                (n_trajectories, max_path_length, observation_dim),
+                dtype=trajectories[0].dtype,
+            )
+            done_flags = np.zeros((n_trajectories, max_path_length), dtype=bool)
+            for i, traj in enumerate(
+                track(trajectories, description=f"Padding {name}")
+            ):
+                path_length = path_lengths[i]
+                trajectories_pad[i, :path_length] = traj
+                done_flags[i, path_length:] = 1
+
+            return trajectories_pad, done_flags, path_lengths
+
         self.joined_segmented, self.done_flags, self.path_lengths = segment(
-            self.joined_raw, done_bamdp, max_path_length, "observations/actions"
+            self.joined_raw, "observations/actions"
         )
-        rewards_segmented, *_ = segment(rewards, done_bamdp, max_path_length, "rewards")
-        values_segmented, *_ = segment(values, done_bamdp, max_path_length, "values")
+        rewards_segmented, *_ = segment(rewards, "rewards")
+        values_segmented, *_ = segment(values, "values")
         print("✓")
 
         ## add (r, V) to `joined`
