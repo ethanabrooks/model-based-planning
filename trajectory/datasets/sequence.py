@@ -3,7 +3,7 @@ from typing import Optional
 
 import numpy as np
 import torch
-from rich.progress import track
+from rich.progress import Progress
 
 from trajectory.datasets import local
 from trajectory.utils import discretization
@@ -59,90 +59,91 @@ class SequenceDataset(torch.utils.data.Dataset):
         ep_ends += 1
         ep_starts = np.pad(ep_ends, (1, 0))[:-1]
 
-        for start, length in track(
-            np.stack([ep_starts, ep_ends], axis=1), description="Computing values"
-        ):
-            assert start < length
-            [ep_rewards] = rewards[start:length].T
-            l = ep_rewards.size
-            discounts = discount_array[:l, :l]
-            ep_values = discounts @ ep_rewards
-            values[start : length - 1] = ep_values[1:, None]
-
-        ## segment
-        print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
-
-        def segment(observations, name: str):
-            """
-            segment `observations` into trajectories according to `terminals`
-            """
-            assert len(observations) == len(done_bamdp)
-            observation_dim = observations.shape[1]
-
-            # Find indices of ones in Y
-            indices, _ = np.where(done_bamdp == 1)
-
-            # Split X into segments
-            trajectories = np.split(observations, indices + 1)
-
-            if len(trajectories[-1]) == 0:
-                trajectories = trajectories[:-1]
-
-            n_trajectories = len(trajectories)
-            path_lengths = np.diff(np.pad(1 + indices, (1, 0)))
-
-            if len(path_lengths) == len(trajectories) - 1:
-                path_lengths = np.append(path_lengths, len(trajectories[-1]))
-            elif len(path_lengths) != len(trajectories):
-                raise ValueError(
-                    f"Path lengths {path_lengths} and trajectories {trajectories} are not compatible"
-                )
-
-            ## pad trajectories to be of equal length
-            trajectories_pad = np.zeros(
-                (n_trajectories, max_path_length, observation_dim),
-                dtype=trajectories[0].dtype,
-            )
-            done_flags = np.zeros((n_trajectories, max_path_length), dtype=bool)
-            for i, traj in enumerate(
-                track(trajectories, description=f"Padding {name}")
+        with Progress() as progress:
+            for start, length in progress.track(
+                np.stack([ep_starts, ep_ends], axis=1), description="Computing values"
             ):
-                path_length = path_lengths[i]
-                trajectories_pad[i, :path_length] = traj
-                done_flags[i, path_length:] = 1
+                assert start < length
+                [ep_rewards] = rewards[start:length].T
+                l = ep_rewards.size
+                discounts = discount_array[:l, :l]
+                ep_values = discounts @ ep_rewards
+                values[start : length - 1] = ep_values[1:, None]
 
-            return trajectories_pad, done_flags, path_lengths
+            ## segment
+            print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
 
-        self.joined_segmented, self.done_flags, self.path_lengths = segment(
-            self.joined_raw, "observations/actions"
-        )
-        rewards_segmented, *_ = segment(rewards, "rewards")
-        values_segmented, *_ = segment(values, "values")
-        print("✓")
+            def segment(observations, name: str):
+                """
+                segment `observations` into trajectories according to `terminals`
+                """
+                assert len(observations) == len(done_bamdp)
+                observation_dim = observations.shape[1]
 
-        ## add (r, V) to `joined`
-        values_raw = values_segmented.squeeze(axis=-1).reshape(-1)
-        values_mask = ~self.done_flags.reshape(-1)
-        values_raw = values_raw[values_mask, None]
+                # Find indices of ones in Y
+                indices, _ = np.where(done_bamdp == 1)
 
-        self.joined_raw = np.concatenate(
-            [self.joined_raw, rewards, values_raw], axis=-1
-        )
-        self.joined_segmented = np.concatenate(
-            [self.joined_segmented, rewards_segmented, values_segmented],
-            axis=-1,
-        )
+                # Split X into segments
+                trajectories = np.split(observations, indices + 1)
 
-        ## get valid indices
-        indices = []
-        for path_ind, length in enumerate(
-            track(self.path_lengths - 1, description="Assign indices")
-        ):
-            starts = np.arange(1 - sequence_length, length)
-            ends = starts + sequence_length
-            idxs = path_ind * np.ones_like(starts)
-            starts = np.clip(starts, 0, None)
-            indices.append(np.stack([idxs, starts, ends]))
+                if len(trajectories[-1]) == 0:
+                    trajectories = trajectories[:-1]
+
+                n_trajectories = len(trajectories)
+                path_lengths = np.diff(np.pad(1 + indices, (1, 0)))
+
+                if len(path_lengths) == len(trajectories) - 1:
+                    path_lengths = np.append(path_lengths, len(trajectories[-1]))
+                elif len(path_lengths) != len(trajectories):
+                    raise ValueError(
+                        f"Path lengths {path_lengths} and trajectories {trajectories} are not compatible"
+                    )
+
+                ## pad trajectories to be of equal length
+                trajectories_pad = np.zeros(
+                    (n_trajectories, max_path_length, observation_dim),
+                    dtype=trajectories[0].dtype,
+                )
+                done_flags = np.zeros((n_trajectories, max_path_length), dtype=bool)
+                for i, traj in enumerate(
+                    progress.track(trajectories, description=f"Padding {name}")
+                ):
+                    path_length = path_lengths[i]
+                    trajectories_pad[i, :path_length] = traj
+                    done_flags[i, path_length:] = 1
+
+                return trajectories_pad, done_flags, path_lengths
+
+            self.joined_segmented, self.done_flags, self.path_lengths = segment(
+                self.joined_raw, "observations/actions"
+            )
+            rewards_segmented, *_ = segment(rewards, "rewards")
+            values_segmented, *_ = segment(values, "values")
+            print("✓")
+
+            ## add (r, V) to `joined`
+            values_raw = values_segmented.squeeze(axis=-1).reshape(-1)
+            values_mask = ~self.done_flags.reshape(-1)
+            values_raw = values_raw[values_mask, None]
+
+            self.joined_raw = np.concatenate(
+                [self.joined_raw, rewards, values_raw], axis=-1
+            )
+            self.joined_segmented = np.concatenate(
+                [self.joined_segmented, rewards_segmented, values_segmented],
+                axis=-1,
+            )
+
+            ## get valid indices
+            indices = []
+            for path_ind, length in enumerate(
+                progress.track(self.path_lengths - 1, description="Assign indices")
+            ):
+                starts = np.arange(1 - sequence_length, length)
+                ends = starts + sequence_length
+                idxs = path_ind * np.ones_like(starts)
+                starts = np.clip(starts, 0, None)
+                indices.append(np.stack([idxs, starts, ends]))
 
         self.indices = np.concatenate(indices, axis=1).T
         self.observation_dim = observations.shape[1]
