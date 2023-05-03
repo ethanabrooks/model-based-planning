@@ -4,15 +4,14 @@ from typing import Optional
 
 import gym
 import numpy as np
+import wandb
 import yaml
 from rich.progress import track
 from torchrl.data import ReplayBuffer
 from torchrl.data.replay_buffers import LazyMemmapStorage
 from torchsnapshot import Snapshot
-import wandb
 
 import environments  # noqa: F401
-import wandb
 from environments import parallel_envs
 from utils.timer import Timer
 
@@ -116,6 +115,26 @@ def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.nd
         dataset["observations"] = add_task_to_obs(
             dataset["observations"], dataset["task"]
         )
+    done_mdp = dataset["done_mdp"]
+    ([mask_size, *_], _) = done_mdp.nonzero()
+    mask_size += 1
+    mask = np.zeros(mask_size, dtype=bool)
+    done_bamdp_mask = np.zeros(mask_size, dtype=bool)
+    terminations = np.zeros(mask_size, dtype=bool)
+    mask[:20] = 1
+    done_bamdp_mask[-20:] = 1
+    terminations[20 - 1] = 1
+    tiles = done_mdp.size // mask_size + 1
+    mask = np.tile(mask, tiles)
+    done_bamdp_mask = np.tile(done_bamdp_mask, tiles)
+    terminations = np.tile(terminations, tiles)
+    mask = mask[: done_mdp.size]
+    done_bamdp_mask = done_bamdp_mask[: done_mdp.size]
+    terminations = terminations[: done_mdp.size]
+    dataset["done_mdp"][terminations] = 1
+    dataset = {
+        k: v[done_bamdp_mask if k == "done" else mask] for k, v in dataset.items()
+    }
     return dataset
 
 
