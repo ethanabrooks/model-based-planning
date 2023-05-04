@@ -139,8 +139,10 @@ def main(
     ####### trainer #######
     #######################
 
-    warmup_tokens = len(dataset) * block_size  # number of tokens seen per epoch
-    final_tokens = 20 * warmup_tokens
+    final_tokens = (
+        total_iters * block_size * batch_size
+    )  # number of tokens seen during training
+    warmup_tokens = final_tokens // 20
 
     trainer_config = utils.Config(
         utils.Trainer,
