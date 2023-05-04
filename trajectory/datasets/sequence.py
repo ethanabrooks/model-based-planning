@@ -8,6 +8,7 @@ from rich.progress import Progress
 from trajectory.datasets import local
 from trajectory.utils import discretization
 from trajectory.utils.arrays import to_torch
+from utils.timer import Timer
 
 from .d4rl import load_environment, qlearning_dataset_with_timeouts
 from .preprocessing import dataset_preprocess_functions
@@ -126,14 +127,6 @@ class SequenceDataset(torch.utils.data.Dataset):
             values_mask = ~self.done_flags.reshape(-1)
             values_raw = values_raw[values_mask, None]
 
-            self.joined_raw = np.concatenate(
-                [self.joined_raw, rewards, values_raw], axis=-1
-            )
-            self.joined_segmented = np.concatenate(
-                [self.joined_segmented, rewards_segmented, values_segmented],
-                axis=-1,
-            )
-
             ## get valid indices
             indices = []
             for path_ind, length in enumerate(
@@ -144,6 +137,16 @@ class SequenceDataset(torch.utils.data.Dataset):
                 idxs = path_ind * np.ones_like(starts)
                 starts = np.clip(starts, 0, None)
                 indices.append(np.stack([idxs, starts, ends]))
+
+        with Timer(desc="Concatenating raw arrays"):
+            self.joined_raw = np.concatenate(
+                [self.joined_raw, rewards, values_raw], axis=-1
+            )
+        with Timer(desc="Concatenating segmented arrays"):
+            self.joined_segmented = np.concatenate(
+                [self.joined_segmented, rewards_segmented, values_segmented],
+                axis=-1,
+            )
 
         self.indices = np.concatenate(indices, axis=1).T
         self.observation_dim = observations.shape[1]
