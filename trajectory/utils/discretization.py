@@ -3,6 +3,8 @@ import pdb
 import numpy as np
 import torch
 
+from utils.timer import Timer
+
 from .arrays import to_np, to_torch
 
 
@@ -12,7 +14,8 @@ class QuantileDiscretizer:
         self.N = N
 
         n_points_per_bin = int(np.ceil(len(data) / N))
-        obs_sorted = np.sort(data, axis=0)
+        with Timer("Sorting data for discretization"):
+            obs_sorted = np.sort(data, axis=0)
         thresholds = obs_sorted[::n_points_per_bin, :]
         maxs = data.max(axis=0, keepdims=True)
 
