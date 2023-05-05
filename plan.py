@@ -192,21 +192,22 @@ def main(
             reward,
             max_context_transitions,
         )
-
+        terminal_mdp = bool(info.get("done_mdp"))
+        log = {
+            "reward": reward,
+            "total_reward": total_reward,
+            "score": score,
+        }
+        if terminal_mdp:
+            log["episode_return"] = total_reward
         writer.log(
-            {
-                "reward": reward,
-                "total_reward": total_reward,
-                "score": score,
-            },
+            log,
             step=T,
         )
         print(
             f"[ plan ] t: {T} / {env.spec.max_episode_steps} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
             f"time: {timer():.2f} | {dataset} | {exp_name} | {suffix}\n"
         )
-
-        terminal_mdp = bool(info.get("done_mdp"))
 
         ## visualization
         if terminal or terminal_mdp:
