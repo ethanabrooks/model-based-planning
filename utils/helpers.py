@@ -8,6 +8,7 @@ import shutil
 import urllib
 import warnings
 from distutils.util import strtobool
+from pathlib import Path
 from typing import Any, Callable, Optional
 
 import numpy as np
@@ -15,6 +16,7 @@ import tomli
 import torch
 import torch.functional as F
 import torch.nn as nn
+import wandb
 from ray import tune
 from ray.air.integrations.wandb import setup_wandb
 from rich import box
@@ -23,7 +25,6 @@ from rich.layout import Layout
 from rich.table import Table
 
 from environments.parallel_envs import make_vec_envs
-from trajectory.utils import Parser
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -422,7 +423,7 @@ TAGS = [
 
 def sweep(
     main: Callable,
-    parser: Parser,
+    parser,
     param_space: dict[str, Any],
     group_name: str,
     dataset: str,
@@ -517,3 +518,7 @@ def print_row(
         value_str = f"{value_str:<{col_width(column)}}"
         row_str += f"{value_str}"
     console.print(row_str)
+
+
+def tmp_dir():
+    return Path(wandb.run.dir).parent / "tmp"

@@ -71,7 +71,7 @@ def main(
 
     dataset_config = utils.Config(
         datasets.DiscretizedDataset,
-        savepath=writer.path("data_config.pkl"),
+        savepath=str(writer.path("data_config.pkl")),
         env=dataset,
         N=N,
         penalty=termination_penalty,
@@ -109,7 +109,7 @@ def main(
 
     model_config = utils.Config(
         GPT,
-        savepath=writer.path("model_config.pkl"),
+        savepath=str(writer.path("model_config.pkl")),
         ## discretization
         vocab_size=N,
         block_size=block_size,
@@ -146,7 +146,7 @@ def main(
 
     trainer_config = utils.Config(
         utils.Trainer,
-        savepath=writer.path("trainer_config.pkl"),
+        savepath=str(writer.path("trainer_config.pkl")),
         # optimization parameters
         batch_size=batch_size,
         learning_rate=learning_rate,
