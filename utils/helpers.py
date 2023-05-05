@@ -436,6 +436,7 @@ def sweep(
     def train_func(sweep_params):
         params = dict(**parser_params)
         params.update(sweep_params)
+        params.update(seed=parser.seed + sweep_params.get("seed", 0))
         run = setup_wandb(
             config=params, group=group, project=project, rank_zero_only=False, tags=TAGS
         )
