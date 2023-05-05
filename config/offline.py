@@ -62,6 +62,7 @@ base = {
         "vis_freq": 50,
         "exp_name": watch(args_to_watch),
         "prefix": "plans/defaults/",
+        "seed": 42,
         "suffix": "0",
         "verbose": True,
         "total_iters": 200,
