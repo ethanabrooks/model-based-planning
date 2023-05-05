@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 
-from .. import utils
-from .sampling import get_logp, sample_n, sort_2d
+from trajectory import utils
+from trajectory.search.sampling import get_logp, sample_n, sort_2d
 
 REWARD_DIM = VALUE_DIM = 1
 
