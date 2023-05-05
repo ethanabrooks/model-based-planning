@@ -222,6 +222,7 @@ def main(
                 context = []
             rollout = []
             t = 0
+            total_reward = 0
         if terminal:
             break
 
