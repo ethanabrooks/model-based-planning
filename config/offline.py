@@ -64,6 +64,7 @@ base = {
         "prefix": "plans/defaults/",
         "suffix": "0",
         "verbose": True,
+        "total_iters": 200,
     },
 }
 
