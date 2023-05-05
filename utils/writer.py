@@ -29,6 +29,7 @@ class Writer:
         self.run = run
         assert wandb.run is not None, "Should be using DebugWriter is not using wandb."
         self._directory = tmp_dir()
+        self._save_directory = Path(wandb.run.dir)
 
     @property
     def directory(self) -> Path:
@@ -82,11 +83,15 @@ class Writer:
     def save(self, path: Path):
         wandb.save(str(path))
 
+    @property
+    def save_directory(self) -> Path:
+        return self._save_directory
+
 
 class DebugWriter(Writer):
     def __init__(self) -> None:
         timestamp = datetime.datetime.now().strftime("_%d:%m_%H:%M:%S")
-        self._directory = Path("/tmp", "restore-path", timestamp)
+        self._save_directory = self._directory = Path("/tmp", "restore-path", timestamp)
         self._directory.mkdir(parents=True)
 
     @property

@@ -168,7 +168,7 @@ def main(
         if t % vis_freq == 0 or terminal_mdp:
             ## save current plan
             renderer.render_plan(
-                join(writer.directory, f"{t}_plan.mp4"),
+                join(writer.save_directory, f"{t}_plan.mp4"),
                 sequence_recon,
                 env.state_vector(),
             )
@@ -214,7 +214,7 @@ def main(
         if terminal or terminal_mdp:
             ## save rollout thus far
             renderer.render_rollout(
-                join(writer.directory, "rollout.mp4"), rollout, fps=80
+                join(writer.save_directory, "rollout.mp4"), rollout, fps=80
             )
 
         t += 1
@@ -231,7 +231,7 @@ def main(
         observation = next_observation
 
     ## save result as a json file
-    json_path = join(writer.directory, "rollout.json")
+    json_path = join(writer.save_directory, "rollout.json")
     json_data = {
         "score": score,
         "step": t,
