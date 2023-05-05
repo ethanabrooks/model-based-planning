@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import pickle
+from pathlib import Path
 from pprint import pprint
 from typing import Optional
 
@@ -10,7 +11,7 @@ import wandb
 from rich.console import Console
 from wandb.sdk.wandb_run import Run
 
-from utils.helpers import TAGS, project_name
+from utils.helpers import TAGS, project_name, tmp_dir
 
 console = Console()
 
@@ -26,10 +27,11 @@ class Writer:
             )
             run = wandb.run
         self.run = run
-        self._directory = run.dir
+        assert wandb.run is not None, "Should be using DebugWriter is not using wandb."
+        self._directory = tmp_dir()
 
     @property
-    def directory(self):
+    def directory(self) -> Path:
         return self._directory
 
     def load_artifact(self, name: str):
@@ -51,12 +53,12 @@ class Writer:
 
     def dump_pickle(self, obj, fname: str):
         save_path = self.path(fname)
-        with open(save_path, "wb") as f:
+        with save_path.open("wb") as f:
             pickle.dump(obj, f)
 
     def load_pickle(self, fname: str):
         load_path = self.path(fname)
-        with open(load_path, "rb") as f:
+        with load_path.open("rb") as f:
             return pickle.load(f)
 
     @staticmethod
@@ -74,21 +76,21 @@ class Writer:
             else Writer(config=config, dataset=dataset, name=name, notes=notes, run=run)
         )
 
-    def path(self, fname: str):
-        return os.path.join(self.directory, fname)
+    def path(self, fname: str) -> Path:
+        return Path(self.directory, fname)
 
-    def save(self, path: str):
-        wandb.save(path)
+    def save(self, path: Path):
+        wandb.save(str(path))
 
 
 class DebugWriter(Writer):
     def __init__(self) -> None:
         timestamp = datetime.datetime.now().strftime("_%d:%m_%H:%M:%S")
-        self._directory = os.path.join("/tmp", "restore-path", timestamp)
-        os.makedirs(self._directory)
+        self._directory = Path("/tmp", "restore-path", timestamp)
+        self._directory.mkdir(parents=True)
 
     @property
-    def directory(self):
+    def directory(self) -> Path:
         return self._directory
 
     def dump_config(self, args: dict):

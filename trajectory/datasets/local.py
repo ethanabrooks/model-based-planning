@@ -13,6 +13,7 @@ from torchsnapshot import Snapshot
 
 import environments  # noqa: F401
 from environments import parallel_envs
+from utils.helpers import tmp_dir
 from utils.timer import Timer
 
 TASK_AWARE_PATTERN = re.compile(r"^TaskAware(.*)")
@@ -89,9 +90,7 @@ def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.nd
     # merge buffers
     size = sum(len(buffer) for buffer in buffers)
     replay_buffer = ReplayBuffer(
-        LazyMemmapStorage(
-            size, scratch_dir="/tmp" if wandb.run is None else wandb.run.dir
-        )
+        LazyMemmapStorage(size, scratch_dir="/tmp" if wandb.run is None else tmp_dir())
     )
     for buffer in track(buffers, description="Merging buffers"):
         tensordict = buffer[:]
