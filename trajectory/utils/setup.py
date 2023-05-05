@@ -109,6 +109,7 @@ class Parser(Tap):
             setattr(args, key, val)
 
     def set_seed(self, args):
+        console.log(f"Seed: {getattr(args, 'seed', None)}")
         if not "seed" in dir(args):
             return
         set_seed(args.seed)
