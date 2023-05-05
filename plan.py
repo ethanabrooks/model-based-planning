@@ -9,6 +9,7 @@ from wandb.sdk.wandb_run import Run
 from trajectory.search import beam_plan, extract_actions, make_prefix, update_context
 from trajectory.utils import Parser as UtilsParser
 from trajectory.utils import load_model, make_renderer
+from trajectory.utils.setup import set_seed
 from trajectory.utils.timer import Timer
 from utils import helpers
 from utils.writer import Writer
@@ -51,6 +52,7 @@ def main(
     plan_freq: int,
     prefix_context: int,
     run: Run,
+    seed: int,
     suffix: str,
     total_iters: int,
     trajectory_transformer: bool,
@@ -63,6 +65,8 @@ def main(
     ######## setup ########
     #######################
     assert any(name in dataset for name in ["SparsePointEnv", "HalfCheetahVel"])
+
+    set_seed(seed)
 
     writer = Writer.make(
         debug, config=args, dataset=dataset, name=name, notes=notes, run=run
