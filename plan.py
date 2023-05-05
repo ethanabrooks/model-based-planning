@@ -209,7 +209,7 @@ def main(
         terminal_mdp = bool(info.get("done_mdp"))
 
         ## visualization
-        if t % vis_freq == 0 or terminal or terminal_mdp:
+        if terminal or terminal_mdp:
             ## save rollout thus far
             renderer.render_rollout(
                 join(writer.directory, "rollout.mp4"), rollout, fps=80
