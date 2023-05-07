@@ -63,7 +63,9 @@ def load_environment(env: str) -> gym.Env:
     return env
 
 
-def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.ndarray]:
+def load_dataset(
+    artifact_names: list[str], task_aware: bool, truncate_episode: int
+) -> dict[str, np.ndarray]:
     buffers = []
     for i, artifact_name in enumerate(artifact_names, start=1):
         # download artifact
@@ -120,9 +122,9 @@ def load_dataset(artifact_names: list[str], task_aware: bool) -> dict[str, np.nd
     mask = np.zeros(mask_size, dtype=bool)
     done_bamdp_mask = np.zeros(mask_size, dtype=bool)
     terminations = np.zeros(mask_size, dtype=bool)
-    mask[:20] = 1
-    done_bamdp_mask[-20:] = 1
-    terminations[20 - 1] = 1
+    mask[:truncate_episode] = 1
+    done_bamdp_mask[-truncate_episode:] = 1
+    terminations[truncate_episode - 1] = 1
     tiles = done_mdp.size // mask_size + 1
     mask = np.tile(mask, tiles)
     done_bamdp_mask = np.tile(done_bamdp_mask, tiles)

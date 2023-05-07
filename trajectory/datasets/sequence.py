@@ -175,7 +175,9 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         artifact_names = local.get_artifact_name(name)
         if artifact_names:
-            dataset = local.load_dataset(artifact_names, task_aware)
+            dataset = local.load_dataset(
+                artifact_names, task_aware, truncate_episode=env.spec.max_episode_steps
+            )
         else:
             print("[ datasets/sequence ] Loading...", end=" ", flush=True)
             dataset = qlearning_dataset_with_timeouts(
