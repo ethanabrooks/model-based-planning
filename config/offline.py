@@ -36,7 +36,7 @@ base = {
         "reward_weight": 1,
         "seed": 42,
         "step": 1,
-        "subsampled_sequence_length": 10,
+        "subsampled_sequence_length": 50,
         "termination_penalty": -100,
         "total_iters": 200_000,
         "value_weight": 1,
@@ -162,7 +162,6 @@ TaskAwareSparsePointEnv_v0 = {
 
 half_cheetah_vel_train = {
     "batch_size": 64,
-    "subsampled_sequence_length": 50,
 }
 
 HalfCheetahVel_v0 = {
