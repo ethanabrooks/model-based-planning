@@ -438,7 +438,12 @@ def sweep(
         params.update(sweep_params)
         params.update(seed=parser.seed + sweep_params.get("seed", 0))
         run = setup_wandb(
-            config=params, group=group, project=project, rank_zero_only=False, tags=TAGS
+            config=params,
+            group=group,
+            project=project,
+            rank_zero_only=False,
+            tags=TAGS,
+            notes=parser.notes,
         )
         print(
             f"wandb: ️👪 View group at {run.get_project_url()}/groups/{urllib.parse.quote(group)}/workspace"
