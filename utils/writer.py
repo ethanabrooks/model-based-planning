@@ -18,12 +18,21 @@ console = Console()
 
 class Writer:
     def __init__(
-        self, config: dict, dataset: str, name: str, notes: str, run: Optional[Run]
+        self,
+        config: dict,
+        dataset: str,
+        name: str,
+        notes: str,
+        run: Optional[Run],
+        trajectory_transformer: bool,
     ) -> None:
         name = f"{name}-{dataset}"
         if run is None:
+            tags = TAGS
+            if trajectory_transformer:
+                tags.append("trajectory-transformer")
             wandb.init(
-                config=config, name=name, notes=notes, project=project_name(), tags=TAGS
+                config=config, name=name, notes=notes, project=project_name(), tags=tags
             )
             run = wandb.run
         self.run = run
@@ -70,11 +79,19 @@ class Writer:
         name: str,
         notes: str,
         run: Optional[Run],
+        trajectory_transformer: bool,
     ):
         return (
             DebugWriter()
             if debug
-            else Writer(config=config, dataset=dataset, name=name, notes=notes, run=run)
+            else Writer(
+                config=config,
+                dataset=dataset,
+                name=name,
+                notes=notes,
+                run=run,
+                trajectory_transformer=trajectory_transformer,
+            )
         )
 
     def path(self, fname: str) -> Path:
