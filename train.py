@@ -60,7 +60,13 @@ def main(
 ):
     assert any(name in dataset for name in ["SparsePointEnv", "HalfCheetahVel"])
     writer = Writer.make(
-        debug, config=args, dataset=dataset, name=name, notes=notes, run=run
+        debug,
+        config=args,
+        dataset=dataset,
+        name=name,
+        notes=notes,
+        run=run,
+        trajectory_transformer=trajectory_transformer,
     )
 
     #######################
