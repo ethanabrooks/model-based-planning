@@ -98,9 +98,9 @@ def load_dataset(
         tensordict = buffer[:]
         [done_mdp] = tensordict["done_mdp"].T
         (*_, last) = done_mdp.nonzero()
-        tensordict.set_at_(
-            "done", True, last.item()
-        )  # terminate last transition per task
+        last = last.item()
+        tensordict.set_at_("done", True, last)  # terminate last transition per task
+        tensordict = tensordict[: last + 1]  # eliminate partial episodes
         replay_buffer.extend(tensordict)
 
     memmap_tensors = replay_buffer[: len(replay_buffer)]
@@ -117,21 +117,24 @@ def load_dataset(
             dataset["observations"], dataset["task"]
         )
     done_mdp = dataset["done_mdp"]
-    ([mask_size, *_], _) = done_mdp.nonzero()
-    mask_size += 1
+    (done_indices, _) = done_mdp.nonzero()
+    episode_lengths = np.diff(done_indices)
+    episode_length = np.unique(episode_lengths)
+    try:
+        (mask_size,) = episode_length
+    except ValueError:
+        raise RuntimeError(f"Episode length is not unique: {episode_length}")
     mask = np.zeros(mask_size, dtype=bool)
     done_bamdp_mask = np.zeros(mask_size, dtype=bool)
     terminations = np.zeros(mask_size, dtype=bool)
     mask[:truncate_episode] = 1
     done_bamdp_mask[-truncate_episode:] = 1
     terminations[truncate_episode - 1] = 1
-    tiles = done_mdp.size // mask_size + 1
+    assert done_mdp.size % mask_size == 0, "Dataset size is not a multiple of mask size"
+    tiles = int(done_mdp.size / mask_size)
     mask = np.tile(mask, tiles)
     done_bamdp_mask = np.tile(done_bamdp_mask, tiles)
     terminations = np.tile(terminations, tiles)
-    mask = mask[: done_mdp.size]
-    done_bamdp_mask = done_bamdp_mask[: done_mdp.size]
-    terminations = terminations[: done_mdp.size]
     dataset["done_mdp"][terminations] = 1
     dataset = {
         k: v[done_bamdp_mask if k == "done" else mask] for k, v in dataset.items()
