@@ -412,13 +412,7 @@ def project_name():
     return pyproject["tool"]["poetry"]["name"]
 
 
-TAGS = [
-    "multi-replay-buffers",
-    "single-task-histories",
-    "512-tasks",
-    "multi-episode-contexts",
-    "extended-context",
-]
+TAGS = []
 
 
 def sweep(
