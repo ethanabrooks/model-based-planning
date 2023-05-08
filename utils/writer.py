@@ -25,12 +25,15 @@ class Writer:
         notes: str,
         run: Optional[Run],
         trajectory_transformer: bool,
+        baseline: Optional[str] = None,
     ) -> None:
         name = f"{name}-{dataset}"
         if run is None:
             tags = TAGS
             if trajectory_transformer:
                 tags.append("trajectory-transformer")
+            if baseline:
+                tags.append(baseline)
             wandb.init(
                 config=config, name=name, notes=notes, project=project_name(), tags=tags
             )
@@ -80,6 +83,7 @@ class Writer:
         notes: str,
         run: Optional[Run],
         trajectory_transformer: bool,
+        baseline: Optional[str] = None,
     ):
         return (
             DebugWriter()
@@ -91,6 +95,7 @@ class Writer:
                 notes=notes,
                 run=run,
                 trajectory_transformer=trajectory_transformer,
+                baseline=baseline,
             )
         )
 
