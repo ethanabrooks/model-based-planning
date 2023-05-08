@@ -54,7 +54,6 @@ base = {
         "k_obs": 1,
         "logbase": logbase,
         "max_context_transitions": 10,
-        "n_expand": 2,
         "percentile": "mean",
         "plan_freq": 1,
         "renderer": "Renderer",

@@ -28,10 +28,13 @@ class Parser(UtilsParser):
     name: str = "plan"
     notes: str = None
     trajectory_transformer: bool = False
+    baseline: str = None
+    n_expand: int = 2
 
 
 def main(
     args: dict,
+    baseline: str,
     beam_width: int,
     cdf_obs: float,
     cdf_act: float,
@@ -76,7 +79,17 @@ def main(
         notes=notes,
         run=run,
         trajectory_transformer=trajectory_transformer,
+        baseline=baseline,
     )
+
+    if baseline == "ad":
+        beam_width = 1
+        n_expand = 1
+    elif baseline == "ad++":
+        beam_width *= n_expand
+        n_expand = 1
+    elif baseline is not None:
+        raise ValueError(f"Unknown baseline: {baseline}")
 
     #######################
     ####### models ########
