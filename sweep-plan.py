@@ -1,6 +1,5 @@
-import torch
 from ray import tune
 
 from plan import sweep
 
-sweep(seed=tune.grid_search(list(range(16))))
+sweep(seed=tune.grid_search(list(range(8))))

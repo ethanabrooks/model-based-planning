@@ -164,7 +164,7 @@ half_cheetah_vel_train = {
 }
 
 half_cheetah_vel_plan = {
-    "total_iters": 30,
+    "total_iters": 1000,
 }
 
 HalfCheetahVel_v0 = {
