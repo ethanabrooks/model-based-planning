@@ -163,10 +163,15 @@ half_cheetah_vel_train = {
     "batch_size": 64,
 }
 
+half_cheetah_vel_plan = {
+    "total_iters": 30,
+}
+
 HalfCheetahVel_v0 = {
     "train": half_cheetah_vel_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/io6tilcy",
+        **half_cheetah_vel_plan,
     },
 }
 
@@ -174,6 +179,7 @@ TaskAwareHalfCheetahVel_v0 = {
     "train": half_cheetah_vel_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/u2g0tsra",
+        **half_cheetah_vel_plan,
     },
 }
 
