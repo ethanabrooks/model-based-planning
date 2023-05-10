@@ -159,49 +159,47 @@ TaskAwareSparsePointEnv_v0 = {
 }
 
 
-half_cheetah_vel_train = {
+mujoco_train = {
     "batch_size": 64,
 }
 
 HalfCheetahVel_v0 = {
-    "train": half_cheetah_vel_train,
+    "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/io6tilcy",
     },
 }
 
 TaskAwareHalfCheetahVel_v0 = {
-    "train": half_cheetah_vel_train,
+    "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/u2g0tsra",
     },
 }
 
 HalfCheetahDir_v0 = {
+    "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/dq7ev0ez",
     },
 }
 
 TaskAwareHalfCheetahDir_v0 = {
+    "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/q72fbi9c",
     },
 }
 
 AntGoal_v0 = {
-    "train": {
-        "batch_size": 64,
-    },
+    "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/r61mx5i0",
     },
 }
 
 TaskAwareAntGoal_v0 = {
-    "train": {
-        "batch_size": 64,
-    },
+    "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
     },
