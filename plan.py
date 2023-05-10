@@ -126,6 +126,10 @@ def main(
     task_aware = local.is_task_aware(env)
     env = local.get_env_name(env)
     env = load_environment(env)
+    try:
+        env.seed(seed)
+    except AttributeError:
+        pass
     if task_aware:
         env = local.TaskWrapper(env)
     renderer = make_renderer(**args, env=env)
