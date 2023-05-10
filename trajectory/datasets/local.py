@@ -74,7 +74,7 @@ def load_dataset(
             artifact = api.artifact(artifact_name)
         else:
             artifact = wandb.run.use_artifact(artifact_name)
-        artifact_dir = artifact.download()
+        artifact_dir = artifact.download(root=os.getenv("WANDB_DIR"))
 
         # load buffers
         run_buffers = {}
