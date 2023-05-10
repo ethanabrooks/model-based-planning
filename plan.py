@@ -63,7 +63,6 @@ def main(
     vis_freq: int,
     **_,
 ):
-    assert "SparsePointEnv-v0" in dataset
     #######################
     ######## setup ########
     #######################

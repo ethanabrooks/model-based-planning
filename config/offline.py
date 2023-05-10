@@ -166,14 +166,14 @@ half_cheetah_vel_train = {
 HalfCheetahVel_v0 = {
     "train": half_cheetah_vel_train,
     "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/vw1i5wf5",
+        "loadpath": "rldl/In-Context Model-Based Planning/io6tilcy",
     },
 }
 
 TaskAwareHalfCheetahVel_v0 = {
     "train": half_cheetah_vel_train,
     "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/q72fbi9c",
+        "loadpath": "rldl/In-Context Model-Based Planning/u2g0tsra",
     },
 }
 
