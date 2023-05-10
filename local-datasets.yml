@@ -17,6 +17,20 @@ HalfCheetahVel-v0:
   - rldl/varibad/HalfCheetahVel-v0-multitask:512.6
   - rldl/varibad/HalfCheetahVel-v0-multitask:512.7
 HalfCheetahDir-v0:
-  - rldl/varibad/HalfCheetahDir-v0-multitask:v0
+  - rldl/varibad/HalfCheetahDir-v0-multitask:512.0
+  - rldl/varibad/HalfCheetahDir-v0-multitask:512.1
+  - rldl/varibad/HalfCheetahDir-v0-multitask:512.2
+  - rldl/varibad/HalfCheetahDir-v0-multitask:512.3
+  - rldl/varibad/HalfCheetahDir-v0-multitask:512.4
+  - rldl/varibad/HalfCheetahDir-v0-multitask:512.5
+  - rldl/varibad/HalfCheetahDir-v0-multitask:512.6
+  - rldl/varibad/HalfCheetahDir-v0-multitask:512.7
 AntGoal-v0:
-  - rldl/varibad/AntGoal-v0-multitask:v0
+  - rldl/varibad/AntGoal-v0-multitask:512.0
+  - rldl/varibad/AntGoal-v0-multitask:512.1
+  - rldl/varibad/AntGoal-v0-multitask:512.2
+  - rldl/varibad/AntGoal-v0-multitask:512.3
+  - rldl/varibad/AntGoal-v0-multitask:512.4
+  - rldl/varibad/AntGoal-v0-multitask:512.5
+  - rldl/varibad/AntGoal-v0-multitask:512.6
+  - rldl/varibad/AntGoal-v0-multitask:512.7
