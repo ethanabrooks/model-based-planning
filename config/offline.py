@@ -163,6 +163,10 @@ mujoco_train = {
     "batch_size": 64,
 }
 
+mujoco_plan = {
+    "total_iters": 400,
+}
+
 half_cheetah_vel_plan = {
     "total_iters": 1000,
 }
@@ -172,6 +176,7 @@ HalfCheetahVel_v0 = {
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/io6tilcy",
         **half_cheetah_vel_plan,
+        **mujoco_plan,
     },
 }
 
@@ -180,6 +185,7 @@ TaskAwareHalfCheetahVel_v0 = {
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/u2g0tsra",
         **half_cheetah_vel_plan,
+        **mujoco_plan,
     },
 }
 
@@ -187,6 +193,7 @@ HalfCheetahDir_v0 = {
     "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/dq7ev0ez",
+        **mujoco_plan,
     },
 }
 
@@ -194,6 +201,7 @@ TaskAwareHalfCheetahDir_v0 = {
     "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/q72fbi9c",
+        **mujoco_plan,
     },
 }
 
@@ -201,6 +209,7 @@ AntGoal_v0 = {
     "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/r61mx5i0",
+        **mujoco_plan,
     },
 }
 
@@ -208,5 +217,6 @@ TaskAwareAntGoal_v0 = {
     "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
+        **mujoco_plan,
     },
 }
