@@ -521,4 +521,6 @@ def print_row(
 
 
 def tmp_dir():
+    if wandb.run.dir is None:
+        return Path(os.getenv("WANDB_DIR", "/tmp"))
     return Path(wandb.run.dir).parent / "tmp"

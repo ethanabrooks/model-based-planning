@@ -80,7 +80,9 @@ def load_dataset(
         run_buffers = {}
         for path in os.listdir(f"{artifact_dir}/0"):
             if re.match(r"\d+", path):
-                replay_buffer = ReplayBuffer(LazyMemmapStorage(0, scratch_dir="/tmp"))
+                replay_buffer = ReplayBuffer(
+                    LazyMemmapStorage(0, scratch_dir=tmp_dir())
+                )
                 run_buffers[path] = replay_buffer
         snapshot = Snapshot(path=artifact_dir)
         with Timer(
@@ -91,9 +93,7 @@ def load_dataset(
 
     # merge buffers
     size = sum(len(buffer) for buffer in buffers)
-    replay_buffer = ReplayBuffer(
-        LazyMemmapStorage(size, scratch_dir="/tmp" if wandb.run is None else tmp_dir())
-    )
+    replay_buffer = ReplayBuffer(LazyMemmapStorage(size, scratch_dir=tmp_dir()))
     for buffer in track(buffers, description="Merging buffers"):
         tensordict = buffer[:]
         [done_mdp] = tensordict["done_mdp"].T
