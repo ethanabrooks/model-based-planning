@@ -57,7 +57,7 @@ def main(
     run: Run,
     seed: int,
     suffix: str,
-    total_iters: int,
+    total_episodes: int,
     trajectory_transformer: bool,
     verbose: bool,
     vis_freq: int,
@@ -156,9 +156,9 @@ def main(
     context = []
 
     terminal_mdp = True  # trigger visualization on first timestep
-    t = T = 0
+    e = t = T = 0
 
-    for _ in range(total_iters):
+    while True:
         observation = preprocess_fn(observation)
 
         if t % plan_freq == 0:
@@ -232,7 +232,7 @@ def main(
             step=T,
         )
         print(
-            f"[ plan ] t: {T} / {total_iters} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
+            f"[ plan ] t: {T} | episode: {e} / {total_episodes} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
             f"time: {timer():.2f} | {dataset} | {exp_name} | {suffix}\n"
         )
 
@@ -246,11 +246,14 @@ def main(
         t += 1
         T += 1
         if terminal_mdp:
+            e += 1
             if trajectory_transformer:
                 context = []
             rollout = []
             t = 0
             total_reward = 0
+            if e == total_episodes:
+                break
         if terminal:
             break
 

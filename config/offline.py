@@ -61,7 +61,7 @@ base = {
         "prefix_context": True,
         "seed": 42,
         "suffix": "0",
-        "total_iters": 200,
+        "total_episodes": 10,
         "verbose": True,
         "vis_freq": 50,
     },
@@ -164,7 +164,7 @@ mujoco_train = {
 }
 
 mujoco_plan = {
-    "total_iters": 400,
+    "total_episodes": 3,
 }
 
 HalfCheetahVel_v0 = {
