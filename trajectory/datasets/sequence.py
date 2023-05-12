@@ -176,7 +176,10 @@ class SequenceDataset(torch.utils.data.Dataset):
         artifact_names = local.get_artifact_name(name)
         if artifact_names:
             dataset = local.load_dataset(
-                artifact_names, task_aware, truncate_episode=env.spec.max_episode_steps
+                artifact_names,
+                task_aware,
+                truncate_episode=env.spec.max_episode_steps,
+                train_task_mask=lambda x: ~env.test_task_mask(x),
             )
         else:
             print("[ datasets/sequence ] Loading...", end=" ", flush=True)

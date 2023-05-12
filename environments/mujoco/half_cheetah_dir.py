@@ -67,6 +67,10 @@ class HalfCheetahDirEnv(HalfCheetahEnv):
     def get_task(self):
         return np.array([self.goal_direction])
 
+    def test_task_mask(self, tasks: np.ndarray):
+        [tasks] = tasks.T
+        return np.zeros_like(tasks).astype(bool)
+
     def reset_task(self, task=None):
         if task is None:
             task = self.sample_tasks(1)[0]

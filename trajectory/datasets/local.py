@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Optional
+from typing import Callable, Optional
 
 import gym
 import numpy as np
@@ -64,7 +64,10 @@ def load_environment(env: str) -> gym.Env:
 
 
 def load_dataset(
-    artifact_names: list[str], task_aware: bool, truncate_episode: int
+    artifact_names: list[str],
+    task_aware: bool,
+    truncate_episode: int,
+    train_task_mask: Optional[Callable[[np.ndarray], np.ndarray]],
 ) -> dict[str, np.ndarray]:
     buffers = []
     for i, artifact_name in enumerate(artifact_names, start=1):
@@ -112,6 +115,9 @@ def load_dataset(
         return v.reshape(b, d)
 
     dataset = {rename.get(k, k): preprocess(v) for k, v in memmap_tensors.items()}
+    if train_task_mask is not None:
+        train_task_mask = train_task_mask(dataset["task"])
+        dataset = {k: v[train_task_mask] for k, v in dataset.items()}
     if task_aware:
         dataset["observations"] = add_task_to_obs(
             dataset["observations"], dataset["task"]

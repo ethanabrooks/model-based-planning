@@ -55,6 +55,10 @@ class HalfCheetahVelEnv(HalfCheetahEnv):
     def get_task(self):
         return np.array([self.goal_velocity])
 
+    def test_task_mask(self, tasks: np.ndarray):
+        [tasks] = tasks.T
+        return (1.25 < tasks) & (tasks <= 1.75)
+
     def sample_tasks(self, n_tasks):
         return [random.uniform(0.0, 3.0) for _ in range(n_tasks)]
 
