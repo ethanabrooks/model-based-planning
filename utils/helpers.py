@@ -413,7 +413,16 @@ def project_name():
     return pyproject["tool"]["poetry"]["name"]
 
 
-TAGS = []
+def get_tags(**kwargs):
+    tags = []
+    for k, v in kwargs.items():
+        if v is True:
+            tags.append(k)
+        elif v is False:
+            pass
+        else:
+            tags.append(f"{k}={v}")
+    return tags
 
 
 def sweep(
@@ -433,6 +442,14 @@ def sweep(
         params.update(sweep_params)
         params.update(seed=parser.seed + sweep_params.get("seed", 0))
         sleep_time = 1
+        tags = dict(
+            trajectory_transformer=parser.trajectory_transformer,
+            baseline=parser.baseline,
+        )
+        try:
+            tags.update(test_tasks=parser.test_tasks)
+        except AttributeError:
+            pass
         while True:
             try:
                 run = setup_wandb(
@@ -440,7 +457,7 @@ def sweep(
                     group=group,
                     project=project,
                     rank_zero_only=False,
-                    tags=TAGS,
+                    tags=get_tags(**tags),
                     notes=parser.notes,
                 )
                 break
