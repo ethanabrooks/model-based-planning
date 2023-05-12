@@ -233,7 +233,17 @@ def main(
             log,
             step=T,
         )
-        console.log(dict(**log, **{"episode step": t, "total step": T, "episode": e}))
+        console.log(
+            dict(
+                **log,
+                **{
+                    "episode step": t,
+                    "total step": T,
+                    "episode": e,
+                    "elapsed steps": env.env.env.env.env.env._elapsed_steps,
+                },
+            )
+        )
 
         ## visualization
         if terminal or terminal_mdp:

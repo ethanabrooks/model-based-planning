@@ -16,7 +16,6 @@ from environments.wrappers import TimeLimitMask, VariBadWrapper
 
 def make_env(env_id, seed, rank, episodes_per_task, tasks, add_done_info, **kwargs):
     def _thunk():
-
         env = gym.make(env_id, **kwargs)
         if tasks is not None:
             env.unwrapped.reset_task = lambda x: env.unwrapped.set_task(
