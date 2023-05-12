@@ -4,13 +4,13 @@ import time
 from os.path import join
 
 import wandb
+from rich.console import Console
 from wandb.sdk.wandb_run import Run
 
 from trajectory.search import beam_plan, extract_actions, make_prefix, update_context
 from trajectory.utils import Parser as UtilsParser
 from trajectory.utils import load_model, make_renderer
 from trajectory.utils.setup import set_seed
-from trajectory.utils.timer import Timer
 from utils import helpers
 from utils.writer import Writer
 
@@ -80,6 +80,7 @@ def main(
         trajectory_transformer=trajectory_transformer,
         baseline=baseline,
     )
+    console = Console()
 
     if baseline == "ad":
         beam_width = 1
@@ -133,7 +134,6 @@ def main(
     if task_aware:
         env = local.TaskWrapper(env)
     renderer = make_renderer(**args, env=env)
-    timer = Timer()
 
     discount = discretizer.discount
     observation_dim = discretizer.observation_dim
@@ -231,10 +231,7 @@ def main(
             log,
             step=T,
         )
-        print(
-            f"[ plan ] t: {T} | episode: {e} / {total_episodes} | r: {reward:.2f} | R: {total_reward:.2f} | score: {score:.4f} | "
-            f"time: {timer():.2f} | {dataset} | {exp_name} | {suffix}\n"
-        )
+        console.log(dict(**log, **{"episode step": t, "total step": T, "episode": e}))
 
         ## visualization
         if terminal or terminal_mdp:
