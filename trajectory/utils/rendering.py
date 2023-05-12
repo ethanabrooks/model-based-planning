@@ -1,11 +1,12 @@
+import copy
 import sys
 
 import gym
 import matplotlib.pyplot as plt
 import mujoco_py as mjc
 import numpy as np
-
 import wandb
+
 from trajectory.datasets.local import TaskWrapper
 
 from ..datasets import get_preprocess_fn, load_environment
@@ -19,7 +20,7 @@ def make_renderer(dataset, renderer, env: gym.Env, **_):
     preprocess_fn = get_preprocess_fn(dataset)
     observation = env.reset()
     observation = preprocess_fn(observation)
-    return render_class(env=env, observation_dim=observation.size)
+    return render_class(env=copy.deepcopy(env), observation_dim=observation.size)
 
 
 def split(sequence, observation_dim, action_dim):
@@ -35,7 +36,7 @@ def set_state(env, state):
     qpos_dim = env.sim.data.qpos.size
     qvel_dim = env.sim.data.qvel.size
     qstate_dim = qpos_dim + qvel_dim
-    name = env.spec.id
+    name = env.unwrapped.__class__.__name__
 
     if "ant" in name:
         ypos = np.zeros(1)
