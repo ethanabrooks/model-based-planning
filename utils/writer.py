@@ -11,7 +11,7 @@ import wandb
 from rich.console import Console
 from wandb.sdk.wandb_run import Run
 
-from utils.helpers import TAGS, project_name, tmp_dir
+from utils.helpers import get_tags, project_name, tmp_dir
 
 console = Console()
 
@@ -29,13 +29,12 @@ class Writer:
     ) -> None:
         name = f"{name}-{dataset}"
         if run is None:
-            tags = TAGS
-            if trajectory_transformer:
-                tags.append("trajectory-transformer")
-            if baseline:
-                tags.append(baseline)
             wandb.init(
-                config=config, name=name, notes=notes, project=project_name(), tags=tags
+                config=config,
+                name=name,
+                notes=notes,
+                project=project_name(),
+                tags=get_tags(trajectory_transformer, baseline),
             )
             run = wandb.run
         self.run = run

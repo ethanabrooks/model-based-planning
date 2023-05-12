@@ -413,7 +413,13 @@ def project_name():
     return pyproject["tool"]["poetry"]["name"]
 
 
-TAGS = []
+def get_tags(trajectory_transformer: bool, baseline: str):
+    tags = []
+    if trajectory_transformer:
+        tags.append("trajectory-transformer")
+    if baseline:
+        tags.append(baseline)
+    return tags
 
 
 def sweep(
@@ -440,7 +446,7 @@ def sweep(
                     group=group,
                     project=project,
                     rank_zero_only=False,
-                    tags=TAGS,
+                    tags=get_tags(parser.trajectory_transformer, parser.baseline),
                     notes=parser.notes,
                 )
                 break
