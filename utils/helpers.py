@@ -5,6 +5,7 @@ import pickle
 # import pickle5 as pickle
 import random
 import shutil
+import time
 import urllib
 import warnings
 from distutils.util import strtobool
@@ -431,14 +432,21 @@ def sweep(
         params = dict(**parser_params)
         params.update(sweep_params)
         params.update(seed=parser.seed + sweep_params.get("seed", 0))
-        run = setup_wandb(
-            config=params,
-            group=group,
-            project=project,
-            rank_zero_only=False,
-            tags=TAGS,
-            notes=parser.notes,
-        )
+        sleep_time = 1
+        while True:
+            try:
+                run = setup_wandb(
+                    config=params,
+                    group=group,
+                    project=project,
+                    rank_zero_only=False,
+                    tags=TAGS,
+                    notes=parser.notes,
+                )
+                break
+            except wandb.errors.CommError:
+                time.sleep(sleep_time)
+                sleep_time *= 2
         print(
             f"wandb: ️👪 View group at {run.get_project_url()}/groups/{urllib.parse.quote(group)}/workspace"
         )
