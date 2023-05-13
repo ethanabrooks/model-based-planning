@@ -169,6 +169,7 @@ class SequenceDataset(torch.utils.data.Dataset):
 
     def init(self, env: str):
         task_aware = local.is_task_aware(env)
+        ed = local.is_ed(env)
         env = local.get_env_name(env)
         env = load_environment(env)
         name = env.spec.id
@@ -176,8 +177,9 @@ class SequenceDataset(torch.utils.data.Dataset):
         artifact_names = local.get_artifact_name(name)
         if artifact_names:
             dataset = local.load_dataset(
-                artifact_names,
-                task_aware,
+                artifact_names=artifact_names,
+                task_aware=task_aware,
+                ed=ed,
                 truncate_episode=env.spec.max_episode_steps,
                 train_task_mask=lambda x: ~env.test_task_mask(x),
             )
