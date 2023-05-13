@@ -170,7 +170,7 @@ mujoco_plan = {
 HalfCheetahVel_v0 = {
     "train": mujoco_train,
     "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/io6tilcy",
+        "loadpath": "rldl/In-Context Model-Based Planning/an22r3ig",
         **mujoco_plan,
     },
 }
