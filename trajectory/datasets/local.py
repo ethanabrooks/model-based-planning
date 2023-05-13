@@ -17,10 +17,14 @@ from utils.helpers import tmp_dir
 from utils.timer import Timer
 
 TASK_AWARE_PATTERN = re.compile(r"^TaskAware(.*)")
+ED_PATTERN = re.compile(r"^ED(.*)")
 
 
 def get_env_name(env: str) -> str:
     matches = TASK_AWARE_PATTERN.match(env)
+    if matches:
+        return matches.group(1)
+    matches = ED_PATTERN.match(env)
     if matches:
         return matches.group(1)
     return env
@@ -28,6 +32,10 @@ def get_env_name(env: str) -> str:
 
 def is_task_aware(env: str) -> bool:
     return TASK_AWARE_PATTERN.match(env) is not None
+
+
+def is_ed(env: str) -> bool:
+    return ED_PATTERN.match(env) is not None
 
 
 with open("local-datasets.yml") as f:
@@ -64,7 +72,10 @@ def load_environment(env: str) -> gym.Env:
 
 
 def load_dataset(
-    artifact_names: list[str], task_aware: bool, truncate_episode: int
+    artifact_names: list[str],
+    task_aware: bool,
+    ed: bool,
+    truncate_episode: int,
 ) -> dict[str, np.ndarray]:
     buffers = []
     for i, artifact_name in enumerate(artifact_names, start=1):
@@ -97,10 +108,13 @@ def load_dataset(
     for buffer in track(buffers, description="Merging buffers"):
         tensordict = buffer[:]
         [done_mdp] = tensordict["done_mdp"].T
-        (*_, last) = done_mdp.nonzero()
+        nonzero = (*_, last) = done_mdp.nonzero()
         last = last.item()
         tensordict.set_at_("done", True, last)  # terminate last transition per task
         tensordict = tensordict[: last + 1]  # eliminate partial episodes
+        if ed:
+            cutoff = nonzero[nonzero.numel() // 2]
+            tensordict = tensordict[cutoff:]
         replay_buffer.extend(tensordict)
 
     memmap_tensors = replay_buffer[: len(replay_buffer)]
