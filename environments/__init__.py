@@ -40,9 +40,9 @@ register(
     entry_point="environments.wrappers:mujoco_wrapper",
     kwargs={
         "entry_point": "environments.mujoco.half_cheetah_dir:HalfCheetahDirEnv",
-        "max_episode_steps": 200,
+        "max_episode_steps": 50,
     },
-    max_episode_steps=200,
+    max_episode_steps=50,
 )
 
 register(
