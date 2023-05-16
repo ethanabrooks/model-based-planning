@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 
 from .half_cheetah import HalfCheetahEnv
@@ -55,8 +53,11 @@ class HalfCheetahVelEnv(HalfCheetahEnv):
     def get_task(self):
         return np.array([self.goal_velocity])
 
+    def sample_task(self):
+        return np.array([np.random.uniform(0.0, 3.0)])
+
     def sample_tasks(self, n_tasks):
-        return [random.uniform(0.0, 3.0) for _ in range(n_tasks)]
+        return np.concatenate([self.sample_task() for _ in range(n_tasks)])
 
     def reset_task(self, task):
         if task is None:
