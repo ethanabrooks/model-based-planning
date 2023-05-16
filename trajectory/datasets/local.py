@@ -5,8 +5,10 @@ from typing import Callable, Optional
 
 import gym
 import numpy as np
+import requests
 import wandb
 import yaml
+from rich.console import Console
 from rich.progress import track
 from torchrl.data import ReplayBuffer
 from torchrl.data.replay_buffers import LazyMemmapStorage
@@ -19,6 +21,7 @@ from utils.timer import Timer
 
 TASK_AWARE_PATTERN = re.compile(r"^TaskAware(.*)")
 ED_PATTERN = re.compile(r"^ED(.*)")
+console = Console()
 
 
 def get_env_name(env: str) -> str:
@@ -88,13 +91,19 @@ def load_dataset(
             artifact = api.artifact(artifact_name)
         else:
             artifact = wandb.run.use_artifact(artifact_name)
-        artifact_dir = artifact.download(
-            root=os.path.join(
-                os.getenv("WANDB_DIR"),
-                env_name,
-                datetime.datetime.now().strftime("_%d:%m_%H:%M:%S"),
-            )
-        )
+        while True:
+            try:
+                artifact_dir = artifact.download(
+                    root=os.path.join(
+                        os.getenv("WANDB_DIR"),
+                        env_name,
+                        datetime.datetime.now().strftime("_%d:%m_%H:%M:%S"),
+                    )
+                )
+                break
+            except requests.exceptions.ChunkedEncodingError as e:
+                console.log(e)
+                console.log("\nRetrying download...\n")
 
         # load buffers
         run_buffers = {}
