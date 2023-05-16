@@ -30,7 +30,7 @@ AntGoal-v0:
   - rldl/varibad/AntGoal-v0-multitask:512.1
   - rldl/varibad/AntGoal-v0-multitask:512.2
   - rldl/varibad/AntGoal-v0-multitask:512.3
-  - rldl/varibad/AntGoal-v0-multitask:512.4
-  - rldl/varibad/AntGoal-v0-multitask:512.5
-  - rldl/varibad/AntGoal-v0-multitask:512.6
-  - rldl/varibad/AntGoal-v0-multitask:512.7
+  #- rldl/varibad/AntGoal-v0-multitask:512.4
+  #- rldl/varibad/AntGoal-v0-multitask:512.5
+  #- rldl/varibad/AntGoal-v0-multitask:512.6
+  #- rldl/varibad/AntGoal-v0-multitask:512.7
