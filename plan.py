@@ -131,6 +131,14 @@ def main(
         env.seed(seed)
     except AttributeError:
         pass
+
+    while True:
+        task = env.sample_task()
+        is_test = env.test_task_mask(task[None]).item()
+        if is_test:
+            env.set_task(task)
+            break
+
     if task_aware:
         env = local.TaskWrapper(env)
     renderer = make_renderer(**args, env=env)
