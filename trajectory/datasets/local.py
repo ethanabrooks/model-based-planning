@@ -1,3 +1,4 @@
+import datetime
 import os
 import re
 from typing import Callable, Optional
@@ -72,13 +73,14 @@ def load_environment(env: str) -> gym.Env:
 
 
 def load_dataset(
-    artifact_names: list[str],
+    env_name: str,
     task_aware: bool,
     ed: bool,
     truncate_episode: int,
     train_task_mask: Optional[Callable[[np.ndarray], np.ndarray]],
 ) -> dict[str, np.ndarray]:
     buffers = []
+    artifact_names = get_artifact_name(env_name)
     for i, artifact_name in enumerate(artifact_names, start=1):
         # download artifact
         if wandb.run is None:
@@ -86,7 +88,13 @@ def load_dataset(
             artifact = api.artifact(artifact_name)
         else:
             artifact = wandb.run.use_artifact(artifact_name)
-        artifact_dir = artifact.download(root=os.getenv("WANDB_DIR"))
+        artifact_dir = artifact.download(
+            root=os.path.join(
+                os.getenv("WANDB_DIR"),
+                env_name,
+                datetime.datetime.now().strftime("_%d:%m_%H:%M:%S"),
+            )
+        )
 
         # load buffers
         run_buffers = {}

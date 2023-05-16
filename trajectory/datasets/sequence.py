@@ -174,10 +174,9 @@ class SequenceDataset(torch.utils.data.Dataset):
         env = load_environment(env)
         name = env.spec.id
 
-        artifact_names = local.get_artifact_name(name)
-        if artifact_names:
+        if local.get_artifact_name(name):
             dataset = local.load_dataset(
-                artifact_names=artifact_names,
+                env_name=name,
                 task_aware=task_aware,
                 ed=ed,
                 truncate_episode=env.spec.max_episode_steps,
