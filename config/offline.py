@@ -186,7 +186,7 @@ TaskAwareHalfCheetahVel_v0 = {
 HalfCheetahDir_v0 = {
     "train": mujoco_train,
     "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/edzbhnov",
+        "loadpath": "rldl/In-Context Model-Based Planning/hdvq9xsm",
         **mujoco_plan,
     },
 }
