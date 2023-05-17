@@ -70,9 +70,27 @@
             sha256 = "sha256-20V6gi1zYBO2/+UJBTABvJGL3Xj+aJZ7YF9TmEqa+sU=";
           };
         });
-        torchrl = pyprev.torchrl.overridePythonAttrs (old: {
-          preFixup = "addAutoPatchelfSearchPath ${pyfinal.torch}";
-        });
+        torchrl = pyprev.buildPythonPackage {
+          pname = "torchrl";
+          version = "0.0.5";
+          propagatedBuildInputs = with pyfinal; [
+            tensordict
+          ];
+          nativeBuildInputs = with pyfinal; [
+            setuptools
+            cloudpickle
+            packaging
+            pkgs.which
+          ];
+          src = pkgs.fetchgit {
+            url = "https://github.com/pytorch/rl";
+            rev = "48eca9890e24a64b0f3ee133a74abafad7cd0768";
+            sha256 = "sha256-ZLHqKRO7O4ZOSPqtwVmyFElpRnEbhX97Iy8PkGh4Fqg=";
+            name = "torchrl";
+          };
+          doCheck = false;
+          patches = [./torchrl.patch];
+        };
       };
       poetryEnv = pkgs.poetry2nix.mkPoetryEnv {
         python = pkgs.python39;
