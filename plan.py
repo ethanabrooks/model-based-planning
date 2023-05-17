@@ -66,7 +66,6 @@ def main(
     #######################
     ######## setup ########
     #######################
-    assert any(name in dataset for name in ["SparsePointEnv", "HalfCheetahVel"])
 
     set_seed(seed)
 
