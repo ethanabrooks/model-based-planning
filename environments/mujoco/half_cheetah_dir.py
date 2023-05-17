@@ -50,10 +50,13 @@ class HalfCheetahDirEnv(HalfCheetahEnv):
         )
         return observation, reward, done, infos
 
+    def sample_task(self):
+        return np.array([random.choice([-1.0, 1.0])])
+
     def sample_tasks(self, n_tasks):
         # for fwd/bwd env, goal direc is backwards if - 1.0, forwards if + 1.0
         return [
-            random.choice([-1.0, 1.0])
+            self.sample_task()[0]
             for _ in range(
                 n_tasks,
             )
