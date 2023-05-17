@@ -55,10 +55,10 @@ class HalfCheetahVelEnv(HalfCheetahEnv):
 
     def test_task_mask(self, tasks: np.ndarray):
         [tasks] = tasks.T
-        return 2.5 < tasks
+        return 3 < tasks
 
     def sample_task(self):
-        return np.array([np.random.uniform(0.0, 3.0)])
+        return np.array([np.random.uniform(0.0, 3.5)])
 
     def sample_tasks(self, n_tasks):
         return np.concatenate([self.sample_task() for _ in range(n_tasks)])
