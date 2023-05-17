@@ -1,0 +1,17 @@
+diff --git a/torchrl/data/replay_buffers/storages.py b/torchrl/data/replay_buffers/storages.py
+index 4eb5860b..2583a1ea 100644
+--- a/torchrl/data/replay_buffers/storages.py
++++ b/torchrl/data/replay_buffers/storages.py
+@@ -331,10 +331,10 @@ class LazyMemmapStorage(LazyTensorStorage):
+         elif isinstance(_storage, (dict, OrderedDict)):
+             if is_tensor_collection(self._storage):
+                 self._storage.load_state_dict(_storage)
+-                self._storage.memmap_()
++                self._storage.memmap_(prefix=self.scratch_dir)
+             elif self._storage is None:
+                 self._storage = TensorDict({}, []).load_state_dict(_storage)
+-                self._storage.memmap_()
++                self._storage.memmap_(prefix=self.scratch_dir)
+             else:
+                 raise RuntimeError(
+                     f"Cannot copy a storage of type {type(_storage)} onto another of type {type(self._storage)}"
