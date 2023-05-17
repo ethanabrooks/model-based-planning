@@ -26,11 +26,4 @@ HalfCheetahDir-v0:
   - rldl/varibad/HalfCheetahDir-v0-multitask:512.6
   - rldl/varibad/HalfCheetahDir-v0-multitask:512.7
 AntGoal-v0:
-  - rldl/varibad/AntGoal-v0-multitask:512.0
-  - rldl/varibad/AntGoal-v0-multitask:512.1
-  - rldl/varibad/AntGoal-v0-multitask:512.2
-  - rldl/varibad/AntGoal-v0-multitask:512.3
-  #- rldl/varibad/AntGoal-v0-multitask:512.4
-  #- rldl/varibad/AntGoal-v0-multitask:512.5
-  #- rldl/varibad/AntGoal-v0-multitask:512.6
-  #- rldl/varibad/AntGoal-v0-multitask:512.7
+  - /shared/home/ethanbro/varibad-data/logs_AntGoal-v0/multitask_0__15:05_08:11:33/models/replay-buffers/

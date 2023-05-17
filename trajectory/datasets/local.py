@@ -83,27 +83,30 @@ def load_dataset(
     train_task_mask: Optional[Callable[[np.ndarray], np.ndarray]],
 ) -> dict[str, np.ndarray]:
     buffers = []
-    artifact_names = get_artifact_name(env_name)
-    for i, artifact_name in enumerate(artifact_names, start=1):
-        # download artifact
-        if wandb.run is None:
-            api = wandb.Api()
-            artifact = api.artifact(artifact_name)
+    artifact_path = get_artifact_name(env_name)
+    for i, path in enumerate(artifact_path, start=1):
+        if os.path.exists(path):
+            artifact_dir = path
         else:
-            artifact = wandb.run.use_artifact(artifact_name)
-        while True:
-            try:
-                artifact_dir = artifact.download(
-                    root=os.path.join(
-                        os.getenv("WANDB_DIR"),
-                        env_name,
-                        datetime.datetime.now().strftime("_%d:%m_%H:%M:%S"),
+            # download artifact
+            if wandb.run is None:
+                api = wandb.Api()
+                artifact = api.artifact(path)
+            else:
+                artifact = wandb.run.use_artifact(path)
+            while True:
+                try:
+                    artifact_dir = artifact.download(
+                        root=os.path.join(
+                            os.getenv("WANDB_DIR"),
+                            env_name,
+                            datetime.datetime.now().strftime("_%d:%m_%H:%M:%S"),
+                        )
                     )
-                )
-                break
-            except requests.exceptions.ChunkedEncodingError as e:
-                console.log(e)
-                console.log("\nRetrying download...\n")
+                    break
+                except requests.exceptions.ChunkedEncodingError as e:
+                    console.log(e)
+                    console.log("\nRetrying download...\n")
 
         # load buffers
         run_buffers = {}
@@ -115,7 +118,7 @@ def load_dataset(
                 run_buffers[path] = replay_buffer
         snapshot = Snapshot(path=artifact_dir)
         with Timer(
-            desc=f"[ {i}/{len(artifact_names)} ] Restoring data from {artifact_dir}"
+            desc=f"[ {i}/{len(artifact_path)} ] Restoring data from {artifact_dir}"
         ):
             snapshot.restore(run_buffers)
         buffers.extend(run_buffers.values())
