@@ -2,12 +2,14 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/a983cc62cc2345443620597697015c1c9c4e5b06";
     utils.url = "github:numtide/flake-utils/93a2b84fc4b70d9e089d029deacc3583435c2ed6";
+    nixgl.url = "github:guibou/nixGL";
   };
 
   outputs = {
     self,
     nixpkgs,
     utils,
+    nixgl,
   }: let
     out = system: let
       pkgs = import nixpkgs {
@@ -15,6 +17,7 @@
         config = {
           allowUnfree = true;
         };
+        overlays = [nixgl.overlay];
       };
       inherit (pkgs) poetry2nix;
       mujoco = fetchTarball {
@@ -98,14 +101,20 @@
         preferWheels = true;
         overrides = poetry2nix.overrides.withDefaults overrides;
       };
+
+      myNixgl = pkgs.nixgl.override {
+        nvidiaVersion = "510.108.03";
+        nvidiaHash = "sha256-QQpRXnjfKcLLpKwLSXiJzg/xsEz8cR/4ieLfyA8NoNg=";
+      };
     in {
       devShell = pkgs.mkShell {
-        LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.linuxPackages.nvidia_x11}/lib:${pkgs.mesa.osmesa}/lib:${pkgs.libGL}/lib:${pkgs.gcc-unwrapped.lib}/lib";
+        LD_LIBRARY_PATH = with pkgs; "$LD_LIBRARY_PATH:${mesa.osmesa}/lib:${gcc-unwrapped.lib}/lib";
         buildInputs = with pkgs; [
           alejandra
           poetry
           poetryEnv
           ffmpeg
+          myNixgl.nixGLNvidia
         ];
         PYTHONBREAKPOINT = "ipdb.set_trace";
         shellHook = ''
