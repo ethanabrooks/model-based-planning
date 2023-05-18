@@ -2,6 +2,7 @@ import math
 import os
 
 import torch
+import torch.nn as nn
 import wandb
 from rich import box
 from rich.table import Table
@@ -138,6 +139,8 @@ def main(
     writer.save(model_config.savepath)
 
     model = model_config()
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
     model.to(device)
 
     #######################
