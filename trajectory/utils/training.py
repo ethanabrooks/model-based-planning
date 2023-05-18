@@ -27,6 +27,8 @@ class Trainer:
     def get_optimizer(self, model):
         if self.optimizer is None:
             console.log(f"Making optimizer at epoch {self.n_epochs}")
+            if isinstance(model, torch.nn.DataParallel):
+                model = model.module
             self.optimizer = model.configure_optimizers(self.config)
         return self.optimizer
 
@@ -54,6 +56,7 @@ class Trainer:
 
                 # backprop and update the parameters
                 model.zero_grad()
+                loss = loss.mean()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(
                     model.parameters(), config.grad_norm_clip
