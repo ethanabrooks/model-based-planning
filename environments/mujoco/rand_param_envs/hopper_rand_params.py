@@ -12,9 +12,9 @@ class HopperRandParamsEnv(RandomEnv, utils.EzPickle):
         utils.EzPickle.__init__(self)
 
     def _step(self, a):
-        posbefore = self.model.data.qpos[0, 0]
+        posbefore = self.data.qpos[0]
         self.do_simulation(a, self.frame_skip)
-        posafter, height, ang = self.model.data.qpos[0:3, 0]
+        posafter, height, ang = self.data.qpos[0:3]
         alive_bonus = 1.0
         reward = (posafter - posbefore) / self.dt
         reward += alive_bonus
@@ -36,7 +36,7 @@ class HopperRandParamsEnv(RandomEnv, utils.EzPickle):
 
     def _get_obs(self):
         return np.concatenate(
-            [self.model.data.qpos.flat[1:], np.clip(self.model.data.qvel.flat, -10, 10)]
+            [self.data.qpos.flat[1:], np.clip(self.data.qvel.flat, -10, 10)]
         )
 
     def reset_model(self):

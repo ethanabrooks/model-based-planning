@@ -182,17 +182,17 @@ class RandomEnv(MetaEnv, MujocoEnv):
     def save_parameters(self):
         self.init_params = {}
         if "body_mass" in self.rand_params:
-            self.init_params["body_mass"] = self.model.body_mass
+            self.init_params["body_mass"] = self.model.body_mass.copy()
 
         # body_inertia
         if "body_inertia" in self.rand_params:
-            self.init_params["body_inertia"] = self.model.body_inertia
+            self.init_params["body_inertia"] = self.model.body_inertia.copy()
 
         # damping -> different multiplier for different dofs/joints
         if "dof_damping" in self.rand_params:
-            self.init_params["dof_damping"] = self.model.dof_damping
+            self.init_params["dof_damping"] = self.model.dof_damping.copy()
 
         # friction at the body components
         if "geom_friction" in self.rand_params:
-            self.init_params["geom_friction"] = self.model.geom_friction
+            self.init_params["geom_friction"] = self.model.geom_friction.copy()
         self.curr_params = self.init_params
