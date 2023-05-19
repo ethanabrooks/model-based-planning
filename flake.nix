@@ -20,9 +20,28 @@
         overlays = [nixgl.overlay];
       };
       inherit (pkgs) poetry2nix;
-      mujoco = fetchTarball {
-        url = "https://mujoco.org/download/mujoco210-linux-x86_64.tar.gz";
-        sha256 = "sha256:1lvppcdfca460sqnb0ryrach6lv1g9dwcjfim0dl4vmxg2ryaq7p";
+      mujoco = pkgs.stdenv.mkDerivation rec {
+        pname = "mujoco";
+        version = "2.1.0";
+
+        src = fetchTarball {
+          url = "https://mujoco.org/download/mujoco210-linux-x86_64.tar.gz";
+          sha256 = "sha256:1lvppcdfca460sqnb0ryrach6lv1g9dwcjfim0dl4vmxg2ryaq7p";
+        };
+        installPhase = ''
+          install -d $out/bin
+          install -m 755 bin/* $out/bin/
+          install -d $out/include
+          install include/* $out/include/
+        '';
+        nativeBuildInputs = with pkgs;
+          [glew110 autoPatchelfHook]
+          ++ (with pkgs.xorg; [
+            libXcursor
+            libXinerama
+            libXrandr
+            libXxf86vm
+          ]);
       };
       overrides = pyfinal: pyprev: rec {
         mjrl = pyprev.buildPythonPackage {
@@ -54,17 +73,14 @@
           })
           .overridePythonAttrs (old: {
             env.NIX_CFLAGS_COMPILE = "-L${pkgs.mesa.osmesa}/lib";
-            preBuild = ''
+            preBuild = with pkgs; ''
               export MUJOCO_PY_MUJOCO_PATH="${mujoco}"
-              export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${mujoco}/bin:${pkgs.mesa.osmesa}/lib:${pkgs.libGL}/lib:${pkgs.gcc-unwrapped.lib}/lib
+              export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${mujoco}/bin:${mesa.osmesa}/lib:${libGL}/lib:${gcc-unwrapped.lib}/lib:${glew110}/lib
             '';
             buildInputs =
               old.buildInputs
-              ++ [
-                pyfinal.setuptools
-                pkgs.mesa
-                pkgs.libGL
-              ];
+              ++ [pyfinal.setuptools]
+              ++ (with pkgs; [mesa libGL]);
             patches = [./mujoco-py.patch];
           });
         torch = pyprev.pytorch-bin.overridePythonAttrs (old: {
@@ -90,7 +106,8 @@
       };
     in {
       devShell = pkgs.mkShell {
-        LD_LIBRARY_PATH = with pkgs; "$LD_LIBRARY_PATH:${mesa.osmesa}/lib:${gcc-unwrapped.lib}/lib";
+        MUJOCO_PY_MUJOCO_PATH = "${mujoco}";
+        LD_LIBRARY_PATH = with pkgs; "$LD_LIBRARY_PATH:${mesa.osmesa}/lib:${gcc-unwrapped.lib}/lib:${mujoco}/bin";
         buildInputs = with pkgs; [
           alejandra
           poetry
