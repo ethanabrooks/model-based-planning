@@ -1,7 +1,7 @@
 import logging
 import time
 
-from environments.mujoco.rand_param_envs.gym import Wrapper
+from environments.mujoco.rand_param_envs.gym.core import Wrapper
 
 logger = logging.getLogger(__name__)
 

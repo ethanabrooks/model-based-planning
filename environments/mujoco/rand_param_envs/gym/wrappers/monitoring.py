@@ -5,13 +5,14 @@ import os
 import numpy as np
 import six
 
-from environments.mujoco.rand_param_envs.gym import Wrapper, error, version
+from environments.mujoco.rand_param_envs.gym.core import Wrapper, error
 from environments.mujoco.rand_param_envs.gym.monitoring import (
     stats_recorder,
     video_recorder,
 )
 from environments.mujoco.rand_param_envs.gym.utils import atomic_write, closer
 from environments.mujoco.rand_param_envs.gym.utils.json_utils import json_encode_np
+from environments.mujoco.rand_param_envs.gym.version import VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +110,7 @@ class Monitor(Wrapper):
 
         if video_callable is None:
             video_callable = capped_cubic_video_schedule
-        elif video_callable == False:
+        elif not video_callable:
             video_callable = disable_videos
         elif not callable(video_callable):
             raise error.Error(
@@ -296,7 +297,7 @@ class Monitor(Wrapper):
 
     def _env_info(self):
         env_info = {
-            "gym_version": version.VERSION,
+            "gym_version": VERSION,
         }
         if self.env.spec:
             env_info["env_id"] = self.env.spec.id
