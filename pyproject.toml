@@ -26,6 +26,7 @@ ray = {version = "^2.3.1", extras = ["tune"]}
 rich = "^13.3.4"
 moviepy = "^1.0.3"
 imageio = "^2.28.1"
+braceexpand = "^0.1.7"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.6.0"
