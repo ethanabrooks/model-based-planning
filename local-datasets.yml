@@ -1,29 +1,4 @@
-SparsePointEnv-v0:
-  - rldl/varibad/SparsePointEnv-v0-multitask:v19
-  - rldl/varibad/SparsePointEnv-v0-multitask:v21
-  - rldl/varibad/SparsePointEnv-v0-multitask:v22
-  - rldl/varibad/SparsePointEnv-v0-multitask:v25
-  - rldl/varibad/SparsePointEnv-v0-multitask:v26
-  - rldl/varibad/SparsePointEnv-v0-multitask:v28
-  - rldl/varibad/SparsePointEnv-v0-multitask:v29
-  - rldl/varibad/SparsePointEnv-v0-multitask:v30
-HalfCheetahVel-v0:
-  - rldl/varibad/HalfCheetahVel-v0-multitask:512.0
-  - rldl/varibad/HalfCheetahVel-v0-multitask:512.1
-  - rldl/varibad/HalfCheetahVel-v0-multitask:512.2
-  - rldl/varibad/HalfCheetahVel-v0-multitask:512.3
-  - rldl/varibad/HalfCheetahVel-v0-multitask:512.4
-  - rldl/varibad/HalfCheetahVel-v0-multitask:512.5
-  - rldl/varibad/HalfCheetahVel-v0-multitask:512.6
-  - rldl/varibad/HalfCheetahVel-v0-multitask:512.7
-HalfCheetahDir-v0:
-  - rldl/varibad/HalfCheetahDir-v0-multitask:512.0
-  - rldl/varibad/HalfCheetahDir-v0-multitask:512.1
-  - rldl/varibad/HalfCheetahDir-v0-multitask:512.2
-  - rldl/varibad/HalfCheetahDir-v0-multitask:512.3
-  - rldl/varibad/HalfCheetahDir-v0-multitask:512.4
-  - rldl/varibad/HalfCheetahDir-v0-multitask:512.5
-  - rldl/varibad/HalfCheetahDir-v0-multitask:512.6
-  - rldl/varibad/HalfCheetahDir-v0-multitask:512.7
-AntGoal-v0:
-  - /shared/home/ethanbro/varibad-data/logs_AntGoal-v0/multitask_0__15:05_08:11:33/models/replay-buffers/
+SparsePointEnv-v0: rldl/varibad/SparsePointEnv-v0-multitask:v{19,21,22,25,26,28,29,30}
+HalfCheetahVel-v0: rldl/varibad/HalfCheetahVel-v0-multitask:512.{0..7}
+HalfCheetahDir-v0: rldl/varibad/HalfCheetahDir-v0-multitask:512.{0..7}
+AntGoal-v0: /shared/home/ethanbro/varibad-data/logs_AntGoal-v0/multitask_0__15:05_08:11:33/models/replay-buffers/
