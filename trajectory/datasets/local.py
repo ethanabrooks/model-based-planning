@@ -8,6 +8,7 @@ import numpy as np
 import requests
 import wandb
 import yaml
+from braceexpand import braceexpand
 from rich.console import Console
 from rich.progress import track
 from torchrl.data import ReplayBuffer
@@ -83,6 +84,8 @@ def load_dataset(
 ) -> dict[str, np.ndarray]:
     buffers = []
     artifact_path = get_artifact_name(env_name)
+    if not isinstance(artifact_path, list):
+        artifact_path = list(braceexpand(artifact_path))
     for i, path in enumerate(artifact_path, start=1):
         if os.path.exists(path):
             artifact_dir = path
