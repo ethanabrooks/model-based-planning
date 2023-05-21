@@ -1,7 +1,7 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/a983cc62cc2345443620597697015c1c9c4e5b06";
-    utils.url = "github:numtide/flake-utils/93a2b84fc4b70d9e089d029deacc3583435c2ed6";
+    nixpkgs.url = "github:nixos/nixpkgs/";
+    utils.url = "github:numtide/flake-utils/";
     nixgl.url = "github:guibou/nixGL";
   };
 
@@ -43,6 +43,8 @@
             libXxf86vm
           ]);
       };
+
+      python = pkgs.python39;
       overrides = pyfinal: pyprev: rec {
         mjrl = pyprev.buildPythonPackage {
           pname = "mjrl";
@@ -83,12 +85,76 @@
               ++ (with pkgs; [mesa libGL]);
             patches = [./mujoco-py.patch];
           });
-        torch = pyprev.pytorch-bin.overridePythonAttrs (old: {
+        # Based on https://github.com/NixOS/nixpkgs/blob/nixos-22.11/pkgs/development/python-modules/torch/bin.nix#L107
+        torch = pyprev.buildPythonPackage {
+          version = "1.13.1";
+
+          pname = "torch";
+          # Don't forget to update torch to the same version.
+
+          format = "wheel";
+
           src = pkgs.fetchurl {
             url = "https://download.pytorch.org/whl/cu116/torch-1.13.1%2Bcu116-cp39-cp39-linux_x86_64.whl";
             sha256 = "sha256-20V6gi1zYBO2/+UJBTABvJGL3Xj+aJZ7YF9TmEqa+sU=";
           };
-        });
+
+          # extract wheel, run normal patch phase, repack wheel.
+          # effectively a "wheelPatchPhase". not a normal thing
+          # to do but needs must.
+          patchPhase = ''
+            wheelFile="$(realpath -s dist/*.whl)"
+            pushd "$(mktemp -d)"
+
+            unzip -q "$wheelFile"
+
+            patchPhase
+
+            newZip="$(mktemp -d)"/new.zip
+            zip -rq "$newZip" *
+            rm -rf "$wheelFile"
+            cp "$newZip" "$wheelFile"
+
+            popd
+          '';
+
+          nativeBuildInputs = with pkgs; [
+            addOpenGLRunpath
+            patchelf
+            unzip
+            zip
+          ];
+
+          propagatedBuildInputs = with pyfinal; [
+            future
+            numpy
+            pyyaml
+            requests
+            setuptools
+            typing-extensions
+          ];
+
+          postInstall = ''
+            # ONNX conversion
+            rm -rf $out/bin
+          '';
+
+          postFixup = let
+            rpath = with pkgs; lib.makeLibraryPath [stdenv.cc.cc.lib];
+          in ''
+            find $out/${python.sitePackages}/torch/lib -type f \( -name '*.so' -or -name '*.so.*' \) | while read lib; do
+              echo "setting rpath for $lib..."
+              patchelf --set-rpath "${rpath}:$out/${python.sitePackages}/torch/lib" "$lib"
+              addOpenGLRunpath "$lib"
+            done
+          '';
+
+          # The wheel-binary is not stripped to avoid the error of `ImportError: libtorch_cuda_cpp.so: ELF load command address/offset not properly aligned.`.
+          dontStrip = true;
+
+          pythonImportsCheck = ["torch"];
+        };
+
         torchrl = pyprev.buildPythonPackage {
           pname = "torchrl";
           version = "0.0.5";
@@ -112,7 +178,7 @@
         };
       };
       poetryEnv = pkgs.poetry2nix.mkPoetryEnv {
-        python = pkgs.python39;
+        inherit python;
         projectDir = ./.;
         preferWheels = true;
         overrides = poetry2nix.overrides.withDefaults overrides;
