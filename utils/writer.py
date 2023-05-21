@@ -26,6 +26,7 @@ class Writer:
         run: Optional[Run],
         trajectory_transformer: bool,
         baseline: Optional[str] = None,
+        test_env: bool = False,
     ) -> None:
         name = f"{name}-{dataset}"
         if run is None:
@@ -34,7 +35,7 @@ class Writer:
                 name=name,
                 notes=notes,
                 project=project_name(),
-                tags=get_tags(trajectory_transformer, baseline),
+                tags=get_tags(trajectory_transformer, baseline, test_env),
             )
             run = wandb.run
         self.run = run
@@ -83,6 +84,7 @@ class Writer:
         run: Optional[Run],
         trajectory_transformer: bool,
         baseline: Optional[str] = None,
+        test_env: bool = False,
     ):
         return (
             DebugWriter()
@@ -95,6 +97,7 @@ class Writer:
                 run=run,
                 trajectory_transformer=trajectory_transformer,
                 baseline=baseline,
+                test_env=test_env,
             )
         )
 

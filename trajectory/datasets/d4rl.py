@@ -1,5 +1,4 @@
 import os
-import pdb
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 
 import gym
@@ -18,15 +17,6 @@ def suppress_output():
     with open(os.devnull, "w") as fnull:
         with redirect_stderr(fnull) as err, redirect_stdout(fnull) as out:
             yield (err, out)
-
-
-with suppress_output():
-    ## d4rl prints out a variety of warnings
-    import d4rl
-
-# def construct_dataloader(dataset, **kwargs):
-#     dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, pin_memory=True, **kwargs)
-#     return dataloader
 
 
 def qlearning_dataset_with_timeouts(
@@ -81,8 +71,10 @@ def qlearning_dataset_with_timeouts(
     }
 
 
-def load_environment(name):
+def load_environment(name, test_env: bool = False):
     if local.is_local_dataset(name):
+        if test_env:
+            name = "Test" + name
         return local.load_environment(name)
     else:
         with suppress_output():

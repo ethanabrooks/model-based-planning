@@ -69,7 +69,7 @@ class PointEnv(Env):
         return self._goal
 
     def test_task_mask(self, tasks: np.ndarray):
-        return tasks[:, 1] > 1
+        return tasks[:, 1] > 1.00
 
     def reset_task(self, task=None):
         if task is None:

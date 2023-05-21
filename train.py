@@ -25,6 +25,7 @@ class Parser(utils.Parser):
     name: str = "train"
     notes: str = None
     trajectory_transformer: bool = False
+    heldout_tasks: bool = False
 
 
 def main(
@@ -39,6 +40,7 @@ def main(
     discretizer: str,
     embd_pdrop: float,
     exp_name: str,
+    heldout_tasks: bool,
     learning_rate: float,
     lr_decay: float,
     N: int,
@@ -86,6 +88,7 @@ def main(
         discount=discount,
         discretizer=discretizer,
         trajectory_transformer=trajectory_transformer,
+        heldout_tasks=heldout_tasks,
     )
     dataset = dataset_config()
     obs_dim = dataset.observation_dim

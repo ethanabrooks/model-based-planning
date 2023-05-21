@@ -58,7 +58,7 @@ class HalfCheetahVelEnv(HalfCheetahEnv):
         return 3 < tasks
 
     def sample_task(self):
-        return np.array([np.random.uniform(0.0, 3.5)])
+        return np.array([np.random.uniform(0.0, 3.0)])
 
     def sample_tasks(self, n_tasks):
         return np.concatenate([self.sample_task() for _ in range(n_tasks)])

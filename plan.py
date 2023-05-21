@@ -30,6 +30,7 @@ class Parser(UtilsParser):
     trajectory_transformer: bool = False
     baseline: str = None
     n_expand: int = 2
+    test_env: bool = False
 
 
 def main(
@@ -41,7 +42,6 @@ def main(
     dataset: str,
     debug: bool,
     device: int,
-    exp_name: str,
     gpt_epoch: int,
     horizon: int,
     k_act: int,
@@ -56,7 +56,7 @@ def main(
     prefix_context: int,
     run: Run,
     seed: int,
-    suffix: str,
+    test_env: bool,
     total_episodes: int,
     trajectory_transformer: bool,
     verbose: bool,
@@ -78,6 +78,7 @@ def main(
         run=run,
         trajectory_transformer=trajectory_transformer,
         baseline=baseline,
+        test_env=test_env,
     )
     console = Console()
 
@@ -125,18 +126,11 @@ def main(
 
     task_aware = local.is_task_aware(env)
     env = local.get_env_name(env)
-    env = load_environment(env)
+    env = load_environment(env, test=test_env)
     try:
         env.seed(seed)
     except AttributeError:
         pass
-
-    while True:
-        task = env.sample_task()
-        is_test = env.test_task_mask(task[None]).item()
-        if is_test:
-            env.set_task(task)
-            break
 
     if task_aware:
         env = local.TaskWrapper(env)

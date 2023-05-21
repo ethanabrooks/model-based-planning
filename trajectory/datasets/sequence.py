@@ -23,10 +23,13 @@ class SequenceDataset(torch.utils.data.Dataset):
         step: int,
         discount: float,
         penalty: Optional[float],
+        heldout_tasks: bool,
     ):
         self.sequence_length = sequence_length
         self.step = step
-        observations, actions, rewards, done_bamdp, done_mdp = self.init(env)
+        observations, actions, rewards, done_bamdp, done_mdp = self.init(
+            env, heldout_tasks
+        )
 
         if trajectory_transformer:
             done_bamdp = done_mdp
@@ -167,7 +170,7 @@ class SequenceDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.indices)
 
-    def init(self, env: str):
+    def init(self, env: str, heldout_tasks: bool):
         task_aware = local.is_task_aware(env)
         ed = local.is_ed(env)
         env = local.get_env_name(env)
@@ -180,7 +183,9 @@ class SequenceDataset(torch.utils.data.Dataset):
                 task_aware=task_aware,
                 ed=ed,
                 truncate_episode=env.spec.max_episode_steps,
-                train_task_mask=lambda x: ~env.test_task_mask(x),
+                train_task_mask=(lambda x: ~env.test_task_mask(x))
+                if heldout_tasks
+                else None,
             )
         else:
             print("[ datasets/sequence ] Loading...", end=" ", flush=True)
