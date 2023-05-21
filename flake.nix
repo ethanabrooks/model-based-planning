@@ -46,6 +46,12 @@
 
       python = pkgs.python39;
       overrides = pyfinal: pyprev: rec {
+        dm-alchemy = pyprev.dm-alchemy.overridePythonAttrs (old: {
+          buildInputs = old.buildInputs ++ (with pyfinal; [setuptools grpcio-tools]);
+        });
+        grpcio-tools = pyprev.grpcio-tools.overridePythonAttrs (old: {
+          buildInputs = [pyfinal.grpcio pkgs.gcc-unwrapped];
+        });
         mjrl = pyprev.buildPythonPackage {
           pname = "mjrl";
           version = "0.0.0";
