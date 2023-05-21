@@ -311,7 +311,7 @@ class PointEnv(Env):
         plt.tight_layout()
         if image_folder is not None:
             plt.savefig(
-                "{}/{}_behaviour.png".format(image_folder, iter_idx),
+                "{}/behaviour.png".format(image_folder),
                 dpi=300,
                 bbox_inches="tight",
             )
@@ -329,7 +329,7 @@ class PointEnv(Env):
         plt.tight_layout()
         if image_folder is not None:
             plt.savefig(
-                "{}/{}_rewards.png".format(image_folder, iter_idx),
+                "{}/rewards.png".format(image_folder),
                 dpi=300,
                 bbox_inches="tight",
             )

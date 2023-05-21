@@ -108,7 +108,6 @@ class VariBadWrapper(gym.Wrapper):
         return state
 
     def step(self, action):
-
         # do normal environment step in MDP
         state, reward, self.done_mdp, info = self.env.step(action)
 
