@@ -67,6 +67,15 @@ class AntDirEnv(AntEnv):
     def get_task(self):
         return np.array([self.goal_direction])
 
+    def _get_obs(self):
+        return np.concatenate(
+            [
+                self.sim.data.qpos.flat,
+                self.sim.data.qvel.flat,
+                np.clip(self.sim.data.cfrc_ext, -1, 1).flat,
+            ]
+        )[:30]
+
 
 class AntDir2DEnv(AntDirEnv):
     def sample_tasks(self, n_tasks):
