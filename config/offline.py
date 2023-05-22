@@ -208,7 +208,7 @@ TaskAwareHalfCheetahDir_v0 = {
 AntGoal_v0 = {
     "train": {"batch_size": 32},
     "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/r61mx5i0",
+        "loadpath": "rldl/In-Context Model-Based Planning/1tpgl4z5",
         **mujoco_plan,
     },
 }
