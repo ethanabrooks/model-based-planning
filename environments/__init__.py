@@ -10,9 +10,9 @@ register(
     entry_point="environments.wrappers:mujoco_wrapper",
     kwargs={
         "entry_point": "environments.mujoco.ant_dir:AntDirEnv",
-        "max_episode_steps": 200,
+        "max_episode_steps": 50,
     },
-    max_episode_steps=200,
+    max_episode_steps=50,
 )
 
 register(
@@ -30,9 +30,9 @@ register(
     entry_point="environments.wrappers:mujoco_wrapper",
     kwargs={
         "entry_point": "environments.mujoco.ant_goal:AntGoalEnv",
-        "max_episode_steps": 200,
+        "max_episode_steps": 50,
     },
-    max_episode_steps=200,
+    max_episode_steps=50,
 )
 
 register(
