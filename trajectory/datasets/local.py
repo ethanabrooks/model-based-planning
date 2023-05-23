@@ -142,6 +142,52 @@ def load_dataset(
         replay_buffer.extend(tensordict)
 
     memmap_tensors = replay_buffer[: len(replay_buffer)]
+    if train_task_mask is not None:
+        train_task_mask = train_task_mask(memmap_tensors["task"])
+        memmap_tensors = memmap_tensors[train_task_mask]
+    [done_mdp] = memmap_tensors["done_mdp"].T
+    [done_indices] = done_mdp.nonzero().T
+    episode_lengths = np.diff(np.concatenate([np.array([0]), 1 + done_indices]))
+    episode_length = np.unique(episode_lengths)
+    try:
+        [mask_size] = episode_length  # single episode length: can vectorize computation
+    except ValueError:
+        console.log("Episode length is not unique:")
+        console.log(episode_length)
+        mask_size = None  # computation must be performed iteratively
+    if mask_size is None:
+        replay_buffer = ReplayBuffer(LazyMemmapStorage(size, scratch_dir=tmp_dir()))
+        for length in track(episode_lengths, description="Truncating episodes"):
+            episode = memmap_tensors[:length]
+            memmap_tensors = memmap_tensors[length:]
+            assert episode["done_mdp"][-1], f"Episode is not terminated: {episode}"
+            episode = episode[:truncate_episode]
+            replay_buffer.extend(episode)
+        assert len(memmap_tensors) == 0
+        dataset = replay_buffer[:]
+
+    else:
+        mask = np.zeros(mask_size, dtype=bool)
+        done_bamdp_mask = np.zeros(mask_size, dtype=bool)
+        terminations = np.zeros(mask_size, dtype=bool)
+        mask[:truncate_episode] = 1
+        done_bamdp_mask[-truncate_episode:] = 1
+        terminations[truncate_episode - 1] = 1
+        assert (
+            done_mdp.size % mask_size == 0
+        ), "Dataset size is not a multiple of mask size"
+        tiles = int(done_mdp.size / mask_size)
+        mask = np.tile(mask, tiles)
+        done_bamdp_mask = np.tile(done_bamdp_mask, tiles)
+        terminations = np.tile(terminations, tiles)
+        dataset["done_mdp"][terminations] = 1
+        dataset = {
+            k: v[done_bamdp_mask if k == "done" else mask] for k, v in dataset.items()
+        }
+    if task_aware:
+        dataset["observations"] = add_task_to_obs(
+            dataset["observations"], dataset["task"]
+        )
     rename = dict(state="observations", next_state="next_observations")
 
     def preprocess(v):
@@ -149,38 +195,7 @@ def load_dataset(
         b, *_, d = v.shape
         return v.reshape(b, d)
 
-    dataset = {rename.get(k, k): preprocess(v) for k, v in memmap_tensors.items()}
-    if train_task_mask is not None:
-        train_task_mask = train_task_mask(dataset["task"])
-        dataset = {k: v[train_task_mask] for k, v in dataset.items()}
-    if task_aware:
-        dataset["observations"] = add_task_to_obs(
-            dataset["observations"], dataset["task"]
-        )
-    done_mdp = dataset["done_mdp"]
-    (done_indices, _) = done_mdp.nonzero()
-    episode_lengths = np.diff(done_indices)
-    episode_length = np.unique(episode_lengths)
-    try:
-        (mask_size,) = episode_length
-    except ValueError:
-        raise RuntimeError(f"Episode length is not unique: {episode_length}")
-    mask = np.zeros(mask_size, dtype=bool)
-    done_bamdp_mask = np.zeros(mask_size, dtype=bool)
-    terminations = np.zeros(mask_size, dtype=bool)
-    mask[:truncate_episode] = 1
-    done_bamdp_mask[-truncate_episode:] = 1
-    terminations[truncate_episode - 1] = 1
-    assert done_mdp.size % mask_size == 0, "Dataset size is not a multiple of mask size"
-    tiles = int(done_mdp.size / mask_size)
-    mask = np.tile(mask, tiles)
-    done_bamdp_mask = np.tile(done_bamdp_mask, tiles)
-    terminations = np.tile(terminations, tiles)
-    dataset["done_mdp"][terminations] = 1
-    dataset = {
-        k: v[done_bamdp_mask if k == "done" else mask] for k, v in dataset.items()
-    }
-    return dataset
+    return {rename.get(k, k): preprocess(v) for k, v in dataset.items()}
 
 
 def add_task_to_obs(obs: np.ndarray, task: np.ndarray) -> np.ndarray:
