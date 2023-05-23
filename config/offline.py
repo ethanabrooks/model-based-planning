@@ -199,6 +199,22 @@ TaskAwareHalfCheetahDir_v0 = {
     },
 }
 
+AntDir_v0 = {
+    "train": {"batch_size": 32},
+    "plan": {
+        "loadpath": "rldl/In-Context Model-Based Planning/1tpgl4z5",
+        **mujoco_plan,
+    },
+}
+
+TaskAwareAntDir_v0 = {
+    "train": {"batch_size": 32},
+    "plan": {
+        "loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
+        **mujoco_plan,
+    },
+}
+
 AntGoal_v0 = {
     "train": {"batch_size": 32},
     "plan": {
