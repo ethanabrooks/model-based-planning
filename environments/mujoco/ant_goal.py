@@ -60,7 +60,7 @@ class AntGoalEnv(AntEnv):
                 self.sim.data.qvel.flat,
                 np.clip(self.sim.data.cfrc_ext, -1, 1).flat,
             ]
-        )
+        )[:30]
 
 
 class AntGoalOracleEnv(AntGoalEnv):
