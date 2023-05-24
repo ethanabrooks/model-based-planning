@@ -282,6 +282,7 @@ def main(
         "gpt_epoch": gpt_epoch,
     }
     json.dump(json_data, open(json_path, "w"), indent=2, sort_keys=True)
+    wandb.finish()
 
 
 def get_args():
