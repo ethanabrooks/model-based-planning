@@ -41,7 +41,7 @@ class PointEnv(Env):
      - reward is L2 distance
     """
 
-    def __init__(self, max_episode_steps=100, goal_sampler=None):
+    def __init__(self, max_episode_steps=100, goal_sampler=None, test: bool = False):
         if callable(goal_sampler):
             self.goal_sampler = goal_sampler
         elif isinstance(goal_sampler, str):
