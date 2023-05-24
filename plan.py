@@ -1,4 +1,5 @@
 import json
+import numbers
 import re
 import time
 from os.path import join
@@ -227,6 +228,9 @@ def main(
             "total_reward": total_reward,
             "score": score,
         }
+        for k, v in info.items():
+            if isinstance(v, numbers.Number):
+                log[k] = v
         if terminal_mdp:
             log["episode_return"] = total_reward
         writer.log(
