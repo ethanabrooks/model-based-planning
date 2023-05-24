@@ -60,7 +60,7 @@ def is_local_dataset(env: str) -> bool:
     return get_artifact_name(env) is not None
 
 
-def load_environment(env: str) -> gym.Env:
+def load_environment(env: str, test: bool = False) -> gym.Env:
     thunk = parallel_envs.make_env(
         env,
         seed=None,
@@ -68,6 +68,7 @@ def load_environment(env: str) -> gym.Env:
         episodes_per_task=None,
         tasks=None,
         add_done_info=None,
+        test=test,
     )
     env = thunk()
     env = NormalizedScoreWrapper(env)

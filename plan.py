@@ -30,6 +30,7 @@ class Parser(UtilsParser):
     trajectory_transformer: bool = False
     baseline: str = None
     n_expand: int = 2
+    test_tasks: bool = False
 
 
 def main(
@@ -57,6 +58,7 @@ def main(
     run: Run,
     seed: int,
     suffix: str,
+    test_tasks: bool,
     total_episodes: int,
     trajectory_transformer: bool,
     verbose: bool,
@@ -78,6 +80,7 @@ def main(
         run=run,
         trajectory_transformer=trajectory_transformer,
         baseline=baseline,
+        test_tasks=test_tasks,
     )
 
     if baseline == "ad":
@@ -124,7 +127,7 @@ def main(
 
     task_aware = local.is_task_aware(env)
     env = local.get_env_name(env)
-    env = load_environment(env)
+    env = load_environment(env, test=test_tasks)
     try:
         env.seed(seed)
     except AttributeError:
