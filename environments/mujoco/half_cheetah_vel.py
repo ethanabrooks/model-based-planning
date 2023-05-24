@@ -22,7 +22,8 @@ class HalfCheetahVelEnv(HalfCheetahEnv):
         (https://homes.cs.washington.edu/~todorov/papers/TodorovIROS12.pdf)
     """
 
-    def __init__(self, max_episode_steps=200):
+    def __init__(self, max_episode_steps=200, test: bool = False):
+        self.test = test
         self.set_task(self.sample_tasks(1)[0])
         self._max_episode_steps = max_episode_steps
         self.task_dim = 1
@@ -41,7 +42,10 @@ class HalfCheetahVelEnv(HalfCheetahEnv):
         reward = forward_reward - ctrl_cost
         done = False
         infos = dict(
-            reward_forward=forward_reward, reward_ctrl=-ctrl_cost, task=self.get_task()
+            forward_vel=forward_vel,
+            reward_forward=forward_reward,
+            reward_ctrl=-ctrl_cost,
+            task=self.get_task(),
         )
         return observation, reward, done, infos
 
@@ -54,7 +58,7 @@ class HalfCheetahVelEnv(HalfCheetahEnv):
         return np.array([self.goal_velocity])
 
     def sample_task(self):
-        return np.array([np.random.uniform(0.0, 3.0)])
+        return np.array([4 if self.test else np.random.uniform(0.0, 3.0)])
 
     def sample_tasks(self, n_tasks):
         return np.concatenate([self.sample_task() for _ in range(n_tasks)])
