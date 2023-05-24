@@ -42,7 +42,6 @@ def main(
     dataset: str,
     debug: bool,
     device: int,
-    exp_name: str,
     gpt_epoch: int,
     horizon: int,
     k_act: int,

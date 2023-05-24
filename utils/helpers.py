@@ -413,12 +413,11 @@ def project_name():
     return pyproject["tool"]["poetry"]["name"]
 
 
-def get_tags(trajectory_transformer: bool, baseline: str):
+def get_tags(**kwargs):
     tags = []
-    if trajectory_transformer:
-        tags.append("trajectory-transformer")
-    if baseline:
-        tags.append(baseline)
+    for k, v in kwargs.items():
+        if v:
+            tags.append(k)
     return tags
 
 
@@ -439,6 +438,14 @@ def sweep(
         params.update(sweep_params)
         params.update(seed=parser.seed + sweep_params.get("seed", 0))
         sleep_time = 1
+        tags = dict(
+            trajectory_transformer=parser.trajectory_transformer,
+            baseline=parser.baseline,
+        )
+        try:
+            tags.update(test_tasks=parser.test_tasks)
+        except AttributeError:
+            pass
         while True:
             try:
                 run = setup_wandb(
@@ -446,7 +453,7 @@ def sweep(
                     group=group,
                     project=project,
                     rank_zero_only=False,
-                    tags=get_tags(parser.trajectory_transformer, parser.baseline),
+                    tags=get_tags(**tags),
                     notes=parser.notes,
                 )
                 break
