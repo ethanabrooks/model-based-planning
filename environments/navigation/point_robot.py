@@ -364,9 +364,15 @@ class SparsePointEnv(PointEnv):
     """Reward is L2 distance given only within goal radius"""
 
     def __init__(
-        self, goal_radius=0.2, max_episode_steps=100, goal_sampler="semi-circle"
+        self,
+        goal_radius=0.2,
+        max_episode_steps=100,
+        goal_sampler="semi-circle",
+        test: bool = False,
     ):
-        super().__init__(max_episode_steps=max_episode_steps, goal_sampler=goal_sampler)
+        super().__init__(
+            max_episode_steps=max_episode_steps, goal_sampler=goal_sampler, test=test
+        )
         self.goal_radius = goal_radius
         self.reset_task()
 
