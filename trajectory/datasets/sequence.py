@@ -74,18 +74,18 @@ class SequenceDataset(torch.utils.data.Dataset):
             ## segment
             print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
 
-            def segment(observations, name: str):
+            def segment(x, name: str):
                 """
                 segment `observations` into trajectories according to `terminals`
                 """
-                assert len(observations) == len(done_bamdp)
-                observation_dim = observations.shape[1]
+                assert len(x) == len(done_bamdp)
+                observation_dim = x.shape[1]
 
                 # Find indices of ones in Y
                 indices, _ = np.where(done_bamdp == 1)
 
                 # Split X into segments
-                trajectories = np.split(observations, indices + 1)
+                trajectories = np.split(x, indices + 1)
 
                 if len(trajectories[-1]) == 0:
                     trajectories = trajectories[:-1]
