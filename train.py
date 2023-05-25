@@ -25,9 +25,11 @@ class Parser(utils.Parser):
     name: str = "train"
     notes: str = None
     trajectory_transformer: bool = False
+    action_mask: bool = False
 
 
 def main(
+    action_mask: bool,
     args: dict,
     action_weight: float,
     attn_pdrop: float,
@@ -67,6 +69,7 @@ def main(
         notes=notes,
         run=run,
         trajectory_transformer=trajectory_transformer,
+        action_mask=action_mask,
     )
 
     #######################
@@ -86,6 +89,7 @@ def main(
         discount=discount,
         discretizer=discretizer,
         trajectory_transformer=trajectory_transformer,
+        action_mask=action_mask,
     )
     dataset = dataset_config()
     obs_dim = dataset.observation_dim

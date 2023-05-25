@@ -32,9 +32,12 @@ class Parser(UtilsParser):
     baseline: str = None
     n_expand: int = 2
     test_tasks: bool = False
+    action_mask: bool = False
 
 
 def main(
+    action_mask: bool,
+    action_mask_loadpath: str,
     args: dict,
     baseline: str,
     beam_width: int,
@@ -95,6 +98,8 @@ def main(
     #######################
     ####### models ########
     #######################
+    if action_mask:
+        loadpath = action_mask_loadpath
 
     sleep_time = 1
     while True:
