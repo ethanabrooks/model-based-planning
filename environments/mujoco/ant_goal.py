@@ -6,7 +6,7 @@ from environments.mujoco.ant import AntEnv
 
 
 class AntGoalEnv(AntEnv):
-    def __init__(self, max_episode_steps=200):
+    def __init__(self, max_episode_steps=200, test: bool = False):
         self.set_task(self.sample_tasks(1)[0])
         self._max_episode_steps = max_episode_steps
         self.task_dim = 2
