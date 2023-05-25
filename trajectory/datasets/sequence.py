@@ -23,10 +23,12 @@ class SequenceDataset(torch.utils.data.Dataset):
         step: int,
         discount: float,
         penalty: Optional[float],
+        action_mask: bool,
     ):
         self.console = console = Console()
         self.sequence_length = sequence_length
         self.step = step
+        self.action_mask = action_mask
         observations, actions, rewards, done_bamdp, done_mdp = self.init(env)
 
         if trajectory_transformer:
@@ -239,6 +241,9 @@ class DiscretizedDataset(SequenceDataset):
         ## beyond the episode boundary
         mask = torch.ones(joined_discrete.shape, dtype=torch.bool)
         mask[done] = False
+        if self.action_mask:
+            mask[:, : self.observation_dim - 1] = False
+            mask[:, self.observation_dim + self.action_dim - 1 :] = False
 
         ## flatten everything
         joined_discrete = joined_discrete.view(-1)
