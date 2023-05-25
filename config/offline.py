@@ -171,6 +171,7 @@ HalfCheetahVel_v0 = {
     "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/an22r3ig",
+        "action_mask_loadpath": None,
         **mujoco_plan,
     },
 }
@@ -187,6 +188,7 @@ HalfCheetahDir_v0 = {
     "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/hdvq9xsm",
+        "action_mask_loadpath": None,
         **mujoco_plan,
     },
 }
@@ -203,6 +205,7 @@ AntDir2D_v0 = {
     "train": {"batch_size": 32},
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/1tpgl4z5",
+        "action_mask_loadpath": None,
         **mujoco_plan,
     },
 }
