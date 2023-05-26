@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from rich.progress import track
+from rich.progress import Progress, TimeElapsedColumn
 
 from .arrays import to_np, to_torch
 
@@ -10,10 +10,15 @@ class QuantileDiscretizer:
         self.N = N
 
         n_points_per_bin = int(np.ceil(len(datas[0]) / N))
-        sorted_data = [
-            np.sort(d, axis=0)
-            for d in track(datas, description="Sorting data for discretization")
-        ]
+        progress = Progress(TimeElapsedColumn(), *Progress.get_default_columns())
+        sorted_data = []
+        with progress:
+            for i, d in enumerate(
+                progress.track(datas, description=f"Sorting {len(datas)} arrays"),
+                start=1,
+            ):
+                progress.add_task(f"Sorting array {i}", total=None)
+                sorted_data.append(np.sort(d, axis=0))
 
         thresholds = [d[::n_points_per_bin, :] for d in sorted_data]
         thresholds = np.concatenate(thresholds, axis=-1)

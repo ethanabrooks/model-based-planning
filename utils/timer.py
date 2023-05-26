@@ -20,11 +20,10 @@ class TimeElapsedColumn(ProgressColumn):
 
 
 @contextmanager
-def Timer(desc: Optional[str] = None, print_freq: float = 0.01):
+def Timer(desc: Optional[str] = None):
     columns = [TimeElapsedColumn()]
     if desc:
-        columns = [TextColumn(f"[progress.description]{desc}:"), *columns]
-
+        columns.append(TextColumn(f"[progress.description]{desc}:"))
     with Progress(*columns) as progress:
         progress.add_task(desc, total=None)
         yield
