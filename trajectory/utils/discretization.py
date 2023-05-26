@@ -1,32 +1,23 @@
 import numpy as np
 import torch
-
-from utils.timer import Timer
+from rich.progress import track
 
 from .arrays import to_np, to_torch
 
 
 class QuantileDiscretizer:
-    def __init__(self, data, datas: list[np.ndarray], N):
+    def __init__(self, datas: list[np.ndarray], N):
         self.N = N
 
-        _n_points_per_bin = int(np.ceil(len(data) / N))
         n_points_per_bin = int(np.ceil(len(datas[0]) / N))
-        if not _n_points_per_bin == n_points_per_bin:
-            breakpoint()
-        with Timer("Sorting data for discretization"):
-            obs_sorted = np.sort(data, axis=0)
-            sorted_data = [np.sort(d, axis=0) for d in datas]
+        sorted_data = [
+            np.sort(d, axis=0)
+            for d in track(datas, description="Sorting data for discretization")
+        ]
 
-        _thresholds = obs_sorted[::n_points_per_bin, :]
         thresholds = [d[::n_points_per_bin, :] for d in sorted_data]
-        print(np.array_equal(_thresholds, thresholds))
-        breakpoint()
         thresholds = np.concatenate(thresholds, axis=-1)
-        _maxs = data.max(axis=0, keepdims=True)
         maxs = [d.max(axis=0, keepdims=True) for d in datas]
-        print(np.array_equal(_maxs, maxs))
-        breakpoint()
         maxs = np.concatenate(maxs, axis=-1)
 
         ## [ (N + 1) x dim ]
@@ -44,8 +35,6 @@ class QuantileDiscretizer:
         ## for sparse reward tasks
         # if (self.diffs[:,-1] == 0).any():
         # 	raise RuntimeError('rebin for sparse reward tasks')
-
-        self._test(data)
 
     def __call__(self, x):
         indices = self.discretize(x)
