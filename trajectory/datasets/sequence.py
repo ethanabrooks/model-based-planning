@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 import torch
 from rich.console import Console
-from rich.progress import Progress
+from rich.progress import Progress, TimeElapsedColumn
 
 from trajectory.datasets import local
 from trajectory.utils import discretization
@@ -63,7 +63,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         ep_ends += 1
         ep_starts = np.pad(ep_ends, (1, 0))[:-1]
 
-        with Progress() as progress:
+        with Progress(TimeElapsedColumn(), *Progress.get_default_columns()) as progress:
             for start, length in progress.track(
                 np.stack([ep_starts, ep_ends], axis=1), description="Computing values"
             ):
@@ -75,7 +75,7 @@ class SequenceDataset(torch.utils.data.Dataset):
                 values[start : length - 1] = ep_values[1:, None]
 
             ## segment
-            progress.log("Segmenting...", end=" ")
+            progress.add_task("Segmenting...", total=None)
 
             def segment(x, name: str):
                 """
