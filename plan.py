@@ -9,6 +9,8 @@ from rich.console import Console
 from wandb.sdk.wandb_run import Run
 
 from trajectory.search import beam_plan, extract_actions, make_prefix, update_context
+from trajectory.search.core import get_max_block, get_transition_dim
+from trajectory.search.sampling import sample_n
 from trajectory.utils import Parser as UtilsParser
 from trajectory.utils import load_model, make_renderer
 from trajectory.utils.setup import set_seed
@@ -36,7 +38,6 @@ class Parser(UtilsParser):
 
 
 def main(
-    action_mask: bool,
     action_mask_loadpath: str,
     args: dict,
     baseline: str,
@@ -86,7 +87,11 @@ def main(
     )
     console = Console()
 
+    ad = False
     if baseline == "ad":
+        loadpath = action_mask_loadpath
+        ad = True
+    elif baseline == "ad+":
         beam_width = 1
         n_expand = 1
     elif baseline == "ad++":
@@ -98,8 +103,6 @@ def main(
     #######################
     ####### models ########
     #######################
-    if action_mask:
-        loadpath = action_mask_loadpath
 
     sleep_time = 1
     while True:
@@ -171,24 +174,38 @@ def main(
             ## concatenate previous transitions and current observations to input to model
             prefix = make_prefix(discretizer, context, observation, prefix_context)
 
-            ## sample sequence from model beginning with `prefix`
-            sequence = beam_plan(
-                model=gpt,
-                value_fn=value_fn,
-                x=prefix,
-                n_steps=horizon,
-                beam_width=beam_width,
-                n_expand=n_expand,
-                observation_dim=observation_dim,
-                action_dim=action_dim,
-                discount=discount,
-                max_context_transitions=max_context_transitions,
-                verbose=verbose,
-                k_obs=k_obs,
-                k_act=k_act,
-                cdf_obs=cdf_obs,
-                cdf_act=cdf_act,
-            )
+            if ad:
+                ## mask out invalid actions
+                transition_dim = get_transition_dim(observation_dim, action_dim)
+                max_block = get_max_block(max_context_transitions, transition_dim)
+                sequence, _ = sample_n(
+                    model=gpt,
+                    x=prefix,
+                    action_dim=action_dim,
+                    topk=None,
+                    cdf=None,
+                    max_block=max_block,
+                    crop_increment=transition_dim,
+                )
+            else:
+                ## sample sequence from model beginning with `prefix`
+                sequence = beam_plan(
+                    model=gpt,
+                    value_fn=value_fn,
+                    x=prefix,
+                    n_steps=horizon,
+                    beam_width=beam_width,
+                    n_expand=n_expand,
+                    observation_dim=observation_dim,
+                    action_dim=action_dim,
+                    discount=discount,
+                    max_context_transitions=max_context_transitions,
+                    verbose=verbose,
+                    k_obs=k_obs,
+                    k_act=k_act,
+                    cdf_obs=cdf_obs,
+                    cdf_act=cdf_act,
+                )
 
         else:
             sequence = sequence[1:]
