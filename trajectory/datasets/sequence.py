@@ -9,7 +9,6 @@ from rich.progress import Progress
 from trajectory.datasets import local
 from trajectory.utils import discretization
 from trajectory.utils.arrays import to_torch
-from utils.timer import Timer
 
 from .d4rl import load_environment, qlearning_dataset_with_timeouts
 from .preprocessing import dataset_preprocess_functions
@@ -142,34 +141,16 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         self.rewards = rewards
         self.values = values_raw
-        with Timer(desc="Concatenating raw arrays"):
-            self._joined_raw = np.concatenate(
-                [self.joined_raw, rewards, values_raw], axis=-1
-            )
         self.rewards_segmented = rewards_segmented
         self.values_segmented = values_segmented
-        with Timer(desc="Concatenating segmented arrays"):
-            self._joined_segmented = np.concatenate(
-                [self.joined_segmented, rewards_segmented, values_segmented],
-                axis=-1,
-            )
 
         self.indices = np.concatenate(indices, axis=1).T
         self.observation_dim = observations.shape[1]
         self.action_dim = actions.shape[1]
-        self.joined_dim = self.joined_raw.shape[1]
         self.discount = discount
-
-        ## pad trajectories
-        # n_trajectories, _, joined_dim = self.joined_segmented.shape
-        # breakpoint()
-        # self.joined_segmented = np.concatenate(
-        #     [
-        #         self.joined_segmented,
-        #         np.zeros((n_trajectories, sequence_length - 1, joined_dim)),
-        #     ],
-        #     axis=1,
-        # )
+        self.joined_dim = (
+            self.joined_raw.shape[1] + self.rewards.shape[1] + self.values.shape[1]
+        )
 
     def __len__(self):
         return len(self.indices)
@@ -214,7 +195,6 @@ class DiscretizedDataset(SequenceDataset):
         self.N = N
         discretizer_class = getattr(discretization, discretizer)
         self.discretizer = discretizer_class(
-            self._joined_raw,
             [self.joined_raw, self.rewards, self.values],
             N,
         )
@@ -225,16 +205,10 @@ class DiscretizedDataset(SequenceDataset):
     def __getitem__(self, idx):
         path_ind, start_ind, end_ind = self.indices[idx]
 
-        joined = self._joined_segmented[path_ind, start_ind : end_ind : self.step]
         obs_action = self.joined_segmented[path_ind, start_ind : end_ind : self.step]
         rewards = self.rewards_segmented[path_ind, start_ind : end_ind : self.step]
         values = self.values_segmented[path_ind, start_ind : end_ind : self.step]
-        joined2 = np.concatenate(
-            [obs_action, rewards, values],
-            axis=-1,
-        )
-        print(np.array_equal(joined, joined2))
-        breakpoint()
+        joined = np.concatenate([obs_action, rewards, values], axis=-1)
         done = self.done_flags[path_ind, start_ind : end_ind : self.step]
         done = np.pad(
             done,
