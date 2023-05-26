@@ -7,6 +7,18 @@ from trajectory.search.sampling import get_logp, sample_n, sort_2d
 REWARD_DIM = VALUE_DIM = 1
 
 
+def get_transition_dim(observation_dim, action_dim):
+    return observation_dim + action_dim + REWARD_DIM + VALUE_DIM
+
+
+def get_max_block(max_context_transitions, transition_dim):
+    return (
+        max_context_transitions * transition_dim - 1
+        if max_context_transitions
+        else None
+    )
+
+
 @torch.no_grad()
 def beam_plan(
     model,
@@ -33,12 +45,8 @@ def beam_plan(
     """
 
     # convert max number of transitions to max number of tokens
-    transition_dim = observation_dim + action_dim + REWARD_DIM + VALUE_DIM
-    max_block = (
-        max_context_transitions * transition_dim - 1
-        if max_context_transitions
-        else None
-    )
+    transition_dim = get_transition_dim(observation_dim, action_dim)
+    max_block = get_max_block(max_context_transitions, transition_dim)
 
     ## pass in max numer of tokens to sample function
     sample_kwargs = {
