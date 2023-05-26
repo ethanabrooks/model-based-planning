@@ -3,6 +3,7 @@ from typing import Optional
 
 import numpy as np
 import torch
+from rich.console import Console
 from rich.progress import Progress
 
 from trajectory.datasets import local
@@ -24,6 +25,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         discount: float,
         penalty: Optional[float],
     ):
+        self.console = console = Console()
         self.sequence_length = sequence_length
         self.step = step
         observations, actions, rewards, done_bamdp, done_mdp = self.init(env)
@@ -38,8 +40,8 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         max_path_length = get_max_path_length(done_bamdp)
 
-        print(
-            f"[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
+        console.log(
+            f"Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
         )
         self.joined_raw = np.concatenate([observations, actions], axis=-1)
 
@@ -72,7 +74,7 @@ class SequenceDataset(torch.utils.data.Dataset):
                 values[start : length - 1] = ep_values[1:, None]
 
             ## segment
-            print("[ datasets/sequence ] Segmenting...", end=" ", flush=True)
+            progress.log("Segmenting...", end=" ")
 
             def segment(x, name: str):
                 """
@@ -182,7 +184,7 @@ class SequenceDataset(torch.utils.data.Dataset):
                 truncate_episode=env.spec.max_episode_steps,
             )
         else:
-            print("[ datasets/sequence ] Loading...", end=" ", flush=True)
+            self.console.log("Loading...", end=" ")
             dataset = qlearning_dataset_with_timeouts(
                 env.unwrapped, terminate_on_end=True
             )
@@ -190,7 +192,7 @@ class SequenceDataset(torch.utils.data.Dataset):
 
         preprocess_fn = dataset_preprocess_functions.get(name)
         if preprocess_fn:
-            print("[ datasets/sequence ] Modifying environment")
+            self.console.log("Modifying environment")
             dataset = preprocess_fn(dataset)
 
         observations = dataset["observations"]
