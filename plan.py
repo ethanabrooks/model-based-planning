@@ -35,6 +35,7 @@ class Parser(UtilsParser):
     n_expand: int = 2
     test_tasks: bool = False
     action_mask: bool = False
+    task_aware: bool = False
 
 
 def main(
@@ -61,6 +62,8 @@ def main(
     prefix_context: int,
     run: Run,
     seed: int,
+    task_aware: bool,
+    task_aware_loadpath: str,
     test_tasks: bool,
     total_episodes: int,
     trajectory_transformer: bool,
@@ -84,6 +87,7 @@ def main(
         trajectory_transformer=trajectory_transformer,
         baseline=baseline,
         test_tasks=test_tasks,
+        task_aware=task_aware,
     )
     console = Console()
 
@@ -99,6 +103,9 @@ def main(
         n_expand = 1
     elif baseline is not None:
         raise ValueError(f"Unknown baseline: {baseline}")
+
+    if task_aware:
+        loadpath = task_aware_loadpath
 
     #######################
     ####### models ########

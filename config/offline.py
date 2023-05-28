@@ -147,14 +147,8 @@ SparsePointEnv_v0 = {
     "plan": {
         "renderer": "PointRenderer",
         "loadpath": "rldl/In-Context Model-Based Planning/bcetko3o",
-    },
-}
-
-TaskAwareSparsePointEnv_v0 = {
-    "train": sparse_point_env_train,
-    "plan": {
-        "renderer": "PointRenderer",
-        "loadpath": "rldl/In-Context Model-Based Planning/edioi44c",
+        "action_mask_loadpath": None,
+        "task_aware_loadpath": "rldl/In-Context Model-Based Planning/edioi44c",
     },
 }
 
@@ -172,64 +166,40 @@ HalfCheetahVel_v0 = {
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/an22r3ig",
         "action_mask_loadpath": None,
+        "task_aware_loadpath": "rldl/In-Context Model-Based Planning/u2g0tsra",
         **mujoco_plan,
     },
 }
 
-TaskAwareHalfCheetahVel_v0 = {
-    "train": mujoco_train,
-    "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/u2g0tsra",
-        **mujoco_plan,
-    },
-}
 
 HalfCheetahDir_v0 = {
     "train": mujoco_train,
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/hdvq9xsm",
         "action_mask_loadpath": None,
+        "task_aware_loadpath": "rldl/In-Context Model-Based Planning/q72fbi9c",
         **mujoco_plan,
     },
 }
 
-TaskAwareHalfCheetahDir_v0 = {
-    "train": mujoco_train,
-    "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/q72fbi9c",
-        **mujoco_plan,
-    },
-}
 
 AntDir2D_v0 = {
     "train": {"batch_size": 32},
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/1tpgl4z5",
         "action_mask_loadpath": None,
+        "task_aware_loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
         **mujoco_plan,
     },
 }
 
-TaskAwareAntDir2D_v0 = {
-    "train": {"batch_size": 32},
-    "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
-        **mujoco_plan,
-    },
-}
 
 AntGoal_v0 = {
     "train": {"batch_size": 32},
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/1tpgl4z5",
-        **mujoco_plan,
-    },
-}
-
-TaskAwareAntGoal_v0 = {
-    "train": {"batch_size": 32},
-    "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
+        "action_mask_loadpath": None,
+        "task_aware_loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
         **mujoco_plan,
     },
 }
