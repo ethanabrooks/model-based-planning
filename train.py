@@ -26,6 +26,7 @@ class Parser(utils.Parser):
     notes: str = None
     trajectory_transformer: bool = False
     action_mask: bool = False
+    task_aware: bool = False
 
 
 def main(
@@ -55,6 +56,7 @@ def main(
     reward_weight: float,
     step: int,
     subsampled_sequence_length: int,
+    task_aware: bool,
     termination_penalty: float,
     trajectory_transformer: bool,
     total_iters: int,
@@ -70,6 +72,7 @@ def main(
         run=run,
         trajectory_transformer=trajectory_transformer,
         action_mask=action_mask,
+        task_aware=task_aware,
     )
 
     #######################
@@ -90,6 +93,7 @@ def main(
         discretizer=discretizer,
         trajectory_transformer=trajectory_transformer,
         action_mask=action_mask,
+        task_aware=task_aware,
     )
     dataset = dataset_config()
     obs_dim = dataset.observation_dim
