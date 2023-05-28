@@ -61,7 +61,7 @@ base = {
         "prefix_context": True,
         "seed": 42,
         "suffix": "0",
-        "total_episodes": 10,
+        "total_episodes": 1,
         "verbose": True,
         "vis_freq": 50,
     },
