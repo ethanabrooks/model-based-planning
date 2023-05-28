@@ -3,9 +3,11 @@ import numbers
 import re
 import time
 from os.path import join
+from typing import Optional
 
 import wandb
 from rich.console import Console
+from traitlets import Any
 from wandb.sdk.wandb_run import Run
 
 from trajectory.search import beam_plan, extract_actions, make_prefix, update_context
@@ -312,18 +314,19 @@ def main(
     wandb.finish()
 
 
-def get_args():
-    return Parser().parse_args("plan")
+def get_args(args: Optional[list[str]] = None):
+    return Parser().parse_args(args=args, experiment="plan")
 
 
-def sweep(**config):
-    args = get_args()
+def sweep(config: dict[str, Any], args: Optional[list[str]], gpus_per_proc: int):
+    args = get_args(args)
     return helpers.sweep(
         main,
         parser=args,
         param_space=config,
         group_name=args.name,
         dataset=args.dataset,
+        gpus_per_proc=gpus_per_proc,
     )
 
 

@@ -431,6 +431,7 @@ def sweep(
     param_space: dict[str, Any],
     group_name: str,
     dataset: str,
+    gpus_per_proc: int,
 ):
     parser_params = parser.as_dict()
     timestamp = datetime.datetime.now().strftime("-%d-%m-%H:%M:%S")
@@ -470,7 +471,7 @@ def sweep(
         return main(**params, args=params, run=run)
 
     tune.Tuner(
-        trainable=tune.with_resources(train_func, dict(gpu=1)),
+        trainable=tune.with_resources(train_func, dict(gpu=gpus_per_proc)),
         param_space=param_space,
     ).fit()
 

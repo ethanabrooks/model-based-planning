@@ -208,7 +208,7 @@ def main(
 
 
 def get_args():
-    return Parser().parse_args("train")
+    return Parser().parse_args(experiment="train")
 
 
 def sweep(**config):
@@ -219,6 +219,7 @@ def sweep(**config):
         param_space=config,
         group_name=args.name,
         dataset=args.dataset,
+        gpus_per_proc=1,
     )
 
 
