@@ -1,16 +1,14 @@
 import importlib
 import os
-import pdb
 import random
+from typing import Optional
 
 import numpy as np
 import torch
 from rich.console import Console
 from tap import Tap
 
-from .arrays import set_device
 from .git_utils import get_git_rev, save_git_diff
-from .serialization import mkdir
 
 console = Console()
 
@@ -43,8 +41,8 @@ class Parser(Tap):
         console.log(f"Saved args to {fullpath}")
         super().save(fullpath, skip_unpicklable=True)
 
-    def parse_args(self, experiment=None):
-        args = super().parse_args(known_only=True)
+    def parse_args(self, args: Optional[list[str]] = None, experiment=None):
+        args = super().parse_args(args=args, known_only=True)
         ## if not loading from a config script, skip the result of the setup
         if not hasattr(args, "config"):
             return args
@@ -110,12 +108,12 @@ class Parser(Tap):
 
     def set_seed(self, args):
         console.log(f"Seed: {getattr(args, 'seed', None)}")
-        if not "seed" in dir(args):
+        if "seed" not in dir(args):
             return
         set_seed(args.seed)
 
     def generate_exp_name(self, args):
-        if not "exp_name" in dir(args):
+        if "exp_name" not in dir(args):
             return
         exp_name = getattr(args, "exp_name")
         if callable(exp_name):
