@@ -414,7 +414,7 @@ def project_name():
 
 
 def get_tags(**kwargs):
-    tags = []
+    tags = ["old-torchrl"]
     for k, v in kwargs.items():
         if v is True:
             tags.append(k)
