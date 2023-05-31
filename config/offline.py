@@ -164,7 +164,7 @@ mujoco_plan = {
 HalfCheetahVel_v0 = {
     "train": mujoco_train,
     "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/io6tilcy",
+        "loadpath": "rldl/In-Context Model-Based Planning/etrzs8zh",
         "action_mask_loadpath": None,
         "task_aware_loadpath": "rldl/In-Context Model-Based Planning/u2g0tsra",
         **mujoco_plan,
