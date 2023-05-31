@@ -161,22 +161,25 @@ def load_dataset(
     try:
         (mask_size,) = episode_length
     except ValueError:
-        raise RuntimeError(f"Episode length is not unique: {episode_length}")
-    mask = np.zeros(mask_size, dtype=bool)
-    done_bamdp_mask = np.zeros(mask_size, dtype=bool)
-    terminations = np.zeros(mask_size, dtype=bool)
-    mask[:truncate_episode] = 1
-    done_bamdp_mask[-truncate_episode:] = 1
-    terminations[truncate_episode - 1] = 1
-    assert done_mdp.size % mask_size == 0, "Dataset size is not a multiple of mask size"
-    tiles = int(done_mdp.size / mask_size)
-    mask = np.tile(mask, tiles)
-    done_bamdp_mask = np.tile(done_bamdp_mask, tiles)
-    terminations = np.tile(terminations, tiles)
-    dataset["done_mdp"][terminations] = 1
-    dataset = {
-        k: v[done_bamdp_mask if k == "done" else mask] for k, v in dataset.items()
-    }
+        mask_size = None
+    if mask_size is not None:
+        mask = np.zeros(mask_size, dtype=bool)
+        done_bamdp_mask = np.zeros(mask_size, dtype=bool)
+        terminations = np.zeros(mask_size, dtype=bool)
+        mask[:truncate_episode] = 1
+        done_bamdp_mask[-truncate_episode:] = 1
+        terminations[truncate_episode - 1] = 1
+        assert (
+            done_mdp.size % mask_size == 0
+        ), "Dataset size is not a multiple of mask size"
+        tiles = int(done_mdp.size / mask_size)
+        mask = np.tile(mask, tiles)
+        done_bamdp_mask = np.tile(done_bamdp_mask, tiles)
+        terminations = np.tile(terminations, tiles)
+        dataset["done_mdp"][terminations] = 1
+        dataset = {
+            k: v[done_bamdp_mask if k == "done" else mask] for k, v in dataset.items()
+        }
     return dataset
 
 
