@@ -3,10 +3,10 @@ from typing import Optional
 
 import numpy as np
 import torch
-import wandb
 from rich.console import Console
 from rich.progress import Progress, TimeElapsedColumn
 
+import utils.helpers as utl
 from trajectory.datasets import local
 from trajectory.utils import discretization
 from trajectory.utils.arrays import to_torch
@@ -165,10 +165,9 @@ class SequenceDataset(torch.utils.data.Dataset):
         ed = local.is_ed(env)
         env = local.get_env_name(env)
         env = load_environment(env)
-        if wandb.run is not None:
-            wandb.run.tags = wandb.run.tags + (
-                f"{env.spec.max_episode_steps}-timesteps",
-            )
+        utl.add_tag(
+            f"{env.spec.max_episode_steps}-timesteps",
+        )
         name = env.spec.id
 
         if local.get_artifact_name(name):

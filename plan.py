@@ -145,6 +145,9 @@ def main(
     task_aware = local.is_task_aware(env)
     env = local.get_env_name(env)
     env = load_environment(env, test=test_tasks)
+    helpers.add_tag(
+        f"{env.spec.max_episode_steps}-timesteps",
+    )
     try:
         env.seed(seed)
     except AttributeError:
