@@ -1,6 +1,7 @@
 import random
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 from environments.mujoco.ant import AntEnv
 
@@ -80,6 +81,13 @@ class AntDirEnv(AntEnv):
 class AntDir2DEnv(AntDirEnv):
     def sample_tasks(self, n_tasks):
         return np.random.random(n_tasks) * np.pi
+
+    def plot_task(curr_task: np.ndarray):
+        [angle] = curr_task
+        length = 1.0  # Length of the line
+        x = np.array([0, length * np.cos(angle)])
+        y = np.array([0, length * np.sin(angle)])
+        plt.plot(x, y, "-")
 
 
 class AntDirOracleEnv(AntDirEnv):

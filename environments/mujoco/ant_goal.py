@@ -1,6 +1,7 @@
 import random
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 from environments.mujoco.ant import AntEnv
 
@@ -51,6 +52,9 @@ class AntGoalEnv(AntEnv):
 
     def get_task(self):
         return np.array(self.goal_pos)
+
+    def plot_task(curr_task: np.ndarray):
+        plt.plot(curr_task[0], curr_task[1], "rx")
 
     def _get_obs(self):
         return np.concatenate(
