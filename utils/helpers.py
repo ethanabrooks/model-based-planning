@@ -425,6 +425,11 @@ def get_tags(**kwargs):
     return tags
 
 
+def add_tag(tag: str):
+    if wandb.run is not None:
+        wandb.run.tags = wandb.run.tags + (tag,)
+
+
 def sweep(
     main: Callable,
     parser,
