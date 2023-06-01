@@ -241,7 +241,7 @@ def main(
                     {join(writer.save_directory, "plan.png"): wandb.Image(fig)}, step=T
                 )
             renderer.render_plan(
-                join(writer.save_directory, f"{t}_plan.mp4"),
+                join(writer.save_directory, "plan.mp4"),
                 sequence_recon,
                 env.state_vector(),
             )
