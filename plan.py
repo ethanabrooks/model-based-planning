@@ -14,7 +14,7 @@ from trajectory.search import beam_plan, extract_actions, make_prefix, update_co
 from trajectory.search.core import get_max_block, get_transition_dim
 from trajectory.search.sampling import sample_n
 from trajectory.utils import Parser as UtilsParser
-from trajectory.utils import load_model, make_renderer
+from trajectory.utils import load_model, make_renderer, rendering
 from trajectory.utils.setup import set_seed
 from utils import helpers
 from utils.writer import Writer
@@ -228,6 +228,18 @@ def main(
         ## visualization
         if t % vis_freq == 0 or terminal_mdp:
             ## save current plan
+            observations, _, _, _ = rendering.split(
+                sequence_recon, observation_dim, action_dim
+            )
+            if hasattr(env, "plot"):
+                fig = env.plot(
+                    [[*observations]],
+                    env.get_task(),
+                    image_folder=writer.save_directory,
+                )
+                writer.log(
+                    {join(writer.save_directory, "plan.png"): wandb.Image(fig)}, step=T
+                )
             renderer.render_plan(
                 join(writer.save_directory, f"{t}_plan.mp4"),
                 sequence_recon,
@@ -284,6 +296,15 @@ def main(
         ## visualization
         if terminal or terminal_mdp:
             ## save rollout thus far
+            if hasattr(env, "plot"):
+                fig = env.plot(
+                    [[*rollout]],
+                    env.get_task(),
+                    image_folder=writer.save_directory,
+                )
+                writer.log(
+                    {join(writer.save_directory, "rollout.png"): wandb.Image(fig)}
+                )
             renderer.render_rollout(
                 join(writer.save_directory, "rollout.mp4"), rollout, fps=80
             )
