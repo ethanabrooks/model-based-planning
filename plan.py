@@ -179,163 +179,166 @@ def main(
     terminal_mdp = True  # trigger visualization on first timestep
     e = t = T = 0
 
-    while True:
-        observation = preprocess_fn(observation)
+    try:
+        while True:
+            observation = preprocess_fn(observation)
 
-        if t % plan_freq == 0:
-            ## concatenate previous transitions and current observations to input to model
-            prefix = make_prefix(discretizer, context, observation, prefix_context)
+            if t % plan_freq == 0:
+                ## concatenate previous transitions and current observations to input to model
+                prefix = make_prefix(discretizer, context, observation, prefix_context)
 
-            if ad:
-                ## mask out invalid actions
-                transition_dim = get_transition_dim(observation_dim, action_dim)
-                max_block = get_max_block(max_context_transitions, transition_dim)
-                sequence, _ = sample_n(
-                    model=gpt,
-                    x=prefix,
-                    action_dim=action_dim,
-                    topk=None,
-                    cdf=None,
-                    max_block=max_block,
-                    crop_increment=transition_dim,
-                )
+                if ad:
+                    ## mask out invalid actions
+                    transition_dim = get_transition_dim(observation_dim, action_dim)
+                    max_block = get_max_block(max_context_transitions, transition_dim)
+                    sequence, _ = sample_n(
+                        model=gpt,
+                        x=prefix,
+                        action_dim=action_dim,
+                        topk=None,
+                        cdf=None,
+                        max_block=max_block,
+                        crop_increment=transition_dim,
+                    )
+                else:
+                    ## sample sequence from model beginning with `prefix`
+                    sequence = beam_plan(
+                        model=gpt,
+                        value_fn=value_fn,
+                        x=prefix,
+                        n_steps=horizon,
+                        beam_width=beam_width,
+                        n_expand=n_expand,
+                        observation_dim=observation_dim,
+                        action_dim=action_dim,
+                        discount=discount,
+                        max_context_transitions=max_context_transitions,
+                        verbose=verbose,
+                        k_obs=k_obs,
+                        k_act=k_act,
+                        cdf_obs=cdf_obs,
+                        cdf_act=cdf_act,
+                    )
+
             else:
-                ## sample sequence from model beginning with `prefix`
-                sequence = beam_plan(
-                    model=gpt,
-                    value_fn=value_fn,
-                    x=prefix,
-                    n_steps=horizon,
-                    beam_width=beam_width,
-                    n_expand=n_expand,
-                    observation_dim=observation_dim,
-                    action_dim=action_dim,
-                    discount=discount,
-                    max_context_transitions=max_context_transitions,
-                    verbose=verbose,
-                    k_obs=k_obs,
-                    k_act=k_act,
-                    cdf_obs=cdf_obs,
-                    cdf_act=cdf_act,
+                sequence = sequence[1:]
+
+            ## [ horizon x transition_dim ] convert sampled tokens to continuous trajectory
+            sequence_recon = discretizer.reconstruct(sequence)
+
+            ## visualization
+            if t % vis_freq == 0 or terminal_mdp:
+                ## save current plan
+                observations, _, _, _ = rendering.split(
+                    sequence_recon, observation_dim, action_dim
+                )
+                if hasattr(env, "plot"):
+                    fig = env.plot(
+                        [[*observations]],
+                        env.get_task(),
+                        image_folder=writer.save_directory,
+                    )
+                    writer.log(
+                        {join(writer.save_directory, "plan.png"): wandb.Image(fig)},
+                        step=T,
+                    )
+                renderer.render_plan(
+                    join(writer.save_directory, "plan.mp4"),
+                    sequence_recon,
+                    env.state_vector(),
                 )
 
-        else:
-            sequence = sequence[1:]
+            ## [ action_dim ] index into sampled trajectory to grab first action
+            action = extract_actions(sequence_recon, observation_dim, action_dim, t=0)
 
-        ## [ horizon x transition_dim ] convert sampled tokens to continuous trajectory
-        sequence_recon = discretizer.reconstruct(sequence)
+            ## execute action in environment
+            next_observation, reward, terminal, info = env.step(action)
 
-        ## visualization
-        if t % vis_freq == 0 or terminal_mdp:
-            ## save current plan
-            observations, _, _, _ = rendering.split(
-                sequence_recon, observation_dim, action_dim
+            ## update return
+            total_reward += reward
+            score = env.get_normalized_score(total_reward)
+
+            ## update rollout observations and context transitions
+            rollout.append(next_observation.copy())
+            context = update_context(
+                context,
+                discretizer,
+                observation,
+                action,
+                reward,
+                max_context_transitions,
             )
-            if hasattr(env, "plot"):
-                fig = env.plot(
-                    [[*observations]],
-                    env.get_task(),
-                    image_folder=writer.save_directory,
-                )
-                writer.log(
-                    {join(writer.save_directory, "plan.png"): wandb.Image(fig)}, step=T
-                )
-            renderer.render_plan(
-                join(writer.save_directory, "plan.mp4"),
-                sequence_recon,
-                env.state_vector(),
+            terminal_mdp = bool(info.get("done_mdp"))
+            log = {
+                "reward": reward,
+                "total_reward": total_reward,
+                "score": score,
+            }
+            for k, v in info.items():
+                if isinstance(v, numbers.Number):
+                    log[k] = v
+            if terminal_mdp:
+                log["episode_return"] = total_reward
+            writer.log(
+                log,
+                step=T,
             )
-
-        ## [ action_dim ] index into sampled trajectory to grab first action
-        action = extract_actions(sequence_recon, observation_dim, action_dim, t=0)
-
-        ## execute action in environment
-        next_observation, reward, terminal, info = env.step(action)
-
-        ## update return
-        total_reward += reward
-        score = env.get_normalized_score(total_reward)
-
-        ## update rollout observations and context transitions
-        rollout.append(next_observation.copy())
-        context = update_context(
-            context,
-            discretizer,
-            observation,
-            action,
-            reward,
-            max_context_transitions,
-        )
-        terminal_mdp = bool(info.get("done_mdp"))
-        log = {
-            "reward": reward,
-            "total_reward": total_reward,
-            "score": score,
-        }
-        for k, v in info.items():
-            if isinstance(v, numbers.Number):
-                log[k] = v
-        if terminal_mdp:
-            log["episode_return"] = total_reward
-        writer.log(
-            log,
-            step=T,
-        )
-        console.log(
-            dict(
-                **log,
-                **{
-                    "episode step": t,
-                    "total step": T,
-                    "episode": e,
-                    "elapsed steps": env.env.env.env.env.env._elapsed_steps,
-                },
-            )
-        )
-
-        ## visualization
-        if terminal or terminal_mdp:
-            ## save rollout thus far
-            if hasattr(env, "plot"):
-                fig = env.plot(
-                    [[*rollout]],
-                    env.get_task(),
-                    image_folder=writer.save_directory,
+            console.log(
+                dict(
+                    **log,
+                    **{
+                        "episode step": t,
+                        "total step": T,
+                        "episode": e,
+                        "elapsed steps": env.env.env.env.env.env._elapsed_steps,
+                    },
                 )
-                writer.log(
-                    {join(writer.save_directory, "rollout.png"): wandb.Image(fig)}
-                )
-            renderer.render_rollout(
-                join(writer.save_directory, "rollout.mp4"), rollout, fps=80
             )
 
-        t += 1
-        T += 1
-        if terminal_mdp:
-            e += 1
-            if trajectory_transformer:
-                context = []
-            rollout = []
-            t = 0
-            total_reward = 0
-            if e == total_episodes:
+            ## visualization
+            if terminal or terminal_mdp:
+                ## save rollout thus far
+                if hasattr(env, "plot"):
+                    fig = env.plot(
+                        [[*rollout]],
+                        env.get_task(),
+                        image_folder=writer.save_directory,
+                    )
+                    writer.log(
+                        {join(writer.save_directory, "rollout.png"): wandb.Image(fig)}
+                    )
+                renderer.render_rollout(
+                    join(writer.save_directory, "rollout.mp4"), rollout, fps=80
+                )
+
+            t += 1
+            T += 1
+            if terminal_mdp:
+                e += 1
+                if trajectory_transformer:
+                    context = []
+                rollout = []
+                t = 0
+                total_reward = 0
+                if e == total_episodes:
+                    break
+            if terminal:
                 break
-        if terminal:
-            break
 
-        observation = next_observation
+            observation = next_observation
 
-    ## save result as a json file
-    json_path = join(writer.save_directory, "rollout.json")
-    json_data = {
-        "score": score,
-        "step": t,
-        "return": total_reward,
-        "term": terminal,
-        "gpt_epoch": gpt_epoch,
-    }
-    json.dump(json_data, open(json_path, "w"), indent=2, sort_keys=True)
-    wandb.finish()
+        ## save result as a json file
+        json_path = join(writer.save_directory, "rollout.json")
+        json_data = {
+            "score": score,
+            "step": t,
+            "return": total_reward,
+            "term": terminal,
+            "gpt_epoch": gpt_epoch,
+        }
+        json.dump(json_data, open(json_path, "w"), indent=2, sort_keys=True)
+    finally:
+        wandb.finish()
 
 
 def get_args(args: Optional[list[str]] = None):
