@@ -190,6 +190,7 @@ AntDir2D_v0 = {
         "action_mask_loadpath": None,
         "task_aware_loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
         **mujoco_plan,
+        "renderer": "DebugRenderer",
     },
 }
 
