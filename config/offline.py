@@ -158,7 +158,7 @@ mujoco_train = {
 }
 
 mujoco_plan = {
-    "total_episodes": 3,
+    "total_episodes": 1,
 }
 
 HalfCheetahVel_v0 = {
