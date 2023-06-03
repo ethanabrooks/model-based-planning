@@ -90,6 +90,7 @@ def main(
         baseline=baseline,
         test_tasks=test_tasks,
         task_aware=task_aware,
+        n_expand=n_expand,
     )
     console = Console()
 
