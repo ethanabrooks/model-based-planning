@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -11,7 +12,8 @@ class AntDirEnv(AntEnv):
     Forward/backward ant direction environment
     """
 
-    def __init__(self, max_episode_steps=200, test: bool = False):
+    def __init__(self, max_episode_steps=200, test_threshold: Optional[float] = None):
+        self.test_threshold = test_threshold
         self.set_task(self.sample_tasks(1)[0])
         self._max_episode_steps = max_episode_steps
         self.task_dim = 1
@@ -80,7 +82,11 @@ class AntDirEnv(AntEnv):
 
 class AntDir2DEnv(AntDirEnv):
     def sample_tasks(self, n_tasks):
-        return np.random.random(n_tasks) * np.pi
+        return (
+            np.array([self.test_threshold])
+            if self.test_threshold
+            else (np.random.random(n_tasks) * np.pi)
+        )
 
     def plot_task(curr_task: np.ndarray):
         [angle] = curr_task
