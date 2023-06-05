@@ -166,6 +166,8 @@ class AntEnv(MujocoEnv):
         # (re)set environment
         env.reset_task()
         state, belief, task = utl.reset_env(env, args)
+        if task is not None:
+            [task] = task
         start_obs_raw = state.clone()
         task = task.view(-1) if task is not None else None
 

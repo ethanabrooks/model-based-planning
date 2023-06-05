@@ -82,6 +82,8 @@ class HalfCheetahEnv(HalfCheetahEnv_):
         # (re)set environment
         env.reset_task()
         state, belief, task = utl.reset_env(env, args)
+        if task is not None:
+            [task] = task
         start_state = state.clone()
 
         # if hasattr(args, 'hidden_size'):
@@ -142,6 +144,8 @@ class HalfCheetahEnv(HalfCheetahEnv_):
                 (state, belief, task), (rew, rew_normalised), done, info = utl.env_step(
                     env, action, args
                 )
+                if task is not None:
+                    [task] = task
                 state = state.reshape((1, -1)).float().to(device)
 
                 # keep track of position
