@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 
 from environments.mujoco.rand_param_envs.base import RandomEnv
@@ -5,7 +7,8 @@ from environments.mujoco.rand_param_envs.gym import utils
 
 
 class Walker2DRandParamsEnv(RandomEnv, utils.EzPickle):
-    def __init__(self, log_scale_limit=3.0):
+    def __init__(self, log_scale_limit=3.0, test_threshold: Optional[float] = None):
+        self.test_threshold = test_threshold
         self._max_episode_steps = 200
         self._elapsed_steps = -1  # the thing below takes one step
         RandomEnv.__init__(self, log_scale_limit, "walker2d.xml", 5)

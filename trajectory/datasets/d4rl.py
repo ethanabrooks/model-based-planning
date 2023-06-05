@@ -76,12 +76,12 @@ def qlearning_dataset_with_timeouts(
     }
 
 
-def load_environment(name: str, test: bool = False) -> gym.Env:
+def load_environment(name: str, **kwargs) -> gym.Env:
     if local.is_local_dataset(name):
-        return local.load_environment(name, test=test)
+        return local.load_environment(name, **kwargs)
     else:
         with suppress_output():
-            wrapped_env = gym.make(name)
+            wrapped_env = gym.make(name, **kwargs)
         env = wrapped_env.unwrapped
         env.max_episode_steps = wrapped_env._max_episode_steps
         env.name = name
