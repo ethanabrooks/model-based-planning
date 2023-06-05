@@ -111,10 +111,10 @@ class DummyVecEnv(VecEnv):
             super().render(mode=mode)
 
     def get_task(self):
-        return self.envs[0].unwrapped.get_task()
+        return np.stack([e.unwrapped.get_task() for e in self.envs])
 
     def get_belief(self):
-        return self.envs[0].unwrapped.get_belief()
+        return np.stack([e.unwrapped.get_belief() for e in self.envs])
 
     def reset_task(self, task=None):
         if self.num_envs == 1:
