@@ -15,30 +15,42 @@ class AntGoalEnv(AntEnv):
         super(AntGoalEnv, self).__init__()
 
     def step(self, action):
+        torso_xyz_before = np.array(self.get_body_com("torso"))
+        goal_vector = self.goal_pos - torso_xyz_before[:2]
+        goal_distance = np.linalg.norm(goal_vector)
+        direct = goal_vector / goal_distance
+
         self.do_simulation(action, self.frame_skip)
-        xposafter = np.array(self.get_body_com("torso"))
+        torso_xyz_after = np.array(self.get_body_com("torso"))
+        torso_velocity = torso_xyz_after - torso_xyz_before
+        torso_velocity = torso_velocity[:2]
+        torso_velocity_norm = np.linalg.norm(torso_velocity)
+        if goal_distance < 0.5:
+            forward_reward = 1
+        else:
+            forward_reward = np.dot((torso_velocity / torso_velocity_norm), direct)
+            assert -1 <= forward_reward <= 1
 
-        goal_reward = -np.sum(
-            np.abs(xposafter[:2] - self.goal_pos)
-        )  # make it happy, not suicidal
-
-        ctrl_cost = 0.1 * np.square(action).sum()
+        ctrl_cost = 0.5 * np.square(action).sum()
         contact_cost = (
             0.5 * 1e-3 * np.sum(np.square(np.clip(self.sim.data.cfrc_ext, -1, 1)))
         )
-        survive_reward = 0.0
-        reward = goal_reward - ctrl_cost - contact_cost + survive_reward
-        done = False
+        survive_reward = 1.0
+        reward = forward_reward - ctrl_cost - contact_cost + survive_reward
+        state = self.state_vector()
+        notdone = np.isfinite(state).all() and state[2] >= 0.2 and state[2] <= 1.0
+        done = not notdone
         ob = self._get_obs()
         return (
             ob,
             reward,
             done,
             dict(
-                goal_forward=goal_reward,
+                reward_forward=forward_reward,
                 reward_ctrl=-ctrl_cost,
                 reward_contact=-contact_cost,
                 reward_survive=survive_reward,
+                torso_velocity=torso_velocity_norm,
                 task=self.get_task(),
             ),
         )
