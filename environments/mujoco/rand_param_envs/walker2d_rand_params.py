@@ -1,5 +1,6 @@
 from typing import Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from environments.mujoco.rand_param_envs.base import RandomEnv
@@ -7,11 +8,10 @@ from environments.mujoco.rand_param_envs.gym import utils
 
 
 class Walker2DRandParamsEnv(RandomEnv, utils.EzPickle):
-    def __init__(self, log_scale_limit=3.0, test_threshold: Optional[float] = None):
-        self.test_threshold = test_threshold
+    def __init__(self, log_scale_limit=3.0, **kwargs):
         self._max_episode_steps = 200
         self._elapsed_steps = -1  # the thing below takes one step
-        RandomEnv.__init__(self, log_scale_limit, "walker2d.xml", 5)
+        RandomEnv.__init__(self, log_scale_limit, "walker2d.xml", 5, **kwargs)
         utils.EzPickle.__init__(self)
 
     def _step(self, a):
@@ -25,7 +25,7 @@ class Walker2DRandParamsEnv(RandomEnv, utils.EzPickle):
         done = not (height > 0.8 and height < 2.0 and ang > -1.0 and ang < 1.0)
         ob = self._get_obs()
         self._elapsed_steps += 1
-        info = {"task": self.get_task()}
+        info = {"task": self.get_task(), "posbefore": posbefore, "posafter": posafter}
         if self._elapsed_steps == self._max_episode_steps:
             done = True
             info["bad_transition"] = True
@@ -55,3 +55,37 @@ class Walker2DRandParamsEnv(RandomEnv, utils.EzPickle):
         self.viewer.cam.distance = self.model.stat.extent * 0.5
         self.viewer.cam.lookat[2] += 0.8
         self.viewer.cam.elevation = -20
+
+    @classmethod
+    def plot(
+        cls,
+        rollouts: np.ndarray,
+        curr_task: np.ndarray,
+        num_episodes: int = 1,
+        image_path: Optional[str] = None,
+    ):
+        # plot the movement of the ant
+        # print(pos)
+        fig = plt.figure(figsize=(5, 4 * num_episodes))
+
+        for i in range(num_episodes):
+            plt.subplot(num_episodes, 1, i + 1)
+
+            x = np.array([i["posbefore"] for _, _, _, _, i in rollouts[i]])
+            plt.plot(x)
+
+            plt.ylabel("position (ep {})".format(i), fontsize=15)
+
+            if i == num_episodes - 1:
+                plt.xlabel("time", fontsize=15)
+                plt.ylabel("position (ep {})".format(i), fontsize=15)
+
+        plt.tight_layout()
+        if image_path is not None:
+            # print(f"Saving plot to {image_path}")
+            plt.savefig(image_path)
+            plt.close()
+        else:
+            plt.show()
+
+        return fig

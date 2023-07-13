@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 
 import numpy as np
 
@@ -69,8 +70,15 @@ class RandomEnv(MetaEnv, MujocoEnv):
     RAND_PARAMS_EXTENDED = RAND_PARAMS + ["geom_size"]
 
     def __init__(
-        self, log_scale_limit, file_name, *args, rand_params=RAND_PARAMS, **kwargs
+        self,
+        log_scale_limit,
+        file_name,
+        *args,
+        rand_params=RAND_PARAMS,
+        test_threshold: Optional[float] = None,
+        **kwargs
     ):
+        self.test_threshold = test_threshold
         self.log_scale_limit = log_scale_limit
         self.rand_params = rand_params
         MujocoEnv.__init__(self, file_name, 4)
@@ -79,6 +87,11 @@ class RandomEnv(MetaEnv, MujocoEnv):
         ), "rand_params must be a subset of " + str(self.RAND_PARAMS_EXTENDED)
         self.save_parameters()
         self.task_dim = self.rand_param_dim
+
+    def sample_param(self):
+        if self.test_threshold:
+            return self.test_threshold
+        return random.uniform(-self.log_scale_limit, 0)
 
     def sample_tasks(self, n_tasks):
         """
@@ -99,7 +112,7 @@ class RandomEnv(MetaEnv, MujocoEnv):
 
             if "body_mass" in self.rand_params:
                 rand_params = [
-                    random.uniform(-self.log_scale_limit, self.log_scale_limit)
+                    self.sample_param()
                     for _ in range(np.prod(self.model.body_mass.shape))
                 ]
                 body_mass_multiplyers = np.array(1.5) ** np.array(rand_params).reshape(
@@ -112,7 +125,7 @@ class RandomEnv(MetaEnv, MujocoEnv):
             # body_inertia
             if "body_inertia" in self.rand_params:
                 rand_params = [
-                    random.uniform(-self.log_scale_limit, self.log_scale_limit)
+                    self.sample_param()
                     for _ in range(np.prod(self.model.body_inertia.shape))
                 ]
                 body_inertia_multiplyers = np.array(1.5) ** np.array(
@@ -125,7 +138,7 @@ class RandomEnv(MetaEnv, MujocoEnv):
             # damping -> different multiplier for different dofs/joints
             if "dof_damping" in self.rand_params:
                 rand_params = [
-                    random.uniform(-self.log_scale_limit, self.log_scale_limit)
+                    self.sample_param()
                     for _ in range(np.prod(self.model.dof_damping.shape))
                 ]
                 dof_damping_multipliers = np.array(1.3) ** np.array(
@@ -138,7 +151,7 @@ class RandomEnv(MetaEnv, MujocoEnv):
             # friction at the body components
             if "geom_friction" in self.rand_params:
                 rand_params = [
-                    random.uniform(-self.log_scale_limit, self.log_scale_limit)
+                    self.sample_param()
                     for _ in range(np.prod(self.model.geom_friction.shape))
                 ]
                 dof_damping_multipliers = np.array(1.5) ** np.array(

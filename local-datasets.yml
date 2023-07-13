@@ -2,5 +2,5 @@
 SparsePointEnv-v0: rldl/varibad/SparsePointEnv-v0-multitask:v19
 HalfCheetahVel-v0: rldl/varibad/HalfCheetahVel-v0-multitask:512.{0..7}
 HalfCheetahDir-v0: rldl/varibad/HalfCheetahDir-v0-multitask:512.{0..7}
-AntGoal-v0: rldl/varibad/AntGoal-v0-multitask:512.{0..128}
+AntGoal-v0: rldl/varibad/AntGoal-v0-AD:None.{0..128}
 AntDir2D-v0: rldl/varibad/AntDir2D-v0-multitask:None.{0..63}

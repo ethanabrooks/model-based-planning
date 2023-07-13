@@ -84,10 +84,23 @@ class AntEnv(MujocoEnv):
     @classmethod
     def plot(
         cls,
-        observations: np.ndarray,
+        rollouts: list,
         curr_task: np.ndarray,
         num_episodes: int = 1,
-        image_folder: Optional[str] = None,
+        image_path: Optional[str] = None,
+    ):
+        observations = [
+            np.array([s for s, _, _, _, _ in rollout]) for rollout in rollouts
+        ]
+        return cls._plot(observations, curr_task, num_episodes, image_path)
+
+    @classmethod
+    def _plot(
+        cls,
+        observations: list,
+        curr_task: np.ndarray,
+        num_episodes: int = 1,
+        image_path: Optional[str] = None,
     ):
         # plot the movement of the ant
         # print(pos)
@@ -98,9 +111,10 @@ class AntEnv(MujocoEnv):
 
         for i in range(num_episodes):
             plt.subplot(num_episodes, 1, i + 1)
+            obs = observations[i]
 
-            x = list(map(lambda o: o[0], observations[i]))
-            y = list(map(lambda o: o[1], observations[i]))
+            x = obs[:, 0]
+            y = obs[:, 1]
             plt.plot(x[0], y[0], "bo")
 
             plt.scatter(x, y, 1, "g")
@@ -117,8 +131,9 @@ class AntEnv(MujocoEnv):
             plt.ylim(min_dim - 0.05 * span, max_dim + 0.05 * span)
 
         plt.tight_layout()
-        if image_folder is not None:
-            plt.savefig("{}/behaviour".format(image_folder))
+        if image_path is not None:
+            # print(f"Saving plot to {image_path}")
+            plt.savefig(image_path)
             plt.close()
         else:
             plt.show()
@@ -293,7 +308,9 @@ class AntEnv(MujocoEnv):
 
         # plot the movement of the ant
         # print(pos)
-        cls.plot(episode_prev_obs, env.get_task(), num_episodes)
+        observations = [o.cpu().numpy() for o in episode_prev_obs]
+        [task] = env.get_task()
+        cls._plot(observations, task, num_episodes)
 
         if not return_pos:
             return (

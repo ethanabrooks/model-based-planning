@@ -9,6 +9,7 @@ from environments.mujoco.ant import AntEnv
 
 class AntGoalEnv(AntEnv):
     def __init__(self, max_episode_steps=200, test_threshold: Optional[float] = None):
+        self.test_threshold = test_threshold
         self.set_task(self.sample_tasks(1)[0])
         self._max_episode_steps = max_episode_steps
         self.task_dim = 2
@@ -36,6 +37,7 @@ class AntGoalEnv(AntEnv):
             0.5 * 1e-3 * np.sum(np.square(np.clip(self.sim.data.cfrc_ext, -1, 1)))
         )
         survive_reward = 1.0
+        distance_traveled = np.linalg.norm(torso_xyz_before)
         reward = forward_reward - ctrl_cost - contact_cost + survive_reward
         state = self.state_vector()
         notdone = np.isfinite(state).all() and state[2] >= 0.2 and state[2] <= 1.0
@@ -46,6 +48,7 @@ class AntGoalEnv(AntEnv):
             reward,
             done,
             dict(
+                distance_traveled=distance_traveled,
                 reward_forward=forward_reward,
                 reward_ctrl=-ctrl_cost,
                 reward_contact=-contact_cost,
@@ -57,7 +60,9 @@ class AntGoalEnv(AntEnv):
 
     def sample_tasks(self, num_tasks):
         a = np.array([random.random() for _ in range(num_tasks)]) * 2 * np.pi
-        r = 3 * np.array([random.random() for _ in range(num_tasks)]) ** 0.5
+        r = 2 * np.array([random.random() for _ in range(num_tasks)]) ** 0.5
+        if self.test_threshold:
+            r = self.test_threshold * np.ones_like(r)
         return np.stack((r * np.cos(a), r * np.sin(a)), axis=-1)
 
     def set_task(self, task):
