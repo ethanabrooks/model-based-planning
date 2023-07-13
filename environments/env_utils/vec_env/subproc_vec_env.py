@@ -1,6 +1,7 @@
 """
 Taken from https://github.com/openai/baselines
 """
+import time
 from multiprocessing import Pipe, Process
 
 import numpy as np
@@ -12,8 +13,16 @@ def worker(remote, parent_remote, env_fn_wrapper):
     parent_remote.close()
     env = env_fn_wrapper.x()
     try:
+        sleep_time = 1
         while True:
-            cmd, data = remote.recv()
+            try:
+                cmd, data = remote.recv()
+                sleep_time = 1
+            except EOFError:
+                print(".", end="", flush=True)
+                time.sleep(sleep_time)
+                sleep_time *= 2
+                continue
             if cmd == "step":
                 ob, reward, done, info = env.step(data)
                 remote.send((ob, reward, done, info))
@@ -40,6 +49,15 @@ def worker(remote, parent_remote, env_fn_wrapper):
                 remote.send(env.belief_dim)
             elif cmd == "reset_task":
                 env.unwrapped.reset_task(data)
+            elif cmd == "plot":
+                rollout = env.get_rollout()
+                task = env.unwrapped.get_task()
+                env.plot(
+                    rollouts=[rollout],
+                    curr_task=task,
+                    image_path=data,
+                )
+
             else:
                 # try to get the attribute directly
                 remote.send(getattr(env.unwrapped, cmd))
@@ -142,3 +160,9 @@ class SubprocVecEnv(VecEnv):
         for remote in self.remotes:
             remote.send(("get_belief", None))
         return np.stack([remote.recv() for remote in self.remotes])
+
+    def plot(self, i: int, image_path: str):
+        self._assert_not_closed()
+        image_path = f"{image_path}-env{i}.png"
+        self.remotes[i].send(("plot", image_path))
+        return image_path

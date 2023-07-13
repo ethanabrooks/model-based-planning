@@ -10,16 +10,6 @@ register(
     entry_point="environments.wrappers:mujoco_wrapper",
     kwargs={
         "entry_point": "environments.mujoco.ant_dir:AntDirEnv",
-        "max_episode_steps": 50,
-    },
-    max_episode_steps=50,
-)
-
-register(
-    "AntDir200-v0",
-    entry_point="environments.wrappers:mujoco_wrapper",
-    kwargs={
-        "entry_point": "environments.mujoco.ant_dir:AntDirEnv",
         "max_episode_steps": 200,
     },
     max_episode_steps=200,
@@ -46,27 +36,7 @@ register(
 )
 
 register(
-    "AntGoal200-v0",
-    entry_point="environments.wrappers:mujoco_wrapper",
-    kwargs={
-        "entry_point": "environments.mujoco.ant_goal:AntGoalEnv",
-        "max_episode_steps": 200,
-    },
-    max_episode_steps=200,
-)
-
-register(
     "HalfCheetahDir-v0",
-    entry_point="environments.wrappers:mujoco_wrapper",
-    kwargs={
-        "entry_point": "environments.mujoco.half_cheetah_dir:HalfCheetahDirEnv",
-        "max_episode_steps": 50,
-    },
-    max_episode_steps=50,
-)
-
-register(
-    "HalfCheetahDir200-v0",
     entry_point="environments.wrappers:mujoco_wrapper",
     kwargs={
         "entry_point": "environments.mujoco.half_cheetah_dir:HalfCheetahDirEnv",
@@ -77,16 +47,6 @@ register(
 
 register(
     "HalfCheetahVel-v0",
-    entry_point="environments.wrappers:mujoco_wrapper",
-    kwargs={
-        "entry_point": "environments.mujoco.half_cheetah_vel:HalfCheetahVelEnv",
-        "max_episode_steps": 200,
-    },
-    max_episode_steps=200,
-)
-
-register(
-    "HalfCheetahVel200-v0",
     entry_point="environments.wrappers:mujoco_wrapper",
     kwargs={
         "entry_point": "environments.mujoco.half_cheetah_vel:HalfCheetahVelEnv",
@@ -138,10 +98,10 @@ register(
     entry_point="environments.navigation.point_robot:SparsePointEnv",
     kwargs={
         "goal_radius": 0.2,
-        "max_episode_steps": 20,
+        "max_episode_steps": 100,
         "goal_sampler": "semi-circle",
     },
-    max_episode_steps=20,
+    max_episode_steps=100,
 )
 
 #

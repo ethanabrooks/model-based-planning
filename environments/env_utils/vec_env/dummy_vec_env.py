@@ -1,6 +1,7 @@
 """
 Taken from https://github.com/openai/baselines
 """
+
 import numpy as np
 from gym import spaces
 
@@ -124,3 +125,11 @@ class DummyVecEnv(VecEnv):
 
     def get_env_attr(self, attr):
         return getattr(self.envs[0].unwrapped, attr)
+
+    def plot(self, i: int, image_path: str):
+        env = self.envs[i]
+        rollout = env.get_rollout()
+        task = env.unwrapped.get_task()
+        image_path = f"{image_path}-env{i}.png"
+        env.unwrapped.plot(rollouts=[rollout], curr_task=task, image_path=image_path)
+        return image_path
