@@ -117,8 +117,8 @@
       };
 
       myNixgl = pkgs.nixgl.override {
-        nvidiaVersion = "510.108.03";
-        nvidiaHash = "sha256-QQpRXnjfKcLLpKwLSXiJzg/xsEz8cR/4ieLfyA8NoNg=";
+        nvidiaVersion = "535.86.05";
+        nvidiaHash = "sha256-QH3wyjZjLr2Fj8YtpbixJP/DvM7VAzgXusnCcaI69ts=";
       };
     in {
       devShell = pkgs.mkShell {
