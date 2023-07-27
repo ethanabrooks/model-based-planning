@@ -145,7 +145,7 @@ def main(
 
     task_aware = local.is_task_aware(env)
     env = local.get_env_name(env)
-    env = load_environment(env, test_threshold=test_threshold)
+    env = load_environment(env, test_threshold=test_threshold, store_rollouts=True)
     helpers.add_tag(
         f"{env.spec.max_episode_steps}-timesteps",
     )
@@ -233,16 +233,17 @@ def main(
                 observations, _, _, _ = rendering.split(
                     sequence_recon, observation_dim, action_dim
                 )
-                if hasattr(env, "plot"):
-                    fig = env.plot(
-                        [[*observations]],
-                        env.get_task(),
-                        image_folder=writer.save_directory,
-                    )
-                    writer.log(
-                        {join(writer.save_directory, "plan.png"): wandb.Image(fig)},
-                        step=T,
-                    )
+                # if hasattr(env, "plot"):
+                # rollout = env.get_rollout()
+                # task = env.unwrapped.get_task()
+                # image_path = join(writer.save_directory, "rollout.png")
+                # fig = env.unwrapped.plot(
+                #     rollouts=[rollout], curr_task=task, image_path=image_path
+                # )
+                # writer.log(
+                #     {join(writer.save_directory, "plan.png"): wandb.Image(fig)},
+                #     step=T,
+                # )
                 renderer.render_plan(
                     join(writer.save_directory, "plan.mp4"),
                     sequence_recon,
@@ -291,7 +292,7 @@ def main(
                         "episode step": t,
                         "total step": T,
                         "episode": e,
-                        "elapsed steps": env.env.env.env.env.env._elapsed_steps,
+                        # "elapsed steps": env.env.env.env.env.env._elapsed_steps,
                     },
                 )
             )
@@ -300,10 +301,11 @@ def main(
             if terminal or terminal_mdp:
                 ## save rollout thus far
                 if hasattr(env, "plot"):
+                    rollout = env.get_rollout()
+                    task = env.unwrapped.get_task()
+                    image_path = join(writer.save_directory, "rollout.png")
                     fig = env.plot(
-                        [[*rollout]],
-                        env.get_task(),
-                        image_folder=writer.save_directory,
+                        rollouts=[rollout], curr_task=task, image_path=image_path
                     )
                     writer.log(
                         {join(writer.save_directory, "rollout.png"): wandb.Image(fig)}
