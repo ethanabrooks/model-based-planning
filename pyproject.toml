@@ -29,6 +29,7 @@ imageio = "^2.28.1"
 braceexpand = "^0.1.7"
 dm_alchemy = {git = "https://github.com/ethanabrooks/dm_alchemy.git", rev = "a295e5432d518903a736cda3ec63a0c480fe6312"}
 grpcio-tools = "1.49.1"
+memory-profiler = "^0.61.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.6.0"
