@@ -3,7 +3,6 @@ from typing import Optional
 
 import numpy as np
 import torch
-from rich.console import Console
 from rich.progress import Progress, TimeElapsedColumn
 
 import utils.helpers as utl
@@ -27,16 +26,59 @@ class SequenceDataset(torch.utils.data.Dataset):
         action_mask: bool,
         task_aware: bool,
     ):
-        self.console = console = Console()
         self.sequence_length = sequence_length
         self.step = step
         self.action_mask = action_mask
+        (
+            actions,
+            done_flags,
+            indices,
+            joined_raw,
+            joined_segmented,
+            observations,
+            path_lengths,
+            rewards,
+            rewards_segmented,
+            values_raw,
+            values_segmented,
+        ) = self.process_trajectories(
+            discount=discount,
+            env=env,
+            penalty=penalty,
+            sequence_length=sequence_length,
+            step=step,
+            task_aware=task_aware,
+        )
+
+        self.joined_raw = joined_raw
+        self.joined_segmented = joined_segmented
+        self.done_flags = done_flags
+        self.path_lengths = path_lengths
+        self.rewards = rewards
+        self.values = values_raw
+        self.rewards_segmented = rewards_segmented
+        self.values_segmented = values_segmented
+
+        self.indices = np.concatenate(indices, axis=1).T
+        self.observation_dim = observations.shape[1]
+        self.action_dim = actions.shape[1]
+        self.discount = discount
+        self.joined_dim = (
+            self.joined_raw.shape[1] + self.rewards.shape[1] + self.values.shape[1]
+        )
+
+    def process_trajectories(
+        self,
+        discount: float,
+        env: str,
+        penalty: float,
+        sequence_length: int,
+        step: int,
+        task_aware: bool,
+    ):
         observations, actions, rewards, done_bamdp, done_mdp = self.init(
             env, task_aware
         )
-
-        if trajectory_transformer:
-            done_bamdp = done_mdp
 
         def get_max_path_length(terms):
             ends, _ = np.where(terms)
@@ -44,17 +86,14 @@ class SequenceDataset(torch.utils.data.Dataset):
             return np.max(np.diff(starts))
 
         max_path_length = get_max_path_length(done_bamdp)
-
-        console.log(
+        utl.console.log(
             f"Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}"
         )
-        self.joined_raw = np.concatenate([observations, actions], axis=-1)
-
+        joined_raw = np.concatenate([observations, actions], axis=-1)
         ## done penalty
         if penalty is not None:
             done_mask = done_mdp.squeeze()
             rewards[done_mask] = penalty
-
         ## [ n_paths x max_path_length x 1 ]
         values = np.zeros(rewards.shape)
         max_ep_len = get_max_path_length(done_mdp)
@@ -62,11 +101,9 @@ class SequenceDataset(torch.utils.data.Dataset):
             axis=1
         )
         discount_array = np.triu(discount**exponents)
-
         ep_ends, _ = np.where(done_mdp)
         ep_ends += 1
         ep_starts = np.pad(ep_ends, (1, 0))[:-1]
-
         with Progress(TimeElapsedColumn(), *Progress.get_default_columns()) as progress:
             for start, length in progress.track(
                 np.stack([ep_starts, ep_ends], axis=1), description="Computing values"
@@ -122,8 +159,8 @@ class SequenceDataset(torch.utils.data.Dataset):
 
                 return trajectories_pad, done_flags, path_lengths
 
-            self.joined_segmented, self.done_flags, self.path_lengths = segment(
-                self.joined_raw, "observations/actions"
+            joined_segmented, done_flags, path_lengths = segment(
+                joined_raw, "observations/actions"
             )
             rewards_segmented, *_ = segment(rewards, "rewards")
             values_segmented, *_ = segment(values, "values")
@@ -131,31 +168,31 @@ class SequenceDataset(torch.utils.data.Dataset):
 
             ## add (r, V) to `joined`
             values_raw = values_segmented.squeeze(axis=-1).reshape(-1)
-            values_mask = ~self.done_flags.reshape(-1)
+            values_mask = ~done_flags.reshape(-1)
             values_raw = values_raw[values_mask, None]
 
             ## get valid indices
             indices = []
             for path_ind, length in enumerate(
-                progress.track(self.path_lengths - 1, description="Assign indices")
+                progress.track(path_lengths - 1, description="Assign indices")
             ):
                 starts = np.arange(1 - sequence_length, length)
                 ends = starts + sequence_length
                 idxs = path_ind * np.ones_like(starts)
                 starts = np.clip(starts, 0, None)
                 indices.append(np.stack([idxs, starts, ends]))
-
-        self.rewards = rewards
-        self.values = values_raw
-        self.rewards_segmented = rewards_segmented
-        self.values_segmented = values_segmented
-
-        self.indices = np.concatenate(indices, axis=1).T
-        self.observation_dim = observations.shape[1]
-        self.action_dim = actions.shape[1]
-        self.discount = discount
-        self.joined_dim = (
-            self.joined_raw.shape[1] + self.rewards.shape[1] + self.values.shape[1]
+        return (
+            actions,
+            done_flags,
+            indices,
+            joined_raw,
+            joined_segmented,
+            observations,
+            path_lengths,
+            rewards,
+            rewards_segmented,
+            values_raw,
+            values_segmented,
         )
 
     def __len__(self):
