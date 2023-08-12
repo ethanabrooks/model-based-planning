@@ -1,4 +1,5 @@
 import math
+import os
 
 import torch
 import wandb
@@ -32,7 +33,7 @@ class Trainer:
             self.optimizer = model.configure_optimizers(self.config)
         return self.optimizer
 
-    def train(self, model, dataset, debug, n_epochs=1, log_freq=100):
+    def train(self, model, dataset, debug, save_freq, writer, n_epochs=1, log_freq=100):
         config = self.config
         optimizer = self.get_optimizer(model)
         model.train(True)
@@ -85,6 +86,16 @@ class Trainer:
                         param_group["lr"] = lr
                 else:
                     lr = config.learning_rate
+
+                if it % save_freq == 0:
+                    ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
+                    statepath = os.path.join(writer.directory, f"state_{it}.pt")
+                    print(f"Saving model to {statepath}")
+
+                    ## save state to disk
+                    state = model.state_dict()
+                    torch.save(state, statepath)
+                    writer.save(statepath)
 
                 # report progress
                 if it % log_freq == 0:
