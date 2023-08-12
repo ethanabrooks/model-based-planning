@@ -1,5 +1,4 @@
 import math
-import os
 
 import torch
 import torch.nn as nn
@@ -187,22 +186,18 @@ def main(
 
     ## scale number of epochs to keep number of updates constant
     n_epochs = math.ceil(total_iters / len(dataset))
-    save_freq = math.ceil(n_epochs / n_saves)
+    save_freq = math.ceil(total_iters / n_saves)
 
     for epoch in range(n_epochs):
         print(f"\nEpoch: {epoch} / {n_epochs} | {dataset} | {exp_name}")
 
-        trainer.train(model, dataset, debug)
-
-        ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
-        save_epoch = (epoch + 1) // save_freq * save_freq
-        statepath = os.path.join(writer.directory, f"state_{save_epoch}.pt")
-        print(f"Saving model to {statepath}")
-
-        ## save state to disk
-        state = model.state_dict()
-        torch.save(state, statepath)
-        writer.save(statepath)
+        trainer.train(
+            model=model,
+            dataset=dataset,
+            debug=debug,
+            save_freq=save_freq,
+            writer=writer,
+        )
 
     wandb.finish()
 
