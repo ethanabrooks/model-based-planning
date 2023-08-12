@@ -36,7 +36,7 @@ base = {
         "reward_weight": 1,
         "seed": 42,
         "step": 1,
-        "subsampled_sequence_length": 50,
+        "subsampled_sequence_length": 100,
         "termination_penalty": -100,
         "total_iters": 200_000,
         "value_weight": 1,
