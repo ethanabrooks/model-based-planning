@@ -8,6 +8,8 @@ import torch
 from rich.console import Console
 from tap import Tap
 
+from trajectory.datasets import local
+
 from .git_utils import get_git_rev, save_git_diff
 
 console = Console()
@@ -63,6 +65,7 @@ class Parser(Tap):
         module = importlib.import_module(args.config)
         params = getattr(module, "base")[experiment]
 
+        dataset = local.get_env_name(dataset)
         if hasattr(module, dataset) and experiment in getattr(module, dataset):
             console.log(f"Using overrides: {dict(config=args.config, dataset=dataset)}")
             overrides = getattr(module, dataset)[experiment]

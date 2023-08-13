@@ -20,18 +20,18 @@ from environments import parallel_envs
 from utils.helpers import tmp_dir
 from utils.timer import Timer
 
-TASK_AWARE_PATTERN = re.compile(r"^TaskAware(.*)")
-ED_PATTERN = re.compile(r"^ED(.*)")
+TASK_AWARE_PATTERN = re.compile(r"TaskAware(.*)")
+ED_PATTERN = re.compile(r"ED(.*)")
 console = Console()
 
 
 def get_env_name(env: str) -> str:
     matches = TASK_AWARE_PATTERN.match(env)
     if matches:
-        return matches.group(1)
+        env = matches.group(1)
     matches = ED_PATTERN.match(env)
     if matches:
-        return matches.group(1)
+        env = matches.group(1)
     return env
 
 
