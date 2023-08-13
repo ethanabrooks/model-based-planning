@@ -25,15 +25,12 @@ class SequenceDataset(torch.utils.data.Dataset):
         discount: float,
         penalty: Optional[float],
         action_mask: bool,
-        task_aware: bool,
     ):
         self.console = console = Console()
         self.sequence_length = sequence_length
         self.step = step
         self.action_mask = action_mask
-        observations, actions, rewards, done_bamdp, done_mdp = self.init(
-            env, task_aware
-        )
+        observations, actions, rewards, done_bamdp, done_mdp = self.init(env)
 
         if trajectory_transformer:
             done_bamdp = done_mdp
@@ -161,8 +158,9 @@ class SequenceDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.indices)
 
-    def init(self, env: str, task_aware: bool):
+    def init(self, env: str):
         ed = local.is_ed(env)
+        task_aware = local.is_task_aware(env)
         env = local.get_env_name(env)
         env = load_environment(env)
         utl.add_tag(
