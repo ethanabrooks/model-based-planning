@@ -144,7 +144,7 @@ def main(
     model = model_config()
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
-    model.to(device)
+    # model.to(device)
 
     #######################
     ####### trainer #######

@@ -1,5 +1,6 @@
 import math
 import os
+from matplotlib import pyplot as plt
 
 import torch
 import wandb
@@ -7,6 +8,7 @@ from rich.console import Console
 from torch.utils.data.dataloader import DataLoader
 
 from utils.helpers import print_row
+import torch.nn.functional as F
 
 
 def to(xs, device):
@@ -49,7 +51,20 @@ class Trainer:
 
         for _ in range(n_epochs):
             for it, batch in enumerate(loader):
-                batch = to(batch, self.device)
+                X, _, _ = batch
+                X = F.pad(X, (0,1), "constant", 0)
+                discretizer = dataset.discretizer
+                X = X.reshape(config.batch_size, -1, discretizer.observation_dim + discretizer.action_dim + 2)
+                x, y = X[:, :, :2].permute(2, 0, 1)
+                x = x.numpy()
+                y = y.numpy()
+                for i in range(32):
+                    plt.plot(x[i], y[i], color='blue', alpha=0.1) # Set alpha value as per your requirement
+                if it % log_freq == 0:
+                    plt.savefig("lines.png")
+                    breakpoint()
+                continue
+                # batch = to(batch, self.device)
 
                 # forward the model
                 with torch.set_grad_enabled(True):
