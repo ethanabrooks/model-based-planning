@@ -1,4 +1,5 @@
 import math
+import numpy as np
 import os
 from matplotlib import pyplot as plt
 
@@ -51,15 +52,31 @@ class Trainer:
 
         for _ in range(n_epochs):
             for it, batch in enumerate(loader):
-                X, _, _ = batch
-                X = F.pad(X, (0,1), "constant", 0)
+                X, _, M = batch
                 discretizer = dataset.discretizer
-                X = X.reshape(config.batch_size, -1, discretizer.observation_dim + discretizer.action_dim + 2)
-                x, y = X[:, :, :2].permute(2, 0, 1)
-                x = x.numpy()
-                y = y.numpy()
+                obs_dim = discretizer.observation_dim
+                def preprocess(array, reconstruct):
+                    array = F.pad(array, (0,1), "constant", 0)
+                    dim = obs_dim + discretizer.action_dim + 2
+                    array = array.reshape(-1, dim)
+                    if reconstruct:
+                        array = discretizer.reconstruct(array)
+                    else:
+                        array = array.numpy()
+                    return array.reshape(config.batch_size, -1, dim)
+                X = preprocess(X, reconstruct=True)
+                M = preprocess(M, reconstruct=False)
+                x, y = X[:, :, :2].transpose(2, 0, 1)
+                xm, ym = M[:, :, :2].transpose(2, 0, 1)
                 for i in range(32):
-                    plt.plot(x[i], y[i], color='blue', alpha=0.1) # Set alpha value as per your requirement
+                    plt.plot(x[i][xm[i]], y[i][ym[i]], color='blue', alpha=0.1) # Set alpha value as per your requirement
+                radians = X[:, :, obs_dim - 1]
+                # Plot each line
+                for i in range(32):
+                    angle = radians[i]
+                    x = 10 * np.cos(angle)
+                    y = 10 * np.sin(angle)
+                    plt.plot([0, x[0]], [0, y[0]], color='red', alpha=0.1) # Change alpha as needed
                 if it % log_freq == 0:
                     plt.savefig("lines.png")
                     breakpoint()
