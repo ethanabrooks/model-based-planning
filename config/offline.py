@@ -186,7 +186,7 @@ HalfCheetahDir_v0 = {
 AntDir2D_v0 = {
     "train": {"batch_size": 32},
     "plan": {
-        "loadpath": "rldl/In-Context Model-Based Planning/y5ud48q7",
+        "loadpath": "rldl/In-Context Model-Based Planning/ywtbqenw",
         "action_mask_loadpath": None,
         "task_aware_loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
         **mujoco_plan,
