@@ -188,11 +188,15 @@ AntDir2D_v0 = {
     "plan": {
         "loadpath": "rldl/In-Context Model-Based Planning/ywtbqenw",
         "action_mask_loadpath": None,
-        "task_aware_loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
         **mujoco_plan,
         "renderer": "DebugRenderer",
     },
 }
+
+TaskAwareEDAntDir2D_v0 = AntDir2D_v0
+TaskAwareEDAntDir2D_v0["plan"][
+    "loadpath"
+] = "rldl/In-Context Model-Based Planning/lkfatroz"
 
 
 AntGoal_v0 = {
