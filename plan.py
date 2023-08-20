@@ -65,7 +65,6 @@ def main(
     run: Run,
     seed: int,
     task_aware: bool,
-    task_aware_loadpath: str,
     test_threshold: bool,
     total_episodes: int,
     trajectory_transformer: bool,
@@ -106,9 +105,6 @@ def main(
         n_expand = 1
     elif baseline is not None:
         raise ValueError(f"Unknown baseline: {baseline}")
-
-    if task_aware:
-        loadpath = task_aware_loadpath
 
     #######################
     ####### models ########
