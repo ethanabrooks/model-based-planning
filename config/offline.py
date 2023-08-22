@@ -208,3 +208,13 @@ AntGoal_v0 = {
         **mujoco_plan,
     },
 }
+
+Walker2DRandParams_v0 = {
+    "train": {"batch_size": 32},
+    "plan": {
+        # "loadpath": "rldl/In-Context Model-Based Planning/g5ivb5r5",
+        # "action_mask_loadpath": None,
+        # "task_aware_loadpath": "rldl/In-Context Model-Based Planning/31w4e9ws",
+        # **mujoco_plan,
+    },
+}
