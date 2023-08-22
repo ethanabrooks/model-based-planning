@@ -3,4 +3,4 @@ HalfCheetahVel-v0: rldl/varibad/HalfCheetahVel-v0-multitask:512.{0..7}
 HalfCheetahDir-v0: rldl/varibad/HalfCheetahDir-v0-multitask:512.{0..7}
 AntGoal-v0: rldl/varibad/AntGoal-v0-AD:512.{0..63}
 AntDir2D-v0: rldl/varibad/AntDir2D-v0-multitask-old:None.{0..63}
-Walker2DRandParams-v0: rldl/varibad/Walker2DRandParams-v0-expert:None.{0..1024}
+Walker2DRandParams-v0: rldl/varibad/Walker2DRandParams-v0-expert:None.{0..900}
