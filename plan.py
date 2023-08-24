@@ -240,11 +240,14 @@ def main(
                 #     {join(writer.save_directory, "plan.png"): wandb.Image(fig)},
                 #     step=T,
                 # )
-                renderer.render_plan(
-                    join(writer.save_directory, "plan.mp4"),
-                    sequence_recon,
-                    env.state_vector(),
-                )
+                try:
+                    renderer.render_plan(
+                        join(writer.save_directory, "plan.mp4"),
+                        sequence_recon,
+                        env.state_vector(),
+                    )
+                except Exception as exception:
+                    console.log(exception)
 
             ## [ action_dim ] index into sampled trajectory to grab first action
             action = extract_actions(sequence_recon, observation_dim, action_dim, t=0)
@@ -304,11 +307,15 @@ def main(
                         rollouts=[rollout], curr_task=task, image_path=image_path
                     )
                     writer.log(
-                        {join(writer.save_directory, "rollout.png"): wandb.Image(fig)}
+                        {join(writer.save_directory, "rollout.png"): wandb.Image(fig)},
+                        step=T,
                     )
-                renderer.render_rollout(
-                    join(writer.save_directory, "rollout.mp4"), rollout, fps=80
-                )
+                try:
+                    renderer.render_rollout(
+                        join(writer.save_directory, "rollout.mp4"), rollout, fps=80
+                    )
+                except Exception as exception:
+                    console.log(exception)
 
             t += 1
             T += 1
