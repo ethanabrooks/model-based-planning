@@ -85,7 +85,7 @@ class AntDir2DEnv(AntDirEnv):
         return (
             np.array([self.test_threshold])
             if self.test_threshold
-            else (np.random.random(n_tasks) * np.pi)
+            else (np.random.random(n_tasks) * 3 / 2 * np.pi)
         )
 
     def plot_task(curr_task: np.ndarray):

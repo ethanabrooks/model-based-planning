@@ -1,6 +1,7 @@
 """
 Taken from https://github.com/openai/baselines
 """
+import os
 
 import numpy as np
 from gym import spaces
