@@ -24,6 +24,20 @@ def get_git_rev(*args, **kwargs):
     return git_rev
 
 
+def get_relative_git_rev(*args, target_commit: str, **kwargs):
+    repo = get_repo(*args, **kwargs)
+    target_commit = repo.commit(target_commit)
+
+    # Your current commit or any other commit you want to compare
+    current_commit = repo.head.commit
+
+    # Find the number of commits between the two commits
+    num_commits = sum(
+        1 for _ in repo.iter_commits(rev=f"{current_commit}..{target_commit}")
+    )
+    return f"{str(target_commit)[:7]}~{num_commits}"
+
+
 def git_diff(*args, **kwargs):
     repo = get_repo(*args, **kwargs)
     diff = repo.git.diff()
@@ -37,7 +51,6 @@ def save_git_diff(savepath, *args, **kwargs):
 
 
 if __name__ == "__main__":
-
     git_rev = get_git_rev()
     print(git_rev)
 

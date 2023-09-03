@@ -9,6 +9,7 @@ from wandb.sdk.wandb_run import Run
 
 import trajectory.utils as utils
 from trajectory.models.transformers import GPT
+from trajectory.utils.git_utils import get_relative_git_rev
 from trajectory.utils.setup import console
 from utils import helpers
 from utils.writer import Writer
@@ -23,6 +24,7 @@ class Parser(utils.Parser):
     debug: bool = False
     name: str = "train"
     notes: str = None
+    target_commit: str = None
     trajectory_transformer: bool = False
     action_mask: bool = False
 
@@ -54,12 +56,16 @@ def main(
     reward_weight: float,
     step: int,
     subsampled_sequence_length: int,
+    target_commit: str,
     termination_penalty: float,
     trajectory_transformer: bool,
     total_iters: int,
     value_weight: float,
     **_,
 ):
+    if target_commit is not None:
+        args.update(relative_commit=get_relative_git_rev(target_commit=target_commit))
+
     writer = Writer.make(
         debug,
         config=args,
