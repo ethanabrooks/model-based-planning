@@ -137,6 +137,10 @@ halfcheetah_medium_v2 = {
     },
 }
 
+point_env_plan = {
+    "total_episodes": 10,
+}
+
 sparse_point_env_train = {
     "batch_size": 200,
     "subsampled_sequence_length": 100,
@@ -149,6 +153,7 @@ SparsePointEnv_v0 = {
         "loadpath": "rldl/In-Context Model-Based Planning/uug57k6k",
         "action_mask_loadpath": None,
         "task_aware_loadpath": "rldl/In-Context Model-Based Planning/edioi44c",
+        **point_env_plan,
     },
 }
 
