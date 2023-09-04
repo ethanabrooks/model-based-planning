@@ -120,18 +120,6 @@ class PointEnv(Env):
 
     def plot(
         self,
-        rollouts: list,
-        curr_task: np.ndarray,
-        num_episodes: int = 1,
-        image_path: Optional[str] = None,
-    ):
-        observations = [
-            np.array([s for s, _, _, _, _ in rollout]) for rollout in rollouts
-        ]
-        return self._plot(observations, curr_task, num_episodes, image_path)
-
-    def _plot(
-        self,
         observations: list,
         curr_task: np.ndarray,
         num_episodes: int = 1,
@@ -357,7 +345,7 @@ class PointEnv(Env):
         image_path = (
             f"{image_folder}/behavior.png" if image_folder is not None else None
         )
-        self._plot(observations, task, num_episodes, image_path=image_path)
+        self.plot(observations, task, num_episodes, image_path=image_path)
 
         if not return_pos:
             return (
