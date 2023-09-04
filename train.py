@@ -1,3 +1,4 @@
+import itertools
 import math
 
 import torch
@@ -50,7 +51,7 @@ def main(
     n_embd: int,
     n_layer: int,
     n_head: int,
-    n_saves: int,
+    save_freq: int,
     resid_pdrop: float,
     run: Run,
     reward_weight: float,
@@ -187,19 +188,18 @@ def main(
     #######################
 
     ## scale number of epochs to keep number of updates constant
-    n_epochs = math.ceil(total_iters / len(dataset))
-    save_freq = math.ceil(total_iters / n_saves)
+    console.log(f"\n{dataset} | {exp_name}")
 
-    for epoch in range(n_epochs):
-        print(f"\nEpoch: {epoch} / {n_epochs} | {dataset} | {exp_name}")
-
-        trainer.train(
+    for epoch in itertools.count():
+        cuml_it = trainer.train(
             model=model,
             dataset=dataset,
             debug=debug,
             save_freq=save_freq,
             writer=writer,
         )
+        if cuml_it >= total_iters:
+            break
 
     wandb.finish()
 

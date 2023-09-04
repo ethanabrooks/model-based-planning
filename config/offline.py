@@ -31,7 +31,7 @@ base = {
         "n_embd": 32,
         "n_head": 4,
         "n_layer": 4,
-        "n_saves": 3,
+        "save_freq": 100_000,
         "resid_pdrop": 0.1,
         "reward_weight": 1,
         "seed": 42,
