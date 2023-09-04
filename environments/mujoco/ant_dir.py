@@ -12,7 +12,12 @@ class AntDirEnv(AntEnv):
     Forward/backward ant direction environment
     """
 
-    def __init__(self, max_episode_steps=200, test_threshold: Optional[float] = None):
+    def __init__(
+        self,
+        max_episode_steps=200,
+        test_threshold: Optional[float] = None,
+        test: bool = False,
+    ):
         self.test_threshold = test_threshold
         self.set_task(self.sample_tasks(1)[0])
         self._max_episode_steps = max_episode_steps

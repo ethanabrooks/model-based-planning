@@ -132,7 +132,7 @@ class AntEnv(MujocoEnv):
 
         plt.tight_layout()
         if image_path is not None:
-            # print(f"Saving plot to {image_path}")
+            print(f"Saving plot to {image_path}")
             plt.savefig(image_path)
             plt.close()
         else:
@@ -310,7 +310,10 @@ class AntEnv(MujocoEnv):
         # print(pos)
         observations = [o.cpu().numpy() for o in episode_prev_obs]
         [task] = env.get_task()
-        cls._plot(observations, task, num_episodes)
+        image_path = (
+            f"{image_folder}/behavior.png" if image_folder is not None else None
+        )
+        cls._plot(observations, task, num_episodes, image_path=image_path)
 
         if not return_pos:
             return (

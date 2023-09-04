@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -116,6 +117,78 @@ class PointEnv(Env):
         ob = self._get_obs()
         info = {"task": self.get_task()}
         return ob, reward, done, info
+
+    def plot(
+        self,
+        rollouts: list,
+        curr_task: np.ndarray,
+        num_episodes: int = 1,
+        image_path: Optional[str] = None,
+    ):
+        observations = [
+            np.array([s for s, _, _, _, _ in rollout]) for rollout in rollouts
+        ]
+        return self._plot(observations, curr_task, num_episodes, image_path)
+
+    def _plot(
+        self,
+        observations: list,
+        curr_task: np.ndarray,
+        num_episodes: int = 1,
+        image_path: Optional[str] = None,
+    ):
+        figsize = (5.5, 4)
+        fig, axis = plt.subplots(1, 1, figsize=figsize)
+        xlim = (-1.3, 1.3)
+        if self.goal_sampler == semi_circle_goal_sampler:
+            ylim = (-0.3, 1.3)
+        else:
+            ylim = (-1.3, 1.3)
+        color_map = mpl.colors.ListedColormap(sns.color_palette("husl", num_episodes))
+
+        # plot goal
+        axis.scatter(*curr_task, marker="x", color="k", s=50)
+        # radius where we get reward
+        if hasattr(self, "goal_radius"):
+            circle1 = plt.Circle(
+                curr_task, self.goal_radius, color="c", alpha=0.2, edgecolor="none"
+            )
+            plt.gca().add_artist(circle1)
+
+        for i in range(num_episodes):
+            color = color_map(i)
+            path = observations[i]
+
+            # plot (semi-)circle
+            r = 1.0
+            if self.goal_sampler == semi_circle_goal_sampler:
+                angle = np.linspace(0, np.pi, 100)
+            else:
+                angle = np.linspace(0, 2 * np.pi, 100)
+            goal_range = r * np.array((np.cos(angle), np.sin(angle)))
+            plt.plot(goal_range[0], goal_range[1], "k--", alpha=0.1)
+
+            # plot trajectory
+            axis.plot(path[:, 0], path[:, 1], "-", color=color, label=i)
+            axis.scatter(*path[0, :2], marker=".", color=color, s=50)
+
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.xticks([])
+        plt.yticks([])
+        plt.legend()
+        plt.tight_layout()
+        if image_path is not None:
+            plt.savefig(
+                image_path,
+                dpi=300,
+                bbox_inches="tight",
+            )
+            plt.close()
+        else:
+            plt.show()
+
+        return fig
 
     def visualise_behaviour(
         self,
@@ -279,81 +352,12 @@ class PointEnv(Env):
         episode_actions = [torch.stack(e) for e in episode_actions]
         episode_rewards = [torch.cat(e) for e in episode_rewards]
 
-        figsize = (5.5, 4)
-        figure, axis = plt.subplots(1, 1, figsize=figsize)
-        xlim = (-1.3, 1.3)
-        if self.goal_sampler == semi_circle_goal_sampler:
-            ylim = (-0.3, 1.3)
-        else:
-            ylim = (-1.3, 1.3)
-        color_map = mpl.colors.ListedColormap(sns.color_palette("husl", num_episodes))
-
-        observations = (
-            torch.stack([episode_prev_obs[i] for i in range(num_episodes)])
-            .cpu()
-            .numpy()
+        observations = [o.cpu().numpy() for o in episode_prev_obs]
+        [task] = env.get_task()
+        image_path = (
+            f"{image_folder}/behavior.png" if image_folder is not None else None
         )
-        [curr_task] = env.get_task()
-
-        # plot goal
-        axis.scatter(*curr_task, marker="x", color="k", s=50)
-        # radius where we get reward
-        if hasattr(self, "goal_radius"):
-            circle1 = plt.Circle(
-                curr_task, self.goal_radius, color="c", alpha=0.2, edgecolor="none"
-            )
-            plt.gca().add_artist(circle1)
-
-        for i in range(num_episodes):
-            color = color_map(i)
-            path = observations[i]
-
-            # plot (semi-)circle
-            r = 1.0
-            if self.goal_sampler == semi_circle_goal_sampler:
-                angle = np.linspace(0, np.pi, 100)
-            else:
-                angle = np.linspace(0, 2 * np.pi, 100)
-            goal_range = r * np.array((np.cos(angle), np.sin(angle)))
-            plt.plot(goal_range[0], goal_range[1], "k--", alpha=0.1)
-
-            # plot trajectory
-            axis.plot(path[:, 0], path[:, 1], "-", color=color, label=i)
-            axis.scatter(*path[0, :2], marker=".", color=color, s=50)
-
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xticks([])
-        plt.yticks([])
-        plt.legend()
-        plt.tight_layout()
-        if image_folder is not None:
-            plt.savefig(
-                "{}/behaviour.png".format(image_folder),
-                dpi=300,
-                bbox_inches="tight",
-            )
-            plt.close()
-        else:
-            plt.show()
-
-        plt_rew = [
-            episode_rewards[i][: episode_lengths[i]]
-            for i in range(len(episode_rewards))
-        ]
-        plt.plot(torch.cat(plt_rew).view(-1).cpu().numpy())
-        plt.xlabel("env step")
-        plt.ylabel("reward per step")
-        plt.tight_layout()
-        if image_folder is not None:
-            plt.savefig(
-                "{}/rewards.png".format(image_folder),
-                dpi=300,
-                bbox_inches="tight",
-            )
-            plt.close()
-        else:
-            plt.show()
+        self._plot(observations, task, num_episodes, image_path=image_path)
 
         if not return_pos:
             return (

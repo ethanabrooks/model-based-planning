@@ -229,17 +229,6 @@ def main(
                 observations, _, _, _ = rendering.split(
                     sequence_recon, observation_dim, action_dim
                 )
-                # if hasattr(env, "plot"):
-                # rollout = env.get_rollout()
-                # task = env.unwrapped.get_task()
-                # image_path = join(writer.save_directory, "rollout.png")
-                # fig = env.unwrapped.plot(
-                #     rollouts=[rollout], curr_task=task, image_path=image_path
-                # )
-                # writer.log(
-                #     {join(writer.save_directory, "plan.png"): wandb.Image(fig)},
-                #     step=T,
-                # )
                 try:
                     renderer.render_plan(
                         join(writer.save_directory, "plan.mp4"),
