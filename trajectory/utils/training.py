@@ -33,7 +33,16 @@ class Trainer:
             self.optimizer = model.configure_optimizers(self.config)
         return self.optimizer
 
-    def train(self, model, dataset, debug, save_freq, writer, n_epochs=1, log_freq=100):
+    def train(
+        self,
+        model,
+        dataset,
+        debug,
+        save_freq,
+        writer,
+        n_epochs=1,
+        log_freq=100,
+    ):
         config = self.config
         optimizer = self.get_optimizer(model)
         model.train(True)
@@ -46,9 +55,14 @@ class Trainer:
             batch_size=config.batch_size,
             num_workers=config.num_workers,
         )
+        console.log(
+            f"\nEpoch: {self.n_epochs} / {config.total_iters /  len(loader):.2f}"
+        )
 
         for _ in range(n_epochs):
             for it, batch in enumerate(loader):
+                cuml_it = it + len(loader) * self.n_epochs
+                done = cuml_it >= config.total_iters
                 batch = to(batch, self.device)
 
                 # forward the model
@@ -87,7 +101,7 @@ class Trainer:
                 else:
                     lr = config.learning_rate
 
-                if it % save_freq == 0:
+                if done or it % save_freq == 0:
                     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
                     statepath = os.path.join(writer.directory, f"state_{it}.pt")
                     print(f"Saving model to {statepath}")
@@ -98,8 +112,7 @@ class Trainer:
                     writer.save(statepath)
 
                 # report progress
-                if it % log_freq == 0:
-                    cuml_it = it + len(loader) * self.n_epochs
+                if done or it % log_freq == 0:
                     _, targets, mask = batch
                     argmax_accuracy = logits.argmax(-1) == targets
                     argmax_accuracy = argmax_accuracy[mask].float().mean()
@@ -137,7 +150,8 @@ class Trainer:
                     if not debug:
                         wandb.log(log, step=cuml_it)
 
-                if cuml_it >= config.total_iters:
+                if done:
                     break
 
             self.n_epochs += 1
+            return cuml_it
