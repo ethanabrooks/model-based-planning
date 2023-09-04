@@ -28,18 +28,20 @@ from trajectory.datasets import (  # isort: skip
 
 
 class Parser(UtilsParser):
-    dataset: str = "halfcheetah-medium-expert-v2"
-    config: str = "config.offline"
-    debug: bool = False
-    name: str = "plan"
-    notes: str = None
-    trajectory_transformer: bool = False
-    baseline: str = None
-    n_expand: int = 2
-    test_threshold: Optional[float] = False
     action_mask: bool = False
+    baseline: str = None
+    config: str = "config.offline"
+    dataset: str = "halfcheetah-medium-expert-v2"
+    debug: bool = False
+    ground_truth_reward: bool = False
+    ground_truth_state: bool = False
+    name: str = "plan"
+    n_expand: int = 2
+    notes: str = None
     task_aware: bool = False
     test: bool = False
+    test_threshold: Optional[float] = False
+    trajectory_transformer: bool = False
 
 
 def main(
@@ -52,6 +54,8 @@ def main(
     dataset: str,
     debug: bool,
     device: int,
+    ground_truth_reward: bool,
+    ground_truth_state: bool,
     gpt_epoch: int,
     horizon: int,
     k_act: int,
@@ -205,21 +209,25 @@ def main(
                 else:
                     ## sample sequence from model beginning with `prefix`
                     sequence = beam_plan(
+                        action_dim=action_dim,
+                        beam_width=beam_width,
+                        cdf_act=cdf_act,
+                        cdf_obs=cdf_obs,
+                        discretizer=discretizer,
+                        discount=discount,
+                        env=env,
+                        ground_truth_reward=ground_truth_reward,
+                        ground_truth_state=ground_truth_state,
+                        k_act=k_act,
+                        k_obs=k_obs,
+                        max_context_transitions=max_context_transitions,
                         model=gpt,
+                        n_expand=n_expand,
+                        n_steps=horizon,
+                        observation_dim=observation_dim,
+                        verbose=verbose,
                         value_fn=value_fn,
                         x=prefix,
-                        n_steps=horizon,
-                        beam_width=beam_width,
-                        n_expand=n_expand,
-                        observation_dim=observation_dim,
-                        action_dim=action_dim,
-                        discount=discount,
-                        max_context_transitions=max_context_transitions,
-                        verbose=verbose,
-                        k_obs=k_obs,
-                        k_act=k_act,
-                        cdf_obs=cdf_obs,
-                        cdf_act=cdf_act,
                     )
 
             else:

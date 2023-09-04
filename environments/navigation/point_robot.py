@@ -110,20 +110,19 @@ class PointEnv(Env):
     def _get_obs(self):
         return np.copy(self._state)
 
-    @staticmethod
-    def step_fn(state, goal, action):
-        action = np.clip(action, ACTION_SPACE.low, ACTION_SPACE.high)
-        assert ACTION_SPACE.contains(action), action
-
+    def step_fn(self, state, action):
         state = state + 0.1 * action
-        reward = -np.linalg.norm(state - goal, ord=2)
+        goal = self.get_task()[None]
+        reward = -np.linalg.norm(state - goal, ord=2, axis=-1)
         done = False
         ob = np.copy(state)
         info = {"task": goal}
         return ob, reward, done, info
 
     def step(self, action):
-        s, r, t, i = self.step_fn(self._state, self._goal, action)
+        action = np.clip(action, self.action_space.low, self.action_space.high)
+        assert self.action_space.contains(action), action
+        [s], [r], t, i = self.step_fn(self._state[None], action[None])
         self._state = s
         return s, r, t, i
 
