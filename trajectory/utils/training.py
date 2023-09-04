@@ -40,7 +40,6 @@ class Trainer:
         debug,
         save_freq,
         writer,
-        n_epochs=1,
         log_freq=100,
     ):
         config = self.config
@@ -59,99 +58,94 @@ class Trainer:
             f"\nEpoch: {self.n_epochs} / {config.total_iters /  len(loader):.2f}"
         )
 
-        for _ in range(n_epochs):
-            for it, batch in enumerate(loader):
-                cuml_it = it + len(loader) * self.n_epochs
-                done = cuml_it >= config.total_iters
-                batch = to(batch, self.device)
+        for it, batch in enumerate(loader):
+            cuml_it = it + len(loader) * self.n_epochs
+            done = cuml_it >= config.total_iters
+            batch = to(batch, self.device)
 
-                # forward the model
-                with torch.set_grad_enabled(True):
-                    logits, loss = model(*batch)
+            # forward the model
+            with torch.set_grad_enabled(True):
+                logits, loss = model(*batch)
 
-                # backprop and update the parameters
-                model.zero_grad()
-                loss = loss.mean()
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(
-                    model.parameters(), config.grad_norm_clip
-                )
-                optimizer.step()
+            # backprop and update the parameters
+            model.zero_grad()
+            loss = loss.mean()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
+            optimizer.step()
 
-                # decay the learning rate based on our progress
-                if config.lr_decay:
-                    y = batch[-2]
-                    self.n_tokens += (
-                        y != vocab_size
-                    ).sum()  # number of tokens processed this step
-                    if self.n_tokens < config.warmup_tokens:
-                        # linear warmup
-                        lr_mult = float(self.n_tokens) / float(
-                            max(1, config.warmup_tokens)
-                        )
-                    else:
-                        # cosine learning rate decay
-                        progress = float(self.n_tokens - config.warmup_tokens) / float(
-                            max(1, config.final_tokens - config.warmup_tokens)
-                        )
-                        lr_mult = max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
-                    lr = config.learning_rate * lr_mult
-                    for param_group in optimizer.param_groups:
-                        param_group["lr"] = lr
+            # decay the learning rate based on our progress
+            if config.lr_decay:
+                y = batch[-2]
+                self.n_tokens += (
+                    y != vocab_size
+                ).sum()  # number of tokens processed this step
+                if self.n_tokens < config.warmup_tokens:
+                    # linear warmup
+                    lr_mult = float(self.n_tokens) / float(max(1, config.warmup_tokens))
                 else:
-                    lr = config.learning_rate
-
-                if done or it % save_freq == 0:
-                    ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
-                    statepath = os.path.join(writer.directory, f"state_{it}.pt")
-                    print(f"Saving model to {statepath}")
-
-                    ## save state to disk
-                    state = model.state_dict()
-                    torch.save(state, statepath)
-                    writer.save(statepath)
-
-                # report progress
-                if done or it % log_freq == 0:
-                    _, targets, mask = batch
-                    argmax_accuracy = logits.argmax(-1) == targets
-                    argmax_accuracy = argmax_accuracy[mask].float().mean()
-                    probs = torch.softmax(logits[0], dim=-1)
-                    [exp_accuracy] = torch.gather(
-                        probs, dim=-1, index=targets[0, :, None]
-                    ).T  # just use first batch index for speed
-                    exp_accuracy = exp_accuracy[mask[0]].float().mean()
-                    norms = [p.norm().item() for p in model.parameters()]
-                    global_norm = sum(x**2 for x in norms) ** 0.5
-                    log = {
-                        "train loss": loss.item(),
-                        "argmax accuracy": argmax_accuracy.item(),
-                        "exp accuracy": exp_accuracy.item(),
-                        "global norm": global_norm,
-                        "lr": lr,
-                        "lr_mult": lr_mult,
-                        "epoch": self.n_epochs,
-                        "iteration": it,
-                    }
-                    print_row(
-                        log,
-                        show_header=it % (log_freq * 30) == 0,
-                        format={
-                            "train loss": lambda x: f"{x:.2f}",
-                            "argmax accuracy": lambda x: f"{x:.2%}",
-                            "exp accuracy": lambda x: f"{x:.2%}",
-                            "global norm": lambda x: f"{x:.2f}",
-                            "lr": lambda x: f"{x:.2e}",
-                            "lr_mult": lambda x: f"{x:.2f}",
-                            "iteration": lambda x: f"{x:,}/{config.total_iters:,} ({x / config.total_iters:.1%})",
-                        },
-                        widths=dict(iteration=0.2),
+                    # cosine learning rate decay
+                    progress = float(self.n_tokens - config.warmup_tokens) / float(
+                        max(1, config.final_tokens - config.warmup_tokens)
                     )
-                    if not debug:
-                        wandb.log(log, step=cuml_it)
+                    lr_mult = max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
+                lr = config.learning_rate * lr_mult
+                for param_group in optimizer.param_groups:
+                    param_group["lr"] = lr
+            else:
+                lr = config.learning_rate
 
-                if done:
-                    break
+            if done or it % save_freq == 0:
+                ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
+                statepath = os.path.join(writer.directory, f"state_{it}.pt")
+                print(f"Saving model to {statepath}")
 
-            self.n_epochs += 1
-            return cuml_it
+                ## save state to disk
+                state = model.state_dict()
+                torch.save(state, statepath)
+                writer.save(statepath)
+
+            # report progress
+            if done or it % log_freq == 0:
+                _, targets, mask = batch
+                argmax_accuracy = logits.argmax(-1) == targets
+                argmax_accuracy = argmax_accuracy[mask].float().mean()
+                probs = torch.softmax(logits[0], dim=-1)
+                [exp_accuracy] = torch.gather(
+                    probs, dim=-1, index=targets[0, :, None]
+                ).T  # just use first batch index for speed
+                exp_accuracy = exp_accuracy[mask[0]].float().mean()
+                norms = [p.norm().item() for p in model.parameters()]
+                global_norm = sum(x**2 for x in norms) ** 0.5
+                log = {
+                    "train loss": loss.item(),
+                    "argmax accuracy": argmax_accuracy.item(),
+                    "exp accuracy": exp_accuracy.item(),
+                    "global norm": global_norm,
+                    "lr": lr,
+                    "lr_mult": lr_mult,
+                    "epoch": self.n_epochs,
+                    "iteration": it,
+                }
+                print_row(
+                    log,
+                    show_header=it % (log_freq * 30) == 0,
+                    format={
+                        "train loss": lambda x: f"{x:.2f}",
+                        "argmax accuracy": lambda x: f"{x:.2%}",
+                        "exp accuracy": lambda x: f"{x:.2%}",
+                        "global norm": lambda x: f"{x:.2f}",
+                        "lr": lambda x: f"{x:.2e}",
+                        "lr_mult": lambda x: f"{x:.2f}",
+                        "iteration": lambda x: f"{x:,}/{config.total_iters:,} ({x / config.total_iters:.1%})",
+                    },
+                    widths=dict(iteration=0.2),
+                )
+                if not debug:
+                    wandb.log(log, step=cuml_it)
+
+            if done:
+                break
+
+        self.n_epochs += 1
+        return cuml_it
