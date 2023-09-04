@@ -41,6 +41,9 @@ GOAL_SAMPLERS = {
     "double-arc": double_arc_goal_sampler,
 }
 
+ACTION_SPACE = spaces.Box(low=-1.0, high=1.0, shape=(2,))
+OBSERVATION_SPACE = spaces.Box(low=-np.inf, high=np.inf, shape=(2,))
+
 
 class PointEnv(Env):
     """
@@ -76,9 +79,9 @@ class PointEnv(Env):
 
         self.reset_task()
         self.task_dim = 2
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(2,))
+        self.observation_space = OBSERVATION_SPACE
         # we convert the actions from [-1, 1] to [-0.1, 0.1] in the step() function
-        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,))
+        self.action_space = ACTION_SPACE
         self._max_episode_steps = max_episode_steps
 
     def sample_task(self):
@@ -107,16 +110,22 @@ class PointEnv(Env):
     def _get_obs(self):
         return np.copy(self._state)
 
-    def step(self, action):
-        action = np.clip(action, self.action_space.low, self.action_space.high)
-        assert self.action_space.contains(action), action
+    @staticmethod
+    def step_fn(state, goal, action):
+        action = np.clip(action, ACTION_SPACE.low, ACTION_SPACE.high)
+        assert ACTION_SPACE.contains(action), action
 
-        self._state = self._state + 0.1 * action
-        reward = -np.linalg.norm(self._state - self._goal, ord=2)
+        state = state + 0.1 * action
+        reward = -np.linalg.norm(state - goal, ord=2)
         done = False
-        ob = self._get_obs()
-        info = {"task": self.get_task()}
+        ob = np.copy(state)
+        info = {"task": goal}
         return ob, reward, done, info
+
+    def step(self, action):
+        s, r, t, i = self.step_fn(self._state, self._goal, action)
+        self._state = s
+        return s, r, t, i
 
     def plot(
         self,
