@@ -38,6 +38,7 @@ class Parser(UtilsParser):
     test_threshold: Optional[float] = False
     action_mask: bool = False
     task_aware: bool = False
+    test: bool = False
 
 
 def main(
@@ -65,6 +66,7 @@ def main(
     run: Run,
     seed: int,
     task_aware: bool,
+    test: bool,
     test_threshold: bool,
     total_episodes: int,
     trajectory_transformer: bool,
@@ -141,7 +143,9 @@ def main(
 
     task_aware = local.is_task_aware(env)
     env = local.get_env_name(env)
-    env = load_environment(env, test_threshold=test_threshold, store_rollouts=True)
+    env = load_environment(
+        env, test_threshold=test_threshold, test=test, store_rollouts=True
+    )
     helpers.add_tag(
         f"{env.spec.max_episode_steps}-timesteps",
     )
