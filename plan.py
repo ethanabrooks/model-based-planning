@@ -9,6 +9,7 @@ import wandb
 from rich.console import Console
 from traitlets import Any
 from wandb.sdk.wandb_run import Run
+from environments.env_utils.vec_env import subproc_vec_env
 
 from trajectory.search import beam_plan, extract_actions, make_prefix, update_context
 from trajectory.search.core import get_max_block, get_transition_dim
@@ -294,15 +295,8 @@ def main(
             if terminal or terminal_mdp:
                 ## save rollout thus far
                 if hasattr(env, "plot"):
-                    rollout = env.get_rollout()
-                    task = env.unwrapped.get_task()
                     image_path = join(writer.save_directory, "rollout.png")
-                    observations = np.array([s for s, _, _, _, _ in rollout])
-                    fig = env.plot(
-                        observations=[observations],
-                        curr_task=task,
-                        image_path=image_path,
-                    )
+                    fig = subproc_vec_env.plot(env, image_path=image_path)
                     writer.log(
                         {join(writer.save_directory, "rollout.png"): wandb.Image(fig)},
                         step=T,

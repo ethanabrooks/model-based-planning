@@ -86,9 +86,9 @@ class AntEnv(MujocoEnv):
         cls,
         observations: list,
         curr_task: np.ndarray,
-        num_episodes: int = 1,
         image_path: Optional[str] = None,
     ):
+        num_episodes = len(observations)
         # plot the movement of the ant
         # print(pos)
         fig = plt.figure(figsize=(5, 4 * num_episodes))

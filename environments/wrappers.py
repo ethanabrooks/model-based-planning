@@ -144,17 +144,17 @@ class TimeLimitMask(gym.Wrapper):
 
 class StoreRollouts(gym.Wrapper):
     def __init__(self, env):
-        self.rollout = None
+        self.rollouts = []
         super().__init__(env)
 
-    def get_rollout(self):
-        return self.rollout
+    def get_rollouts(self):
+        return self.rollouts
 
     def step(self, action):
         obs, rew, done, info = self.env.step(action)
-        self.rollout.append((obs, action, rew, done, info))
+        self.rollouts[-1].append((obs, action, rew, done, info))
         return obs, rew, done, info
 
     def reset(self, **kwargs):
-        self.rollout = []
+        self.rollouts.append([])
         return super().reset(**kwargs)

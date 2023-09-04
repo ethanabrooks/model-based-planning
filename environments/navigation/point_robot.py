@@ -122,9 +122,9 @@ class PointEnv(Env):
         self,
         observations: list,
         curr_task: np.ndarray,
-        num_episodes: int = 1,
         image_path: Optional[str] = None,
     ):
+        num_episodes = len(observations)
         figsize = (5.5, 4)
         fig, axis = plt.subplots(1, 1, figsize=figsize)
         xlim = (-1.3, 1.3)

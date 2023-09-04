@@ -18,6 +18,7 @@ import torch
 import torch.functional as F
 import torch.nn as nn
 import wandb
+from gym import Env
 from ray import tune
 from ray.air.integrations.wandb import setup_wandb
 from rich import box
@@ -555,3 +556,16 @@ def tmp_dir():
     if wandb.run is None:
         return Path(os.getenv("WANDB_DIR", "/tmp"))
     return Path(wandb.run.dir).parent / "tmp"
+
+
+def plot(env: Env, image_path):
+    rollouts = env.get_rollouts()
+    observations = [
+        np.stack([o for o, *_ in rollout]) for rollout in rollouts if len(rollout)
+    ]
+    task = env.unwrapped.get_task()
+    return env.plot(
+        observations=observations,
+        curr_task=task,
+        image_path=image_path,
+    )

@@ -33,13 +33,13 @@ def make_env(
             env.seed(seed + rank)
         if str(env.__class__.__name__).find("TimeLimit") >= 0:
             env = TimeLimitMask(env)
+        if store_rollouts:
+            env = StoreRollouts(env)
         env = VariBadWrapper(
             env=env,
             episodes_per_task=episodes_per_task,
             add_done_info=add_done_info,
         )
-        if store_rollouts:
-            env = StoreRollouts(env)
         return env
 
     return _thunk

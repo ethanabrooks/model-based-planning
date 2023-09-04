@@ -6,8 +6,22 @@ import time
 from multiprocessing import Pipe, Process
 
 import numpy as np
+from gym import Env
 
 from . import CloudpickleWrapper, VecEnv
+
+
+def plot(env: Env, image_path):
+    rollouts = env.get_rollouts()
+    observations = [
+        np.stack([o for o, *_ in rollout]) for rollout in rollouts if len(rollout)
+    ]
+    task = env.unwrapped.get_task()
+    return env.plot(
+        observations=observations,
+        curr_task=task,
+        image_path=image_path,
+    )
 
 
 def worker(remote, parent_remote, env_fn_wrapper):
@@ -51,13 +65,8 @@ def worker(remote, parent_remote, env_fn_wrapper):
             elif cmd == "reset_task":
                 env.unwrapped.reset_task(data)
             elif cmd == "plot":
-                rollout = env.get_rollout()
-                task = env.unwrapped.get_task()
-                env.plot(
-                    rollouts=[rollout],
-                    curr_task=task,
-                    image_path=data,
-                )
+                plot(env, image_path=data)
+                os.remove(data.replace(".png", ".lock"))
 
             else:
                 # try to get the attribute directly
@@ -165,5 +174,14 @@ class SubprocVecEnv(VecEnv):
     def plot(self, i: int, image_path: str):
         self._assert_not_closed()
         image_path = f"{image_path}-env{i}.png"
+
+        lock_path = image_path.replace(".png", ".lock")
+        with open(lock_path, "w"):
+            pass
         self.remotes[i].send(("plot", image_path))
+        sleep_time = 0.01
+        while os.path.exists(lock_path):
+            print(".", end="", flush=True)
+            time.sleep(sleep_time)
+            sleep_time *= 2
         return image_path

@@ -69,7 +69,7 @@ class Walker2DRandParamsEnv(RandomEnv, utils.EzPickle):
         fig = plt.figure(figsize=(5, 4 * num_episodes))
         min_dim = -3.5
         max_dim = 3.5
-        span = max_dim - min_dim
+        _ = max_dim - min_dim
 
         for i in range(num_episodes):
             plt.subplot(num_episodes, 1, i + 1)
