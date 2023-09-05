@@ -87,7 +87,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         ed = local.is_ed(env)
         task_aware = local.is_task_aware(env)
         env = local.get_env_name(env)
-        env = load_environment(env)
+        env = load_environment(env, test=True)
         utl.add_tag(
             f"{env.spec.max_episode_steps}-timesteps",
         )
