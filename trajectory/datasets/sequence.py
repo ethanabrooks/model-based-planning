@@ -15,6 +15,59 @@ from .d4rl import load_environment, qlearning_dataset_with_timeouts
 from .preprocessing import dataset_preprocess_functions
 
 
+def compute_episode_boundaries(done_tensor: np.ndarray):
+    """
+    Compute the start and end indices of episodes based on a given 'done' tensor.
+    """
+    ep_ends, _ = np.where(done_tensor)
+    ep_ends += 1
+    ep_starts = np.pad(ep_ends, (1, 0))[:-1]
+    return ep_starts, ep_ends
+
+
+def compute_rewards_for_tasks(observations: np.ndarray, done_tensor: np.ndarray, env):
+    """
+    Compute rewards based on tasks sampled for each episode.
+    """
+    ep_starts, ep_ends = compute_episode_boundaries(done_tensor)
+    ep_tasks = env.sample_task(size=len(ep_starts))
+    rewards = np.zeros_like(done_tensor)
+
+    eps = np.concatenate([ep_starts[..., None], ep_ends[..., None], ep_tasks], axis=1)
+    for start, end, *task in eps:
+        assert start < end
+        start = int(start)
+        end = int(end)
+        ep_obs = observations[start:end]
+        task = np.array([task])
+        ep_task_tile = np.tile(task, (end - start, 1))
+        ep_rewards = env.get_reward(ep_obs, ep_task_tile)
+        rewards[start:end] = ep_rewards[..., None]
+
+    return rewards
+
+
+def compute_values(
+    rewards: np.ndarray, done_tensor: np.ndarray, discount_array: np.ndarray
+):
+    """
+    Compute values based on rewards and given 'done' tensor.
+    """
+    ep_starts, ep_ends = compute_episode_boundaries(done_tensor)
+    values = np.zeros_like(rewards)
+
+    eps = np.concatenate([ep_starts[..., None], ep_ends[..., None]], axis=1)
+    for start, end in eps:
+        assert start < end
+        ep_rewards = rewards[start:end].T[0]
+        l = ep_rewards.size
+        discounts = discount_array[:l, :l]
+        ep_values = discounts @ ep_rewards
+        values[start : end - 1] = ep_values[1:, None]
+
+    return values
+
+
 class SequenceDataset(torch.utils.data.Dataset):
     def __init__(
         self,
@@ -94,27 +147,15 @@ class SequenceDataset(torch.utils.data.Dataset):
         )
         discount_array = np.triu(discount**exponents)
 
-        ep_ends, _ = np.where(done_mdp)
-        ep_ends += 1
-        ep_starts = np.pad(ep_ends, (1, 0))[:-1]
+        with Progress(
+            TimeElapsedColumn(),
+            *Progress.get_default_columns(),
+        ) as progress:
+            # Compute rewards based on BAMDP episodes
+            rewards = compute_rewards_for_tasks(observations, done_bamdp, env)
 
-        with Progress(TimeElapsedColumn(), *Progress.get_default_columns()) as progress:
-            ep_tasks = env.sample_task(size=len(ep_starts))
-            eps = np.concatenate(
-                [ep_starts[..., None], ep_ends[..., None], ep_tasks], axis=1
-            )
-            for start, end, *task in eps:
-                assert start < end
-                start = int(start)
-                end = int(end)
-                ep_obs = observations[start:end]
-                task = np.array([task])
-                ep_tasks = np.tile(task, (end - start, 1))
-                ep_rewards = env.get_reward(ep_obs, ep_tasks)
-                l = ep_rewards.size
-                discounts = discount_array[:l, :l]
-                ep_values = discounts @ ep_rewards
-                values[start : end - 1] = ep_values[1:, None]
+            # Compute values based on MDP episodes
+            values = compute_values(rewards, done_mdp, discount_array)
 
             ## segment
             progress.add_task("Segmenting...", total=None)
