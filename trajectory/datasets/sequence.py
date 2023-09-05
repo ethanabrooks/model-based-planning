@@ -30,7 +30,41 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.sequence_length = sequence_length
         self.step = step
         self.action_mask = action_mask
-        observations, actions, rewards, done_bamdp, done_mdp = self.init(env)
+
+        ed = local.is_ed(env)
+        task_aware = local.is_task_aware(env)
+        env = local.get_env_name(env)
+        env = load_environment(env)
+        utl.add_tag(
+            f"{env.spec.max_episode_steps}-timesteps",
+        )
+
+        name = env.spec.id
+
+        if local.get_artifact_name(name):
+            dataset = local.load_dataset(
+                env_name=name,
+                task_aware=task_aware,
+                ed=ed,
+                truncate_episode=env.spec.max_episode_steps,
+            )
+        else:
+            self.console.log("Loading...", end=" ")
+            dataset = qlearning_dataset_with_timeouts(
+                env.unwrapped, terminate_on_end=True
+            )
+            print("✓")
+
+        preprocess_fn = dataset_preprocess_functions.get(name)
+        if preprocess_fn:
+            self.console.log("Modifying environment")
+            dataset = preprocess_fn(dataset)
+
+        observations = dataset["observations"]
+        actions = dataset["actions"]
+        rewards = dataset["rewards"]
+        done_bamdp = dataset["done"]
+        done_mdp = dataset["done_mdp"]
 
         if trajectory_transformer:
             done_bamdp = done_mdp
@@ -157,42 +191,6 @@ class SequenceDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.indices)
-
-    def init(self, env: str):
-        ed = local.is_ed(env)
-        task_aware = local.is_task_aware(env)
-        env = local.get_env_name(env)
-        env = load_environment(env)
-        utl.add_tag(
-            f"{env.spec.max_episode_steps}-timesteps",
-        )
-        name = env.spec.id
-
-        if local.get_artifact_name(name):
-            dataset = local.load_dataset(
-                env_name=name,
-                task_aware=task_aware,
-                ed=ed,
-                truncate_episode=env.spec.max_episode_steps,
-            )
-        else:
-            self.console.log("Loading...", end=" ")
-            dataset = qlearning_dataset_with_timeouts(
-                env.unwrapped, terminate_on_end=True
-            )
-            print("✓")
-
-        preprocess_fn = dataset_preprocess_functions.get(name)
-        if preprocess_fn:
-            self.console.log("Modifying environment")
-            dataset = preprocess_fn(dataset)
-
-        observations = dataset["observations"]
-        actions = dataset["actions"]
-        rewards = dataset["rewards"]
-        done_bamdp = dataset["done"]
-        done_mdp = dataset["done_mdp"]
-        return observations, actions, rewards, done_bamdp, done_mdp
 
 
 class DiscretizedDataset(SequenceDataset):
