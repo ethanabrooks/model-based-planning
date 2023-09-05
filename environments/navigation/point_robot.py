@@ -13,25 +13,25 @@ from utils import helpers as utl
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def semi_circle_goal_sampler():
+def semi_circle_goal_sampler(size):
     r = 1.0
-    angle = random.uniform(0, np.pi)
-    goal = r * np.array((np.cos(angle), np.sin(angle)))
+    angle = random.uniform(0, np.pi, size=size)
+    goal = r * np.stack((np.cos(angle), np.sin(angle)), axis=-1)
     return goal
 
 
-def circle_goal_sampler():
+def circle_goal_sampler(size):
     r = 1.0
-    angle = random.uniform(0, 2 * np.pi)
-    goal = r * np.array((np.cos(angle), np.sin(angle)))
+    angle = np.random.uniform(0, 2 * np.pi, size=size)
+    goal = r * np.stack((np.cos(angle), np.sin(angle)), axis=-1)
     return goal
 
 
-def double_arc_goal_sampler(start, end):
+def double_arc_goal_sampler(start, end, size):
     r = 1.0
-    angle = random.uniform(start, end)
-    angle += np.random.choice(2) * np.pi
-    goal = r * np.array((np.cos(angle), np.sin(angle)))
+    angle = np.random.uniform(start, end, size=size)
+    angle += np.random.choice(2, size=size) * np.pi
+    goal = r * np.stack((np.cos(angle), np.sin(angle)), axis=-1)
     return goal
 
 
@@ -67,10 +67,10 @@ class PointEnv(Env):
             self.goal_sampler = sampler = GOAL_SAMPLERS[goal_sampler]
             if goal_sampler == "double-arc":
                 test_threshold = test_threshold or np.pi / 2
-                self.goal_sampler = lambda: (
-                    sampler(0, test_threshold)
+                self.goal_sampler = lambda size: (
+                    sampler(0, test_threshold, size)
                     if not test
-                    else sampler(test_threshold, np.pi)
+                    else sampler(test_threshold, np.pi, size)
                 )
         elif goal_sampler is None:
             self.goal_sampler = semi_circle_goal_sampler
@@ -84,9 +84,8 @@ class PointEnv(Env):
         self.action_space = ACTION_SPACE
         self._max_episode_steps = max_episode_steps
 
-    def sample_task(self):
-        goal = self.goal_sampler()
-        return goal
+    def sample_task(self, size):
+        return self.goal_sampler(size)
 
     def set_task(self, task):
         self._goal = task
@@ -96,7 +95,7 @@ class PointEnv(Env):
 
     def reset_task(self, task=None):
         if task is None:
-            task = self.sample_task()
+            [task] = self.sample_task(1)
         self.set_task(task)
         return task
 
@@ -110,12 +109,15 @@ class PointEnv(Env):
     def _get_obs(self):
         return np.copy(self._state)
 
-    def step_fn(self, state, action):
-        state = state + 0.1 * action
+    def get_reward(self, states, goals):
+        return -np.linalg.norm(states - goals, ord=2, axis=-1)
+
+    def step_fn(self, states, actions):
+        states = states + 0.1 * actions
         goal = self.get_task()[None]
-        reward = -np.linalg.norm(state - goal, ord=2, axis=-1)
+        reward = self.get_reward(states, goal)
         done = False
-        ob = np.copy(state)
+        ob = np.copy(states)
         info = {"task": goal}
         return ob, reward, done, info
 

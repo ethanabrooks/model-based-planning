@@ -99,15 +99,22 @@ class SequenceDataset(torch.utils.data.Dataset):
         ep_starts = np.pad(ep_ends, (1, 0))[:-1]
 
         with Progress(TimeElapsedColumn(), *Progress.get_default_columns()) as progress:
-            for start, length in progress.track(
-                np.stack([ep_starts, ep_ends], axis=1), description="Computing values"
-            ):
-                assert start < length
-                [ep_rewards] = rewards[start:length].T
+            ep_tasks = env.sample_task(size=len(ep_starts))
+            eps = np.concatenate(
+                [ep_starts[..., None], ep_ends[..., None], ep_tasks], axis=1
+            )
+            for start, end, *task in eps:
+                assert start < end
+                start = int(start)
+                end = int(end)
+                ep_obs = observations[start:end]
+                task = np.array([task])
+                ep_tasks = np.tile(task, (end - start, 1))
+                ep_rewards = env.get_reward(ep_obs, ep_tasks)
                 l = ep_rewards.size
                 discounts = discount_array[:l, :l]
                 ep_values = discounts @ ep_rewards
-                values[start : length - 1] = ep_values[1:, None]
+                values[start : end - 1] = ep_values[1:, None]
 
             ## segment
             progress.add_task("Segmenting...", total=None)
