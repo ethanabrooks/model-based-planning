@@ -4,7 +4,6 @@ import numpy as np
 import torch
 from gym import Env
 
-from trajectory import utils
 from trajectory.search.sampling import get_logp, sample_n, sort_2d
 from trajectory.utils import rendering
 from trajectory.utils.discretization import QuantileDiscretizer
@@ -68,9 +67,6 @@ def beam_plan(
     ## construct reward and discount tensors for estimating values
     rewards = torch.zeros(beam_width, n_steps + 1, device=x.device)
     discounts = discount ** torch.arange(n_steps + 1, device=x.device)
-
-    ## logging
-    progress = utils.Progress(n_steps) if verbose else utils.Silent()
 
     ## ground truth
     try:
@@ -139,20 +135,6 @@ def beam_plan(
             if x2 is not None and ground_truth_state:
                 x2 = torch.tensor(x2).to(x.device)
                 x[:, x_ind:] = x2[inds]
-
-        ## logging
-        progress.update(
-            {
-                "x": list(x.shape),
-                "vmin": values.min(),
-                "vmax": values.max(),
-                "vtmin": V_t.min(),
-                "vtmax": V_t.max(),
-                "discount": discount,
-            }
-        )
-
-    progress.stamp()
 
     ## [ batch_size x (n_context + n_steps) x transition_dim ]
     x = x.view(beam_width, -1, transition_dim)
