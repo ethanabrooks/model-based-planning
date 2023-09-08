@@ -144,6 +144,8 @@ point_env_plan = {
 point_env_train = {
     "batch_size": 200,
     "subsampled_sequence_length": 100,
+    "learning_rate": 1e-3,
+    "n_layer": 1,
 }
 
 SparsePointEnv_v0 = {
