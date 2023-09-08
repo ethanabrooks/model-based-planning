@@ -122,11 +122,15 @@ class Trainer:
                 tgts = split(targets, idxs, dataset.observation_dim, dataset.action_dim)
                 names = ["obs", "act", "rew", "val", "total"]
                 acc = {}
+                final_acc = {}
                 predictions = logits.argmax(-1)
                 for name, pred, tgt in zip(
                     names, [*preds, predictions], [*tgts, targets]
                 ):
                     acc[name] = (pred == tgt).float().mean().item()
+                    pred = pred.view(logits.size(0), -1, pred.size(-1))
+                    tgt = tgt.view(logits.size(0), -1, tgt.size(-1))
+                    final_acc[name] = (pred[:, -1] == tgt[:, -1]).float().mean().item()
 
                 norms = [p.norm().item() for p in model.parameters()]
                 global_norm = sum(x**2 for x in norms) ** 0.5
@@ -138,6 +142,7 @@ class Trainer:
                     "epoch": self.n_epochs,
                     "iteration": it,
                     **{f"{k} accuracy": v for k, v in acc.items()},
+                    **{f"{k} final accuracy": v for k, v in final_acc.items()},
                 }
                 print_row(
                     log,
