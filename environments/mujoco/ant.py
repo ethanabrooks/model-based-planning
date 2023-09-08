@@ -300,7 +300,8 @@ class AntEnv(MujocoEnv):
         image_path = (
             f"{image_folder}/behavior.png" if image_folder is not None else None
         )
-        cls.plot(observations, task, num_episodes, image_path=image_path)
+
+        cls.plot(observations, task, image_path=image_path)
 
         if not return_pos:
             return (

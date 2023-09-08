@@ -16,7 +16,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class GridNavi(gym.Env):
-    def __init__(self, num_cells=5, num_steps=15):
+    def __init__(
+        self,
+        num_cells=5,
+        num_steps=15,
+        test_threshold: float = None,
+        test: bool = False,
+    ):
         super(GridNavi, self).__init__()
 
         self.seed()
@@ -67,7 +73,6 @@ class GridNavi(gym.Env):
         return self._belief_state
 
     def update_belief(self, state, action):
-
         on_goal = state[0] == self._goal[0] and state[1] == self._goal[1]
 
         # hint
@@ -115,7 +120,6 @@ class GridNavi(gym.Env):
         return self._env_state
 
     def step(self, action):
-
         if isinstance(action, np.ndarray) and action.ndim == 1:
             action = action[0]
         assert self.action_space.contains(action)
@@ -220,7 +224,6 @@ class GridNavi(gym.Env):
         """
 
         num_episodes = args.max_rollouts_per_task
-        unwrapped_env = env.venv.unwrapped.envs[0]
 
         # --- initialise things we want to keep track of ---
 
@@ -258,13 +261,11 @@ class GridNavi(gym.Env):
         start_obs = state.clone()
 
         for episode_idx in range(args.max_rollouts_per_task):
-
-            curr_goal = env.get_task()
+            [curr_goal] = env.get_task()
             curr_rollout_rew = []
             curr_rollout_goal = []
 
             if encoder is not None:
-
                 if episode_idx == 0:
                     # reset to prior
                     (
@@ -290,7 +291,6 @@ class GridNavi(gym.Env):
                 episode_beliefs[episode_idx].append(belief)
 
             for step_idx in range(1, env._max_episode_steps + 1):
-
                 if step_idx == 1:
                     episode_prev_obs[episode_idx].append(start_obs.clone())
                 else:
@@ -506,7 +506,6 @@ def plot_bb(
     # loop through the experiences
     for episode_idx in range(num_episodes):
         for step_idx in range(num_steps):
-
             curr_obs = episode_all_obs[episode_idx][: step_idx + 1]
             curr_goal = episode_goals[episode_idx]
 

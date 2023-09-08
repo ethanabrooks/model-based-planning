@@ -19,6 +19,7 @@ class AntDirEnv(AntEnv):
         test: bool = False,
     ):
         self.test_threshold = test_threshold
+        self.test = test
         self.set_task(self.sample_tasks(1)[0])
         self._max_episode_steps = max_episode_steps
         self.task_dim = 1
@@ -87,10 +88,17 @@ class AntDirEnv(AntEnv):
 
 class AntDir2DEnv(AntDirEnv):
     def sample_tasks(self, n_tasks):
+        test_threshold = self.test_threshold or np.pi / 2
+
+        def double_arc_goal_sampler(start, end):
+            angle = np.random.uniform(start, end, size=n_tasks)
+            angle += np.random.choice(2, size=n_tasks) * np.pi
+            return angle
+
         return (
-            np.array([self.test_threshold])
-            if self.test_threshold
-            else (np.random.random(n_tasks) * 3 / 2 * np.pi)
+            double_arc_goal_sampler(0, test_threshold)
+            if not self.test
+            else double_arc_goal_sampler(test_threshold, np.pi)
         )
 
     def plot_task(curr_task: np.ndarray):
