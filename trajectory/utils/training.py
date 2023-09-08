@@ -6,14 +6,22 @@ import wandb
 from rich.console import Console
 from torch.utils.data.dataloader import DataLoader
 
+from trajectory.search.core import get_transition_dim
+from trajectory.utils import rendering
 from utils.helpers import print_row
+
+console = Console()
 
 
 def to(xs, device):
     return [x.to(device) for x in xs]
 
 
-console = Console()
+def split(x, gt, observation_dim, action_dim):
+    x = torch.cat([gt[:, :1], x], dim=1)
+    transition_dim = get_transition_dim(observation_dim, action_dim)
+    x = x.reshape(-1, transition_dim)
+    return rendering.split(x, observation_dim, action_dim)
 
 
 class Trainer:
@@ -107,25 +115,29 @@ class Trainer:
 
             # report progress
             if done or it % log_freq == 0:
-                _, targets, mask = batch
-                argmax_accuracy = logits.argmax(-1) == targets
-                argmax_accuracy = argmax_accuracy[mask].float().mean()
-                probs = torch.softmax(logits[0], dim=-1)
-                [exp_accuracy] = torch.gather(
-                    probs, dim=-1, index=targets[0, :, None]
-                ).T  # just use first batch index for speed
-                exp_accuracy = exp_accuracy[mask[0]].float().mean()
+                idxs, targets, _ = batch
+                preds = split(
+                    logits.argmax(-1), idxs, dataset.observation_dim, dataset.action_dim
+                )
+                tgts = split(targets, idxs, dataset.observation_dim, dataset.action_dim)
+                names = ["obs", "act", "rew", "val", "total"]
+                acc = {}
+                predictions = logits.argmax(-1)
+                for name, pred, tgt in zip(
+                    names, [*preds, predictions], [*tgts, targets]
+                ):
+                    acc[name] = (pred == tgt).float().mean().item()
+
                 norms = [p.norm().item() for p in model.parameters()]
                 global_norm = sum(x**2 for x in norms) ** 0.5
                 log = {
                     "train loss": loss.item(),
-                    "argmax accuracy": argmax_accuracy.item(),
-                    "exp accuracy": exp_accuracy.item(),
                     "global norm": global_norm,
                     "lr": lr,
                     "lr_mult": lr_mult,
                     "epoch": self.n_epochs,
                     "iteration": it,
+                    **{f"{k} accuracy": v for k, v in acc.items()},
                 }
                 print_row(
                     log,
